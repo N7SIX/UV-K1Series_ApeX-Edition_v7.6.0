@@ -1,0 +1,389 @@
+/* Copyright 2023 Dual Tachyon
+ * https://github.com/DualTachyon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *     Unless required by applicable law or agreed to in writing, software
+ *     distributed under the License is distributed on an "AS IS" BASIS,
+ *     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *     See the License for the specific language governing permissions and
+ *     limitations under the License.
+ */
+
+#include <stdint.h>
+#include <string.h>
+#include <stdio.h>     // NULL
+
+#ifdef ENABLE_AM_FIX
+    #include "am_fix.h"
+#endif
+
+#include "audio.h"
+#include "board.h"
+#include "misc.h"
+#include "radio.h"
+#include "settings.h"
+#include "version.h"
+
+#ifdef ENABLE_FEAT_N7SIX
+    #ifdef ENABLE_FMRADIO
+        #include "app/action.h"
+        #include "ui/ui.h"
+    #endif
+    #ifdef ENABLE_SPECTRUM
+        #include "app/spectrum.h"
+    #endif
+    #include "app/chFrScanner.h"
+#endif
+
+#include "app/app.h"
+#include "app/dtmf.h"
+
+#include "driver/backlight.h"
+#include "driver/bk4819.h"
+#include "driver/gpio.h"
+#include "driver/system.h"
+#include "driver/systick.h"
+#include "driver/py25q16.h"
+#ifdef ENABLE_UART
+    #include "driver/uart.h"
+#endif
+#ifdef ENABLE_USB
+#include "driver/vcp.h"
+#endif
+#include "helper/battery.h"
+#include "helper/boot.h"
+
+#include "ui/lock.h"
+#include "ui/welcome.h"
+#include "ui/menu.h"
+
+#include "external/printf/printf.h"
+
+void _putchar(__attribute__((unused)) char c)
+{
+
+#ifdef ENABLE_UART
+    UART_Send((uint8_t *)&c, 1);
+#endif
+
+}
+
+void Main(void)
+{
+    SYSTICK_Init();
+    BOARD_Init();
+
+    // Always reset scan range state on boot to prevent invalid spectrum/scan state
+#ifdef ENABLE_SCAN_RANGES
+    gScanRangeStart = 0;
+    gScanRangeStop = 0;
+#endif
+
+    boot_counter_10ms = 600;   // 6 sec
+
+#ifdef ENABLE_UART
+    UART_Init();
+    UART_Send(UART_Version, strlen(UART_Version));
+#endif
+#ifdef ENABLE_USB
+    VCP_Init();
+#endif
+
+    // Not implementing authentic device checks
+
+    memset(gDTMF_String, '-', sizeof(gDTMF_String));
+    gDTMF_String[sizeof(gDTMF_String) - 1] = 0;
+
+    BK4819_Init();
+
+    BOARD_ADC_GetBatteryInfo(&gBatteryCurrentVoltage, &gBatteryCurrent);
+
+    SETTINGS_InitEEPROM();
+
+    #ifdef ENABLE_FEAT_N7SIX
+        gDW = gEeprom.DUAL_WATCH;
+        gCB = gEeprom.CROSS_BAND_RX_TX;
+    #endif
+
+    SETTINGS_WriteBuildOptions();
+    SETTINGS_LoadCalibration();
+
+    RADIO_ConfigureChannel(0, VFO_CONFIGURE_RELOAD);
+    RADIO_ConfigureChannel(1, VFO_CONFIGURE_RELOAD);
+
+    RADIO_SelectVfos();
+
+    RADIO_SetupRegisters(true);
+
+    for (unsigned int i = 0; i < ARRAY_SIZE(gBatteryVoltages); i++)
+        BOARD_ADC_GetBatteryInfo(&gBatteryVoltages[i], &gBatteryCurrent);
+
+    BATTERY_GetReadings(false);
+
+#ifdef ENABLE_AM_FIX
+    AM_fix_init();
+#endif
+
+    BOOT_Mode_t  BootMode = BOOT_GetMode();
+
+#ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
+    if (BootMode == BOOT_MODE_RESCUE_OPS)
+    {
+        gEeprom.MENU_LOCK = !gEeprom.MENU_LOCK;
+        SETTINGS_SaveSettings();
+    }
+
+    /*
+    if(gEeprom.MENU_LOCK == true) // Force Main Only
+    {
+        gEeprom.DUAL_WATCH = 0;
+        gEeprom.CROSS_BAND_RX_TX = 0;
+        //gFlagReconfigureVfos = true;
+        //gUpdateStatus        = true;
+    }
+    */
+#endif
+
+#ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
+    if (BootMode == BOOT_MODE_F_LOCK && gEeprom.MENU_LOCK == true)
+    {
+        BootMode = BOOT_MODE_NORMAL;
+    }
+#endif
+
+    if (BootMode == BOOT_MODE_F_LOCK)
+    {
+
+        gF_LOCK = true;            // flag to say include the hidden menu items
+        #ifdef ENABLE_FEAT_N7SIX
+            gEeprom.KEY_LOCK = 0;
+            SETTINGS_SaveSettings();
+            #ifndef ENABLE_VOX
+                gMenuCursor = 67; // move to hidden section, fix me if change... !!! Remove VOX and Mic Bar
+            #else
+                gMenuCursor = 68; // move to hidden section, fix me if change... !!!
+            #endif
+
+            #ifdef ENABLE_NOAA
+                gMenuCursor += 1; // move to hidden section, fix me if change... !!!
+            #endif
+            #ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
+                gMenuCursor += 1; // move to hidden section, fix me if change... !!!
+            #endif
+            gSubMenuSelection = gSetting_F_LOCK;
+        #endif
+    }
+
+    // count the number of menu items
+    gMenuListCount = 0;
+    while (MenuList[gMenuListCount].name[0] != '\0') {
+        if(!gF_LOCK && MenuList[gMenuListCount].menu_id == FIRST_HIDDEN_MENU_ITEM)
+            break;
+
+        gMenuListCount++;
+    }
+
+    // wait for user to release all butts before moving on
+    if (GPIO_IsPttPressed() ||
+         KEYBOARD_Poll() != KEY_INVALID ||
+         BootMode != BOOT_MODE_NORMAL)
+    {   // keys are pressed
+        UI_DisplayReleaseKeys();
+        BACKLIGHT_TurnOn();
+
+        // 500ms
+        for (int i = 0; i < 50;)
+        {
+            i = (!GPIO_IsPttPressed() && KEYBOARD_Poll() == KEY_INVALID) ? i + 1 : 0;
+            SYSTEM_DelayMs(10);
+        }
+        gKeyReading0 = KEY_INVALID;
+        gKeyReading1 = KEY_INVALID;
+        gDebounceCounter = 0;
+    }
+
+    if (!gChargingWithTypeC && gBatteryDisplayLevel == 0)
+    {
+        FUNCTION_Select(FUNCTION_POWER_SAVE);
+
+        if (gEeprom.BACKLIGHT_TIME < 61) 
+            BACKLIGHT_TurnOff();
+        else
+            BACKLIGHT_TurnOn();
+
+        gReducedService = true;
+    } 
+    else 
+    {
+
+        // --- START OF BOOT SCREEN ---
+        UI_DisplayWelcome();
+        BACKLIGHT_TurnOn();
+
+        // Professional startup beep (single mid double beep)
+        AUDIO_PlayBeep(BEEP_880HZ_60MS_DOUBLE_BEEP); // Mid double beep
+        SYSTEM_DelayMs(60);
+
+        // 1. Skippable delay loop
+        for (int i = 0; i < 600; i++)
+        {
+            if (KEYBOARD_Poll() != KEY_INVALID || GPIO_IsPttPressed())
+            {
+                break; 
+            }
+            SYSTEM_DelayMs(10);
+        }
+
+        // 2. Wait for the user to RELEASE the button first
+        while (KEYBOARD_Poll() != KEY_INVALID || GPIO_IsPttPressed())
+        {
+            SYSTEM_DelayMs(10);
+        }
+
+        // 3. Small "breathing" delay for the hardware
+        SYSTEM_DelayMs(100);
+
+        // Wait for button release
+        while (KEYBOARD_Poll() != KEY_INVALID || GPIO_IsPttPressed())
+        {
+            SYSTEM_DelayMs(10);
+        }
+
+        // Finalize boot
+        boot_counter_10ms = 0;
+        RADIO_SetupRegisters(true);
+
+#ifdef ENABLE_PWRON_PASSWORD
+        if (gEeprom.POWER_ON_PASSWORD < 1000000)
+        {
+            bIsInLockScreen = true;
+            UI_DisplayLock();
+            bIsInLockScreen = false;
+
+            for (int i = 0; i < 50;)
+            {
+                i = (GPIO_CheckBit(&GPIOC->DATA, GPIOC_PIN_PTT) && KEYBOARD_Poll() == KEY_INVALID) ? i + 1 : 0;
+                SYSTEM_DelayMs(10);
+            }
+            gKeyReading0 = KEY_INVALID;
+            gKeyReading1 = KEY_INVALID;
+            gDebounceCounter = 0;
+        }
+#endif
+
+        BOOT_ProcessMode(BootMode);
+        gUpdateStatus = true;
+
+#ifdef ENABLE_VOICE
+        {
+            uint8_t Channel;
+            AUDIO_SetVoiceID(0, VOICE_ID_WELCOME);
+            Channel = gEeprom.ScreenChannel[gEeprom.TX_VFO];
+            if (IS_MR_CHANNEL(Channel))
+            {
+                AUDIO_SetVoiceID(1, VOICE_ID_CHANNEL_MODE);
+                AUDIO_SetDigitVoice(2, Channel + 1);
+            }
+            else if (IS_FREQ_CHANNEL(Channel))
+                AUDIO_SetVoiceID(1, VOICE_ID_FREQUENCY_MODE);
+
+            AUDIO_PlaySingleVoice(0);
+        }
+#endif
+
+#ifdef ENABLE_NOAA
+        RADIO_ConfigureNOAA();
+#endif
+    } // <--- THIS BRACE CLOSES THE 'ELSE' BLOCK
+
+    /*
+    #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
+    if(gEeprom.CURRENT_STATE == 2 || gEeprom.CURRENT_STATE == 5)
+    {
+            gScanRangeStart = gScanRangeStart ? 0 : gTxVfo->pRX->Frequency;
+            gScanRangeStop = gEeprom.VfoInfo[!gEeprom.TX_VFO].freq_config_RX.Frequency;
+            if(gScanRangeStart > gScanRangeStop)
+            {
+                SWAP(gScanRangeStart, gScanRangeStop);
+            }
+    }
+    switch (gEeprom.CURRENT_STATE) {
+        case 1:
+            gEeprom.SCAN_LIST_DEFAULT = gEeprom.CURRENT_LIST;
+            CHFRSCANNER_Start(true, SCAN_FWD);
+            break;
+
+        case 2:
+            CHFRSCANNER_Start(true, SCAN_FWD);
+            break;
+
+        #ifdef ENABLE_FMRADIO
+        case 3:
+            ACTION_FM();
+            GUI_SelectNextDisplay(gRequestDisplayScreen);
+            break;
+        #endif
+
+        #ifdef ENABLE_SPECTRUM
+        case 4:
+            APP_RunSpectrum();
+            break;
+        case 5:
+            APP_RunSpectrum();
+            break;
+        #endif
+
+        default:
+            // No action for CURRENT_STATE == 0 or other unexpected values
+            break;
+    }
+    #endif
+    */
+
+    #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
+        if (gEeprom.CURRENT_STATE == 2 || gEeprom.CURRENT_STATE == 5) {
+            gScanRangeStart = gScanRangeStart ? 0 : gTxVfo->pRX->Frequency;
+            gScanRangeStop = gEeprom.VfoInfo[!gEeprom.TX_VFO].freq_config_RX.Frequency;
+            if (gScanRangeStart > gScanRangeStop) {
+                SWAP(gScanRangeStart, gScanRangeStop);
+            }
+        }
+
+        if (gEeprom.CURRENT_STATE == 1) {
+            gEeprom.SCAN_LIST_DEFAULT = gEeprom.CURRENT_LIST;
+        }
+
+        if (gEeprom.CURRENT_STATE == 1 || gEeprom.CURRENT_STATE == 2) {
+            CHFRSCANNER_Start(true, SCAN_FWD);
+        }
+        #ifdef ENABLE_FMRADIO
+        else if (gEeprom.CURRENT_STATE == 3) {
+            ACTION_FM();
+            GUI_SelectNextDisplay(gRequestDisplayScreen);
+        }
+        #endif
+        #ifdef ENABLE_SPECTRUM
+        else if (gEeprom.CURRENT_STATE == 4 || gEeprom.CURRENT_STATE == 5) {
+            APP_RunSpectrum();
+        }
+        #endif
+    #endif
+        
+    while (true) {
+        APP_Update();
+
+        if (gNextTimeslice) {
+
+            APP_TimeSlice10ms();
+
+            if (gNextTimeslice_500ms) {
+                APP_TimeSlice500ms();
+            }
+        }
+    }
+}

@@ -1,0 +1,77 @@
+Fix critical buffer overflows and display driver bugs across UART, DTMF, and ST7565
+
+This commit applies 6 production-ready patches to address critical stability issues
+and improve code robustness:
+
+CRITICAL FIXES (🔴 High Impact):
+- uart.c: Replace unsafe strcpy() with bounds-checked strncpy() for external UART
+  version requests. Prevents SEGFAULT when version string exceeds 16-byte buffer.
+- generic.c: Replace unsafe strcpy() with bounds-checked strncpy() for DTMF user
+  input. Prevents memory corruption on long DTMF sequences.
+- st7565.c: Fix FillScreen() algorithm - was using incorrect DrawLine() pattern
+  instead of proper memset(). Corrupted display clear/fill operations.
+- st7565.c: Add missing CS_Release() in ContrastAndInv(). Prevents SPI bus lockup
+  when adjusting display contrast/inversion in menu.
+- st7565.c: Add missing #include <string.h> for memset() declaration.
+
+OPTIMIZATION & CLEANUP (🟡 Low Impact):
+- board.c: Wrap GPIO_PIN_13 initialization in #ifdef ENABLE_FLASHLIGHT. Saves
+  ~50 bytes when flashlight feature is disabled.
+- adc.c: Add unsigned suffix to bit-shift operation and clarify comment. Improves
+  compiler optimization and code intent clarity.
+
+TESTING:
+- All 7 firmware variants build successfully without errors
+- Binary sizes remain well within 118KB flash constraint:
+  * ApeX: 82KB (70%)
+  * Bandscope: 73KB (62%)
+  * Basic: 74KB (63%)
+  * Broadcast: 71KB (60%)
+  * Game: 72KB (61%)
+  * RescueOps: 68KB (58%)
+
+EXPECTED IMPROVEMENTS:
+✅ Prevents 2 critical buffer overflow crashes
+✅ Eliminates SPI bus lockup on display operations
+✅ Fixes display rendering algorithm
+✅ Improves UART/external tool compatibility (Chirp, UVTools)
+✅ Saves ~50 bytes with conditional compilation
+
+DEPLOYMENT:
+
+---
+
+## Documentation Update (March 7, 2026)
+
+- Corrected release date in v7.6.4br4_UPDATE_SUMMARY.md to match actual publication (March 5, 2026)
+- No code changes; documentation now accurately reflects release timeline for v7.6.4br3, v7.6.4br4, v7.6.4br5
+
+This ensures historical accuracy and consistency across all update summaries.
+These patches are backward compatible with no API changes. Recommend field testing:
+- UART command reliability (external tools)
+- DTMF entry with edge cases (16+ digits)
+- Display contrast/inversion menu stability
+- General display operations (clear, fill, drawing)
+
+Fixes: Buffer overflow crash on UART version requests
+Fixes: Memory corruption on long DTMF input sequences
+Fixes: Display clear/fill corruption
+Fixes: SPI bus lockup on display menu
+
+Files Changed:
+- App/app/uart.c
+- App/app/generic.c
+- App/driver/st7565.c
+- App/board.c
+- App/driver/adc.c
+
+
+---
+
+**Upcoming v7.6.4br4 spectrum enhancements (new commit):**
+- Added EEPROM persistence for spectrum settings (step, zoom, offset,
+  bandwidth, threshold, dB range, scan delay, backlight) with CRC check.
+- Improved AutoTriggerLevel: baseline initialization, asymmetric up/down
+  step sizes to prevent threshold drift from strong close‑range signals.
+- Retained ±600 kHz default frequency offset and made it persistent.
+- Minor refactor and documentation updates.

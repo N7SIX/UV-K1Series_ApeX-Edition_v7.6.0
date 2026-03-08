@@ -1,0 +1,17 @@
+/src/build/Bandscope/CMakeFiles/N7SIX.bandscope.dir
+/src/build/Bandscope/CMakeFiles/edit_cache.dir
+/src/build/Bandscope/CMakeFiles/rebuild_cache.dir
+/src/build/Bandscope/Drivers/CMakeFiles/edit_cache.dir
+/src/build/Bandscope/Drivers/CMakeFiles/rebuild_cache.dir
+/src/build/Bandscope/Drivers/CMSIS/CMakeFiles/edit_cache.dir
+/src/build/Bandscope/Drivers/CMSIS/CMakeFiles/rebuild_cache.dir
+/src/build/Bandscope/Drivers/PY32F071_HAL_Driver/CMakeFiles/edit_cache.dir
+/src/build/Bandscope/Drivers/PY32F071_HAL_Driver/CMakeFiles/rebuild_cache.dir
+/src/build/Bandscope/Middlewares/CMakeFiles/edit_cache.dir
+/src/build/Bandscope/Middlewares/CMakeFiles/rebuild_cache.dir
+/src/build/Bandscope/Middlewares/CherryUSB/CMakeFiles/edit_cache.dir
+/src/build/Bandscope/Middlewares/CherryUSB/CMakeFiles/rebuild_cache.dir
+/src/build/Bandscope/Core/CMakeFiles/edit_cache.dir
+/src/build/Bandscope/Core/CMakeFiles/rebuild_cache.dir
+/src/build/Bandscope/App/CMakeFiles/edit_cache.dir
+/src/build/Bandscope/App/CMakeFiles/rebuild_cache.dir
