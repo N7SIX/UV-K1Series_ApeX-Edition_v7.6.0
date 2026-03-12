@@ -3,10 +3,16 @@
 
 **Release Date:** March 07, 2026  
 **Build Target:** UV-K1 Series, UV-K5 V3  
-**Build Variant:** ApeX Edition  
+**Build Variant:** ApeX Edition (all-in-one; all features included)  
 **MCU Platform:** PY32F071 (ARM Cortex-M0+)
 
+
 ---
+
+### Technical Note (March 2026)
+- Internal refactor: All static helper functions in spectrum analyzer code moved to file scope for C compliance and maintainability.
+- RAM usage further optimized by marking lookup tables as const.
+- No change to user features or logic; all builds validated.
 
 ## EXECUTIVE SUMMARY
 
@@ -69,8 +75,10 @@ These changes make the spectrum scan and display feel instant and smooth, closel
 
 ---
 
+
 ## WHAT'S NEW IN v7.6.4br5
 
+- ApeX is now the only build: all features from Bandscope, Broadcast, Basic, RescueOps, and Game are included in this all-in-one edition.
 - Professional-grade spectrum analyzer with 16-level grayscale waterfall
 - Max-hold peak trace with exponential decay and visual "ghost" effect
 - "Professional Grass" noise floor simulation for organic spectrum realism
@@ -188,7 +196,7 @@ Base Version:       v7.6.0 (build refresh)
 Patch Category:     Display Alignment / Scan Range Mode
 
 Compilation Status:
-  ✅ ApeX Edition
+  ✅ ApeX Edition (all-in-one)
 
 Memory Usage:
   RAM:               14944 B / 16 KB (91.21%)
@@ -205,7 +213,8 @@ Memory Usage:
 
 ---
 
-*This release represents a focused build-refresh addressing spectrum analyzer display alignment for professional narrowband scanning applications.*
+
+*This release represents the consolidation of all features into the ApeX all-in-one edition, addressing spectrum analyzer display alignment for professional narrowband scanning applications.*
 
 *Thank you for choosing UV-K1 Series ApeX Edition.*
 

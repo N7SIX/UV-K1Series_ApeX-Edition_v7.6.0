@@ -1637,7 +1637,7 @@ void APP_TimeSlice500ms(void)
             gBacklightCountdown_500ms = 0;
             gPowerSave_10ms = 1;
             gWakeUp = true;
-            // TODO:
+            // TODO: Consider further optimizing power-down sequence for display and backlight.
             // PWM_PLUS0_CH0_COMP = 0;
             BACKLIGHT_SetBrightness(0);
             ST7565_ShutDown();
@@ -2189,6 +2189,7 @@ Skip:
     }
 
     if (gRequestSaveChannel > 0) { // TODO: remove the gRequestSaveChannel, why use global variable for that??
+        // TODO: Refactor to avoid global variable for channel save; use function parameter or local state if possible.
         if ((!bKeyHeld && !bKeyPressed) || UI_MENU_GetCurrentMenuId())
         {
             SETTINGS_SaveChannel(gTxVfo->CHANNEL_SAVE, gEeprom.TX_VFO, gTxVfo, gRequestSaveChannel);

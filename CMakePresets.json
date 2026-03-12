@@ -82,99 +82,6 @@
             }
         },
         {
-            "name": "Bandscope",
-            "inherits": "default",
-            "cacheVariables": {
-                "ENABLE_SPECTRUM": true,
-                "ENABLE_FMRADIO": false,
-                "ENABLE_VOX": false,
-                "ENABLE_AIRCOPY": true,
-                "ENABLE_FEAT_N7SIX_SCREENSHOT": true,
-                "ENABLE_FEAT_N7SIX_GAME": false,
-                "ENABLE_FEAT_N7SIX_PMR": true,
-                "ENABLE_FEAT_N7SIX_GMRS_FRS_MURS": true,
-                "ENABLE_FEAT_N7SIX_RESCUE_OPS": false,
-                "EDITION_STRING": "Bandscope",
-                "TARGET": "N7SIX.bandscope"
-            }
-        },
-        {
-            "name": "Broadcast",
-            "inherits": "default",
-            "cacheVariables": {
-                "ENABLE_SPECTRUM": false,
-                "ENABLE_FMRADIO": true,
-                "ENABLE_VOX": true,
-                "ENABLE_AIRCOPY": true,
-                "ENABLE_FEAT_N7SIX_SCREENSHOT": true,
-                "ENABLE_FEAT_N7SIX_GAME": false,
-                "ENABLE_FEAT_N7SIX_PMR": true,
-                "ENABLE_FEAT_N7SIX_GMRS_FRS_MURS": true,
-                "ENABLE_FEAT_N7SIX_RESCUE_OPS": false,
-                "EDITION_STRING": "Broadcast",
-                "TARGET": "N7SIX.broadcast"
-            }
-        },
-        {
-            "name": "Basic",
-            "inherits": "default",
-            "cacheVariables": {
-                "ENABLE_SPECTRUM": true,
-                "ENABLE_FMRADIO": true,
-                "ENABLE_VOX": false,
-                "ENABLE_AIRCOPY": false,
-                "ENABLE_FEAT_N7SIX_SCREENSHOT": false,
-                "ENABLE_FEAT_N7SIX_GAME": false,
-                "ENABLE_FEAT_N7SIX_SPECTRUM": false,
-                "ENABLE_FEAT_N7SIX_PMR": true,
-                "ENABLE_FEAT_N7SIX_GMRS_FRS_MURS": true,
-                "ENABLE_AUDIO_BAR": false,
-                "ENABLE_FEAT_N7SIX_RESUME_STATE": false,
-                "ENABLE_FEAT_N7SIX_CHARGING_C": false,
-                "ENABLE_FEAT_N7SIX_INV": true,
-                "ENABLE_FEAT_N7SIX_CTR": false,
-                "ENABLE_FEAT_N7SIX_NARROWER": true,
-                "ENABLE_FEAT_N7SIX_RESCUE_OPS": false,
-                "EDITION_STRING": "Basic",
-                "TARGET": "N7SIX.basic"
-            }
-        },
-        {
-            "name": "RescueOps",
-            "inherits": "default",
-            "cacheVariables": {
-                "ENABLE_SPECTRUM": false,
-                "ENABLE_FMRADIO": false,
-                "ENABLE_VOX": true,
-                "ENABLE_AIRCOPY": true,
-                "ENABLE_FEAT_N7SIX_SCREENSHOT": true,
-                "ENABLE_FEAT_N7SIX_GAME": false,
-                "ENABLE_FEAT_N7SIX_PMR": true,
-                "ENABLE_FEAT_N7SIX_GMRS_FRS_MURS": true,
-                "ENABLE_NOAA": true,
-                "ENABLE_FEAT_N7SIX_RESCUE_OPS": true,
-                "EDITION_STRING": "RescueOps",
-                "TARGET": "N7SIX.rescueops"
-            }
-        },
-        {
-            "name": "Game",
-            "inherits": "default",
-            "cacheVariables": {
-                "ENABLE_SPECTRUM": false,
-                "ENABLE_FMRADIO": true,
-                "ENABLE_VOX": false,
-                "ENABLE_AIRCOPY": true,
-                "ENABLE_FEAT_N7SIX_SCREENSHOT": true,
-                "ENABLE_FEAT_N7SIX_GAME": true,
-                "ENABLE_FEAT_N7SIX_PMR": true,
-                "ENABLE_FEAT_N7SIX_GMRS_FRS_MURS": true,
-                "ENABLE_FEAT_N7SIX_RESCUE_OPS": false,
-                "EDITION_STRING": "Game",
-                "TARGET": "N7SIX.game"
-            }
-        },
-        {
             "name": "ApeX",
             "inherits": "default",
             "cacheVariables": {
@@ -197,26 +104,6 @@
         {
             "name": "Custom",
             "configurePreset": "Custom"
-        },
-        {
-            "name": "Bandscope",
-            "configurePreset": "Bandscope"
-        },
-        {
-            "name": "Broadcast",
-            "configurePreset": "Broadcast"
-        },
-        {
-            "name": "Basic",
-            "configurePreset": "Basic"
-        },
-        {
-            "name": "RescueOps",
-            "configurePreset": "RescueOps"
-        },
-        {
-            "name": "Game",
-            "configurePreset": "Game"
         },
         {
             "name": "ApeX",

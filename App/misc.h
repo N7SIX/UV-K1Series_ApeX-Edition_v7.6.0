@@ -377,7 +377,7 @@ extern volatile uint8_t      gVFOStateResumeCountdown_500ms;
     extern volatile bool     gScheduleFM;
 #endif
 extern uint8_t               gIsLocked;
-extern volatile uint8_t      boot_counter_10ms;
+extern volatile uint16_t     boot_counter_10ms;
 
 #ifdef ENABLE_FEAT_N7SIX
     extern bool                  gK5startup;

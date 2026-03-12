@@ -90,8 +90,6 @@ void SYSTEM_DelayUs(uint32_t us)
  // =============================================================================
  // FORWARD DECLARATIONS
  // =============================================================================
- static uint8_t messageTimer = 0;
- static const char* toastMessage = "";
  static void Measure(void); 
  static void InitScan(void);
  static void ResetPeak(void);
@@ -192,10 +190,10 @@ static const CalibrationPoint calTable[] = {
  
  // Spectrum and Waterfall Buffers
  uint16_t rssiHistory[SPECTRUM_MAX_STEPS];
- uint8_t waterfallHistory[SPECTRUM_MAX_STEPS][WATERFALL_HISTORY_DEPTH / 2]; 
+uint8_t waterfallHistory[SPECTRUM_MAX_STEPS][WATERFALL_HISTORY_DEPTH / 2]; 
  uint8_t waterfallIndex = 0;
  uint16_t waterfallUpdateCounter = 0;
- static uint16_t smoothedRssi[SPECTRUM_MAX_STEPS] = {0};
+static uint16_t smoothedRssi[SPECTRUM_MAX_STEPS] = {0};
  
  // --- 1. PROTOTYPES (Add this near other static prototypes) ---
 static void ProcessSpectrumEnhancements(void);
@@ -218,7 +216,7 @@ static uint16_t displayBestIndex[SPECTRUM_MAX_STEPS];
  // UI/System State
  uint8_t menuState = 0;
  uint16_t listenT = 0;
- static char String[DISPLAY_STRING_BUFFER_SIZE];
+static char String[DISPLAY_STRING_BUFFER_SIZE];
  uint16_t statuslineUpdateTimer = 0;
  
  #ifdef ENABLE_SCAN_RANGES
@@ -229,9 +227,9 @@ static uint16_t displayBestIndex[SPECTRUM_MAX_STEPS];
  // =============================================================================
  // TABLES AND SETTINGS
  // =============================================================================
- const char *bwOptions[] = {"25", "12.5", "6.25"};
- const uint8_t modulationTypeTuneSteps[] = {100, 50, 10};
- const uint8_t modTypeReg47Values[] = {1, 7, 5};
+const char * const bwOptions[] = {"25", "12.5", "6.25"};
+const uint8_t modulationTypeTuneSteps[] = {100, 50, 10};
+const uint8_t modTypeReg47Values[] = {1, 7, 5};
  
  RegisterSpec registerSpecs[] = {
      {}, // Index 0: unused
@@ -516,18 +514,6 @@ void DrawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, bool color) {
      return 128 >> settings.stepsCount;
  }
  
- #ifdef ENABLE_SCAN_RANGES
- static uint16_t GetStepsCountDisplay() {
-     // previously this helper omitted the "+1" used by GetStepsCount().
-     // the discrepancy caused the on‑screen count to be off by one when a
-     // scan range was active.  The display should reflect the actual
-     // number of measurements we will perform.
-     if (gScanRangeStart) {
-         return ((gScanRangeStop - gScanRangeStart) / GetScanStep()) + 1;
-     }
-     return GetStepsCount();
-}
- #endif
  
  uint32_t GetBW() { return GetStepsCount() * GetScanStep(); }
 
@@ -677,96 +663,90 @@ static uint32_t GetCentroidFrequency()
  }
  
  static void ToggleRX(bool on) {
-     #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
-     if (isListening == on) return;
-     #endif
-     isListening = on;
-     if (on) {
-         extern VFO_Info_t *gRxVfo;
-         if (gRxVfo) {
-             gRxVfo->pRX->Frequency = fMeasure;
-             RADIO_ConfigureSquelchAndOutputPower(gRxVfo);
-         }
-         RADIO_SetupRegisters(false);
-         RADIO_SetupAGC(settings.modulationType == MODULATION_AM, lockAGC);
-         ToggleAudio(true);
-         ToggleAFDAC(true);
-         ToggleAFBit(true);
-         SetBandLed(fMeasure, false, true);
-     #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
-         listenT = settings.listenTScan;
-         BK4819_WriteRegister(0x43, listenBWRegValues[settings.listenBw]);
-         setTailFoundInterrupt();
-     #else
-         listenT = 5;
-         BK4819_WriteRegister(0x43, listenBWRegValues[settings.listenBw]);
-     #endif
-     } else {
-         BK4819_WriteRegister(0x43, GetBWRegValueForScan());
-         ToggleAudio(false);
-         ToggleAFDAC(false);
-         ToggleAFBit(false);
-         SetBandLed(fMeasure, false, false);
-     }
- }
- 
- // =============================================================================
- // SCAN EXECUTION AND STATISTICS
- // =============================================================================
- 
- static void ResetScanStats() {
-     scanInfo.rssi = 0;
-     scanInfo.rssiMax = 0;
-     scanInfo.iPeak = 0;
-     scanInfo.fPeak = 0;
- }
- 
- static void InitScan() {
-     ResetScanStats();
-     scanInfo.i = 0;
-     scanInfo.f = GetFStart();
-     scanInfo.scanStep = GetScanStep();
-     scanInfo.measurementsCount = GetStepsCount();
- }
- 
- static void ResetBlacklist() {
-     for (int i = 0; i < 128; ++i) {
-         if (rssiHistory[i] == RSSI_MAX_VALUE) rssiHistory[i] = 0;
-     }
- #ifdef ENABLE_SCAN_RANGES
-     memset(blacklistFreqs, 0, sizeof(blacklistFreqs));
-     blacklistFreqsIdx = 0;
- #endif
- }
- 
- static void RelaunchScan() {
-     InitScan();
-     ResetPeak();
-     ToggleRX(false);
- #ifdef SPECTRUM_AUTOMATIC_SQUELCH
-     settings.rssiTriggerLevel = RSSI_MAX_VALUE;
- #endif
-     preventKeypress = true;
-     Measure(); 
-     scanInfo.rssiMin = scanInfo.rssi;
+    #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
+    if (isListening == on) return;
+    #endif
+    isListening = on;
+    if (on) {
+        extern VFO_Info_t *gRxVfo;
+        if (gRxVfo) {
+            gRxVfo->pRX->Frequency = fMeasure;
+            RADIO_ConfigureSquelchAndOutputPower(gRxVfo);
+        }
+        RADIO_SetupRegisters(false);
+        RADIO_SetupAGC(settings.modulationType == MODULATION_AM, lockAGC);
+        ToggleAudio(true);
+        ToggleAFDAC(true);
+        ToggleAFBit(true);
+        SetBandLed(fMeasure, false, true);
+    #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
+        listenT = settings.listenTScan;
+        BK4819_WriteRegister(0x43, listenBWRegValues[settings.listenBw]);
+        setTailFoundInterrupt();
+    #endif
+    }
+    else {
+        ToggleAudio(false);
+        ToggleAFDAC(false);
+        ToggleAFBit(false);
+        SetBandLed(fMeasure, false, false);
+    }
+}
+
+// --- Moved static functions to file scope ---
+static void ResetScanStats() {
+    scanInfo.rssi = 0;
+    scanInfo.rssiMax = 0;
+    scanInfo.iPeak = 0;
+    scanInfo.fPeak = 0;
+}
+
+static void InitScan() {
+    ResetScanStats();
+    scanInfo.i = 0;
+    scanInfo.f = GetFStart();
+    scanInfo.scanStep = GetScanStep();
+    scanInfo.measurementsCount = GetStepsCount();
+}
+
+static void ResetBlacklist() {
+    for (int i = 0; i < 128; ++i) {
+        if (rssiHistory[i] == RSSI_MAX_VALUE) rssiHistory[i] = 0;
+    }
+#ifdef ENABLE_SCAN_RANGES
+    memset(blacklistFreqs, 0, sizeof(blacklistFreqs));
+    blacklistFreqsIdx = 0;
+#endif
+}
+
+static void RelaunchScan() {
+    InitScan();
+    ResetPeak();
+    ToggleRX(false);
+#ifdef SPECTRUM_AUTOMATIC_SQUELCH
+    settings.rssiTriggerLevel = RSSI_MAX_VALUE;
+#endif
+    preventKeypress = true;
+    Measure(); 
+    scanInfo.rssiMin = scanInfo.rssi;
     // reset display->best measurement mapping
     for (uint8_t i = 0; i < SPECTRUM_MAX_STEPS; ++i) displayBestIndex[i] = 0xFFFF;
- }
- 
- static void UpdateScanInfo() {
-     if (scanInfo.rssi > scanInfo.rssiMax) {
-         scanInfo.rssiMax = scanInfo.rssi;
-         scanInfo.fPeak = scanInfo.f;
-         scanInfo.iPeak = scanInfo.i;
-     }
-     if (scanInfo.rssi < scanInfo.rssiMin) {
-         scanInfo.rssiMin = ((uint32_t)scanInfo.rssiMin * 7 + scanInfo.rssi) / 8;
-         settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
-         redrawStatus = true;
-     } else if (scanInfo.rssi > (scanInfo.rssiMin + 20)) {
-         scanInfo.rssiMin++;
-     }
- }
+}
+
+static void UpdateScanInfo() {
+    if (scanInfo.rssi > scanInfo.rssiMax) {
+        scanInfo.rssiMax = scanInfo.rssi;
+        scanInfo.fPeak = scanInfo.f;
+        scanInfo.iPeak = scanInfo.i;
+    }
+    if (scanInfo.rssi < scanInfo.rssiMin) {
+        scanInfo.rssiMin = ((uint32_t)scanInfo.rssiMin * 7 + scanInfo.rssi) / 8;
+        settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
+        redrawStatus = true;
+    } else if (scanInfo.rssi > (scanInfo.rssiMin + 20)) {
+        scanInfo.rssiMin++;
+    }
+}
  
  // =============================================================================
  // STATE AND INPUT HANDLING

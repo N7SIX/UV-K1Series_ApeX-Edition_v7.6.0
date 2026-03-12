@@ -60,7 +60,7 @@ void UI_DisplayLock(void)
     {
         while (!gNextTimeslice) {}
 
-        // TODO: Original code doesn't do the below, but is needed for proper key debounce
+        // NOTE: Added for proper key debounce. Further tuning may improve UI responsiveness.
 
         gNextTimeslice = false;
 

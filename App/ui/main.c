@@ -1,27 +1,35 @@
-/* Copyright 2023 Dual Tachyon
+/*
+ * Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *     Unless required by applicable law or agreed to in writing, software
- *     distributed under the License is distributed on an "AS IS" BASIS,
- *     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *     See the License for the specific language governing permissions and
- *     limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * @file      main.c
+ * @project   ApeX Edition Enhancement
+ * @author    Sean (N7SIX)
+ * @version   v7.6.5
+ * @brief     Main UI rendering logic and VFO state management.
+ * @note      Modified to support custom VFO labels and enhanced 
+ * frequency display for the ApeX Edition firmware.
  */
 
 #include <string.h>
-#include <stdlib.h>  // abs()
-
+#include <stdlib.h>
 #include "app/chFrScanner.h"
 #include "app/dtmf.h"
-#ifdef ENABLE_AM_FIX
-    #include "am_fix.h"
-#endif
+#include "app/menu.h"
 #include "bitmaps.h"
 #include "board.h"
 #include "driver/bk4819.h"
@@ -37,6 +45,13 @@
 #include "ui/main.h"
 #include "ui/ui.h"
 #include "audio.h"
+
+const char * s = "";
+const char * t = ""; // Initialize it globally within the function
+
+#ifdef ENABLE_AM_FIX
+    #include "am_fix.h"
+#endif
 
 #ifdef ENABLE_FEAT_N7SIX
     #include "driver/system.h"
@@ -66,7 +81,7 @@ const int8_t dBmCorrTable[7] = {
             -4, // band 4
             -7, // band 5
             -6, // band 6
-             -1  // band 7
+            -1  // band 7
         };
 
 const char *VfoStateStr[] = {
@@ -661,7 +676,6 @@ void UI_DisplayMain(void)
             }
 #endif
 
-
             if (gDTMF_InputMode
 #ifdef ENABLE_DTMF_CALLING
                 || gDTMF_CallState != DTMF_CALL_STATE_NONE || gDTMF_IsTx
@@ -765,19 +779,13 @@ void UI_DisplayMain(void)
             mode = VFO_MODE_RX;
             //if (FUNCTION_IsRx() && gEeprom.RX_VFO == vfo_num) {
             if (FUNCTION_IsRx() && gEeprom.RX_VFO == vfo_num && VfoState[vfo_num] == VFO_STATE_NORMAL) {
+// Always blink RX during active signal, regardless of VFO selection
 #ifdef ENABLE_FEAT_N7SIX
                 RxBlinkLed = 1;
                 RxBlinkLedCounter = 0;
                 RxLine = line;
                 RxOnVfofrequency = frequency;
-                if(!isMainVFO)
-                {
-                    RxBlink = 1;
-                }
-                else
-                {
-                    RxBlink = 0;
-                }
+                RxBlink = 1;
 #else
                 UI_PrintStringSmallBold("RX", 8, 0, line);
 #endif
@@ -802,17 +810,17 @@ void UI_DisplayMain(void)
             const unsigned int x = 2;
             const bool inputting = gInputBoxIndex != 0 && gEeprom.TX_VFO == vfo_num;
             if (!inputting)
-                sprintf(String, "M%u", gEeprom.ScreenChannel[vfo_num] + 1);
+                sprintf(String, "CH%u", gEeprom.ScreenChannel[vfo_num] + 1);
             else
-                sprintf(String, "M%.3s", INPUTBOX_GetAscii());  // show the input text
+                sprintf(String, "CH%.3s", INPUTBOX_GetAscii());  // show the input text
             UI_PrintStringSmallNormal(String, x, 0, line + 1);
         }
         else if (IS_FREQ_CHANNEL(gEeprom.ScreenChannel[vfo_num]))
         {   // frequency mode
-            // show the frequency band number
+            // show the VFO label
             const unsigned int x = 2;
             char * buf = gEeprom.VfoInfo[vfo_num].pRX->Frequency < _1GHz_in_KHz ? "" : "+";
-            sprintf(String, "F%u%s", 1 + gEeprom.ScreenChannel[vfo_num] - FREQ_CHANNEL_FIRST, buf);
+            sprintf(String, "VFO%u%s", vfo_num + 1, buf);
             UI_PrintStringSmallNormal(String, x, 0, line + 1);
         }
 #ifdef ENABLE_NOAA
@@ -933,7 +941,7 @@ void UI_DisplayMain(void)
     if (gEeprom.VfoInfo[vfo_num].Compander)
         memcpy(p_line0 + 120 + LCD_WIDTH, BITMAP_compand, sizeof(BITMAP_compand));
 #else
-    // TODO:  // find somewhere else to put the symbol
+    // TODO: Consider relocating this symbol for better display clarity.
 #endif
 
                 switch (gEeprom.CHANNEL_DISPLAY_MODE)
@@ -1516,5 +1524,3 @@ void UI_DisplayMain(void)
 
     ST7565_BlitFullScreen();
 }
-
-// ***************************************************************************

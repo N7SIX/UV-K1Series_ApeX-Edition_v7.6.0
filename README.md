@@ -57,12 +57,8 @@ Special thanks to Jean-Cyrille F6IWW (2 times), Fabrice 14RC123, David F4BPP, Ol
 
 ## Main features and improvements from F4HWN
 
-- several firmware versions:
-  - Bandscope (with spectrum analyzer made by Fagci),
-  - Broadcast (with commercial FM radio support),
-  - Basic (with spectrum analyzer and commercial FM radios support, but without certain functions such as Vox, Aircopy, etc.),
-  - RescueOps (specifically designed for first responders: firefighters, sea rescue, mountain rescue),
-  - Game (with a small breakout game),
+- single all-in-one firmware edition:
+  - ApeX (includes all features from Bandscope, Broadcast, Basic, RescueOps, and Game)
 - improve default power settings level:
   - Low1 to Low5 (<~20mW, ~125mW, ~250mW, ~500mW, ~1W),
   - Mid ~2W,
@@ -250,38 +246,27 @@ The script `compile-with-docker.sh` performs the following actions:
 ./compile-with-docker.sh <Preset> [extra CMake options]
 ```
 
+
 ### Available Presets
 
 - **Custom**
-- **Bandscope**
-- **Broadcast**
-- **Basic**
-- **RescueOps**
-- **Game**
-- **Fusion**
-- **All** (builds all editions sequentially)
+- **ApeX** (all-in-one, recommended)
 
 ### Examples
 
 
-Build a single edition:
+
+Build the all-in-one ApeX edition:
 
 ```bash
-./compile-with-docker.sh Fusion
-./compile-with-docker.sh Bandscope
-./compile-with-docker.sh Broadcast
+./compile-with-docker.sh ApeX
 ```
 
-Build everything:
-
-```bash
-./compile-with-docker.sh All
-```
 
 **Clean build (recommended for troubleshooting):**
 
 ```bash
-rm -rf build/* && ./compile-with-docker.sh All
+rm -rf build/* && ./compile-with-docker.sh ApeX
 ```
 
 ### Passing Additional CMake Options

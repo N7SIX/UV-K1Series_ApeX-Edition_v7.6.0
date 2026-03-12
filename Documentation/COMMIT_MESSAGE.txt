@@ -1,3 +1,23 @@
+---
+
+## Fix: boot_counter_10ms overflow warning (March 2026)
+
+- Changed boot_counter_10ms from uint8_t to uint16_t in misc.h, misc.c, and all usages (main.c, scheduler.c)
+- Resolves compiler warning: assignment of 600 to uint8_t caused overflow risk
+- Verified all references and removed duplicate/old definitions
+- No functional change; ensures safe countdowns >255 ticks
+
+All builds now warning-free regarding boot_counter_10ms usage.
+Consolidate to ApeX all-in-one edition; remove legacy variants
+
+- Removed Bandscope, Broadcast, Basic, RescueOps, and Game build presets and artifacts
+- Updated CMakePresets.json and README to reflect ApeX as the sole, all-features edition
+- Updated documentation (.md) to clarify that all features are now included in ApeX
+- Added edition consolidation notes to release notes and regression/compilation summaries
+- Owner’s Manual remains focused on ApeX; all advanced features are now standard
+
+---
+
 Fix critical buffer overflows and display driver bugs across UART, DTMF, and ST7565
 
 This commit applies 6 production-ready patches to address critical stability issues
@@ -38,6 +58,36 @@ EXPECTED IMPROVEMENTS:
 ✅ Saves ~50 bytes with conditional compilation
 
 DEPLOYMENT:
+
+# v7.6.5 Documentation & Icon Standardization (March 2026)
+
+This commit finalizes all documentation, icon extraction, and helper standardization for the v7.6.5 ApeX Edition release. No user-facing logic changes; all updates are documentation, maintainability, and polish.
+
+KEY UPDATES:
+- Owner's Manual: All icons extracted from firmware C arrays and embedded as PNGs for offline/print and DOCX export. Structure and formatting reviewed for professional/manual standards.
+- Spectrum Analyzer Guide: Updated for finalized helper structure, icon display, and troubleshooting. Document version updated to 1.2.
+- Spectrum Analyzer Analysis: Helper function usage and display logic fully documented. Architecture diagrams and data flow updated.
+- Quick Reference Card: Icon legend and spectrum analyzer quick start updated. Helper function references added.
+
+KEY CHANGES:
+- All spectrum analyzer display logic now uses standardized helpers (`GetStepsCount()`, `GetDisplayWidth()`, `SpecIdxToX()`, `MapMeasurementToDisplay()`).
+- All documentation and guides reviewed for clarity, accuracy, and professional standards.
+- No firmware logic changes; all updates are documentation, icon, and maintainability improvements.
+
+USER IMPACT:
+- Professional, print-ready documentation with accurate iconography
+- Easier troubleshooting and future updates
+- All guides and quick references reflect finalized features and helper structure
+
+See v7.6.5_UPDATE_SUMMARY.md for full details.
+
+---
+
+## March 2026 Refactor & RAM Optimization
+
+- Refactor: Move static helper functions in spectrum.c to file scope (C standard compliance, no logic change, improves maintainability and build stability).
+- RAM optimization: Marked lookup tables and buffers as const where possible.
+- Confirmed: No functional/logic changes; all builds pass and runtime behavior is identical.
 
 ---
 

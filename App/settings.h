@@ -25,6 +25,9 @@
 #include "radio.h"
 #include <driver/backlight.h>
 
+extern uint8_t gSetting_set_pwr;
+extern bool    gSetting_set_gui;
+
 enum POWER_OnDisplayMode_t {
 #ifdef ENABLE_FEAT_N7SIX
     POWER_ON_DISPLAY_MODE_ALL,

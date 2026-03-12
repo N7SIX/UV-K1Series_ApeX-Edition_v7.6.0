@@ -984,6 +984,7 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
     }
 
     // TODO: ???
+    // TODO: Unclear logic from original code. If needed, clarify intent before restoring or removing.
 //  if (Key > KEY_PTT)
 //  {
 //      Key = KEY_SIDE2;      // what's this doing ???

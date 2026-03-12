@@ -344,6 +344,7 @@ void SETTINGS_InitEEPROM(void)
     #ifdef ENABLE_FEAT_N7SIX
         // 1FF0..0x1FF7
         // TODO: address TBD
+            // TODO: Assign proper EEPROM/flash address for N7SIX feature. Ensure no conflicts.
         PY25Q16_ReadBuffer(0x00c000, Data, 8);
         gSetting_set_pwr = (((Data[7] & 0xF0) >> 4) < 7) ? ((Data[7] & 0xF0) >> 4) : 0;
         gSetting_set_ptt = (((Data[7] & 0x0F)) < 2) ? ((Data[7] & 0x0F)) : 0;
@@ -864,6 +865,7 @@ void SETTINGS_SaveSettings(void)
     // 0x1FF0
     State = SecBuf;
     // TODO: TBD
+        // TODO: Assign proper EEPROM/flash address for N7SIX feature. Ensure no conflicts.
     PY25Q16_ReadBuffer(0x00c000, State, 8);
 
     //memset(State, 0xFF, sizeof(State));
@@ -1139,7 +1141,7 @@ State[1] = 0
 #ifdef ENABLE_FEAT_N7SIX
 void SETTINGS_ResetTxLock(void)
 {
-    // TODO: This is expensive operation!
+    // TODO: This is an expensive operation! Consider optimizing batch size or reducing flash writes for better UI responsiveness.
 
 #define SETTINGS_ResetTxLock_BATCH 10
 

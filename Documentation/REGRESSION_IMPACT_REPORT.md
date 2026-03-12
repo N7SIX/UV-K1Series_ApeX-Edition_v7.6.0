@@ -7,6 +7,12 @@
 
 ---
 
+## Edition Consolidation (March 2026)
+
+As of v7.6.5, only the ApeX (all-in-one) edition is built and supported. All features from previous editions (Bandscope, Broadcast, Basic, RescueOps, Game) are now included in ApeX. Build scripts, documentation, and presets have been updated accordingly.
+
+---
+
 ## ISSUE #1: SCHEDULER RACE CONDITION
 
 ### 1.1 Issue Summary
