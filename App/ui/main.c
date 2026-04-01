@@ -97,16 +97,52 @@ const char *VfoStateStr[] = {
 
 static void DrawSmallAntennaAndBars(uint8_t *p, unsigned int level)
 {
-    if(level>6)
+    if (level > 6)
         level = 6;
 
+    // Draw the original antenna icon (5 columns wide)
     memcpy(p, BITMAP_Antenna, ARRAY_SIZE(BITMAP_Antenna));
 
-    for(uint8_t i = 1; i <= level; i++) {
-        char bar = (0xff << (6-i)) & 0x7F;
-        memset(p + 2 + i*3, bar, 2);
+    // Draw a level bar graph to the right of the icon
+    for (uint8_t i = 1; i <= level; i++) {
+        uint8_t bar = (0xff << (6 - i)) & 0x7F;
+        p[5 + i * 2] = bar;
     }
 }
+
+static void UI_InvertPixelBuffer(uint16_t x, uint16_t y)
+{
+    if (x >= LCD_WIDTH || y >= LCD_HEIGHT)
+        return;
+
+    const uint8_t bit = (uint8_t)(1 << (y & 7));
+    gFrameBuffer[y / 8][x] ^= bit;
+}
+
+static void UI_HighlightRoundedBox(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
+{
+    if (width == 0 || height == 0)
+        return;
+
+    int16_t left   = (int16_t)x - 1;
+    int16_t top    = (int16_t)y - 1;
+    int16_t right  = (int16_t)x + (int16_t)width + 2;  // Add 2 pixels on the right
+    int16_t bottom = (int16_t)y + (int16_t)height - 1; // Remove 1 pixel from the bottom
+
+    if (left < 0) left = 0;
+    if (top < 0) top = 0;
+    if (right >= LCD_WIDTH) right = LCD_WIDTH - 1;
+    if (bottom >= LCD_HEIGHT) bottom = LCD_HEIGHT - 1;
+
+    for (int16_t yy = top; yy <= bottom; yy++) {
+        for (int16_t xx = left; xx <= right; xx++) {
+            UI_InvertPixelBuffer((uint16_t)xx, (uint16_t)yy);
+        }
+    }
+
+    // No rounded corners - perfect rectangle
+}
+
 #if defined ENABLE_AUDIO_BAR || defined ENABLE_RSSI_BAR
 
 static void DrawLevelBar(uint8_t xpos, uint8_t line, uint8_t level, uint8_t bars)
@@ -245,6 +281,16 @@ void UI_DisplayAudioBar(void)
         memset(p_line, 0, LCD_WIDTH);
 
         DrawLevelBar(2, line, barsOld, 25);
+
+        // Draw antenna icon at the start of the TX bar meter
+        int8_t txLevel = -1;
+        if (gCurrentFunction == FUNCTION_TRANSMIT) {
+            const VFO_Info_t *vfoInfo = &gEeprom.VfoInfo[gEeprom.TX_VFO];
+            txLevel = vfoInfo->OUTPUT_POWER - 1;
+        }
+        if (txLevel >= 0) {
+            DrawSmallAntennaAndBars(p_line, txLevel);
+        }
 
         if (gCurrentFunction == FUNCTION_TRANSMIT)
             ST7565_BlitFullScreen();
@@ -609,7 +655,6 @@ void UI_DisplayMain(void)
         }
         const bool         isMainVFO  = (vfo_num == gEeprom.TX_VFO);
         uint8_t           *p_line0    = gFrameBuffer[line + 0];
-        uint8_t           *p_line1    = gFrameBuffer[line + 1];
         enum Vfo_txtr_mode mode       = VFO_MODE_NONE;      
 #else
         const unsigned int line0 = 0;  // text screen line
@@ -819,8 +864,17 @@ void UI_DisplayMain(void)
             // show the VFO label
             const unsigned int x = 2;
             char * buf = gEeprom.VfoInfo[vfo_num].pRX->Frequency < _1GHz_in_KHz ? "" : "+";
-            sprintf(String, "VFO%u%s", vfo_num + 1, buf);
-            UI_PrintStringSmallNormal(String, x, 0, line + 1);
+            sprintf(String, "%s%s", vfo_num ? "B" : "A", buf);
+
+            // Highlight selected VFO by inverting a larger rounded box
+            if (gEeprom.TX_VFO == vfo_num) {
+                const uint16_t width = (uint16_t)strlen(String) * 6;
+                const uint16_t y = (uint16_t)(line + 1) * 8;
+                UI_PrintStringSmallNormal(String, x, 0, line + 1);
+                UI_HighlightRoundedBox((uint16_t)x, y, width, 8);
+            } else {
+                UI_PrintStringSmallNormal(String, x, 0, line + 1);
+            }
         }
 #ifdef ENABLE_NOAA
         else
@@ -1068,28 +1122,8 @@ void UI_DisplayMain(void)
             int8_t Level = -1;
 
             if (mode == VFO_MODE_TX)
-            {   // TX power level
-                /*
-                switch (gRxVfo->OUTPUT_POWER)
-                {
-                    case OUTPUT_POWER_LOW1:     Level = 2; break;
-                    case OUTPUT_POWER_LOW2:     Level = 2; break;
-                    case OUTPUT_POWER_LOW3:     Level = 2; break;
-                    case OUTPUT_POWER_LOW4:     Level = 2; break;
-                    case OUTPUT_POWER_LOW5:     Level = 2; break;
-                    case OUTPUT_POWER_MID:      Level = 4; break;
-                    case OUTPUT_POWER_HIGH:     Level = 6; break;
-                }
-
-                if (gRxVfo->OUTPUT_POWER == OUTPUT_POWER_MID) {
-                    Level = 4;
-                } else if (gRxVfo->OUTPUT_POWER == OUTPUT_POWER_HIGH) {
-                    Level = 6;
-                } else {
-                    Level = 2;
-                }
-                */
-                Level = gRxVfo->OUTPUT_POWER - 1;
+            {   // TX power level - antenna is now drawn in UI_DisplayAudioBar()
+                // so we skip it here to avoid duplication
             }
             else
             if (mode == VFO_MODE_RX)
@@ -1100,8 +1134,9 @@ void UI_DisplayMain(void)
                         Level = gVFO_RSSI_bar_level[vfo_num];
                 #endif
             }
-            if(Level >= 0)
-                DrawSmallAntennaAndBars(p_line1 + LCD_WIDTH, Level);
+            // Antenna rendering is now integrated into UI_DisplayAudioBar() during TX
+            // to avoid conflicts with the audio bar on the same line
+            (void)Level;  // Mark as intentionally unused
         }
 
         // ************
@@ -1127,8 +1162,7 @@ void UI_DisplayMain(void)
                 if (code_type < ARRAY_SIZE(code_list))
                     s = code_list[code_type];
 #ifdef ENABLE_FEAT_N7SIX
-                if(gCurrentFunction != FUNCTION_TRANSMIT || activeTxVFO != vfo_num)
-                    t = gModulationStr[mod];
+                t = gModulationStr[mod];
 #endif
                 break;
             }
@@ -1510,12 +1544,14 @@ void UI_DisplayMain(void)
     //#endif
     if (isMainOnly() && !gDTMF_InputMode)
     {
-        sprintf(String, "VFO %s", activeTxVFO ? "B" : "A");
+        sprintf(String, "%s", activeTxVFO ? "B" : "A");
+
         UI_PrintStringSmallBold(String, 92, 0, 6);
-        for (uint8_t i = 92; i < 128; i++)
-        {
-            gFrameBuffer[6][i] ^= 0x7F;
-        }
+
+        // Highlight selected VFO with larger rounded box
+        const uint16_t width = (uint16_t)strlen(String) * 6;
+        const uint16_t y = 6 * 8;
+        UI_HighlightRoundedBox(92, y, width, 8);
     }
     //#ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
     //}
