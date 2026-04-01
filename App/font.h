@@ -1,3 +1,13 @@
+/**
+ * =====================================================================================
+ * @file        font.h
+ * @brief       Font Glyph Data Interface & Character Rendering Declarations
+ * @author      Dual Tachyon (Original)
+ * @author      N7SIX/Professional Enhancement Team (2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *

@@ -86,6 +86,10 @@
 
 #define USBD_IRQHandler USB_IRQHandler
 
+// CDC Zero-Length Packet support flag
+// Set this if the hardware USB controller supports NULL buffer for ZLP
+#define CDC_UDC_SUPPORTS_ZLP_NULL 1
+
 typedef struct
 {
     uint8_t *buf;

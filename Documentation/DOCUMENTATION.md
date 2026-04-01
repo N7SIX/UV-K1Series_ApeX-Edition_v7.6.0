@@ -1,3 +1,12 @@
+<!--
+=====================================================================================
+UV-K1/K5 ApeX Edition Documentation
+Author: N7SIX, Sean
+Version: v7.6.0 (ApeX Edition)
+License: Apache License, Version 2.0
+=====================================================================================
+-->
+
 # UV-K1/K5 ApeX Edition Documentation
 
 Complete professional owner's manual and technical reference for the UV-K1 Series and UV-K5 V3 custom firmware editions.

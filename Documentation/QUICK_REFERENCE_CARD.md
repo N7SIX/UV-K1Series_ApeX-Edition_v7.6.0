@@ -1,3 +1,12 @@
+<!--
+=====================================================================================
+UV-K1/K5 ApeX Edition - Quick Reference Card
+Author: N7SIX, Sean
+Version: v7.6.0 (ApeX Edition)
+License: Apache License, Version 2.0
+=====================================================================================
+-->
+
 # UV-K1/K5 ApeX Edition - QUICK REFERENCE CARD
 
 ---

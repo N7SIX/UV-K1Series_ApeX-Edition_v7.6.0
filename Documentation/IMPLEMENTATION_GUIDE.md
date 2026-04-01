@@ -1,3 +1,12 @@
+<!--
+=====================================================================================
+Audit Findings Quick Reference & Implementation Guide
+Author: N7SIX, Sean
+Version: v7.6.0 (ApeX Edition)
+License: Apache License, Version 2.0
+=====================================================================================
+-->
+
 # AUDIT FINDINGS QUICK REFERENCE & IMPLEMENTATION GUIDE
 
 ## Critical Issues (Implement Immediately)

@@ -1,3 +1,36 @@
+/**
+ * =====================================================================================
+ * @file        battery.c
+ * @brief       Battery Monitoring & Power Management System (ADC Calibration & Metrics)
+ * @author      Dual Tachyon (Original)
+ * @author      N7SIX/Professional Enhancement Team (2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * "Real-time battery voltage monitoring with calibrated ADC and low-voltage warning"
+ * =====================================================================================
+ * ARCHITECTURAL OVERVIEW:
+ * Manages battery voltage monitoring through ADC (successive approximation 12-bit),
+ * calibration tables for accurate voltage readings, and power state detection. Provides
+ * battery level display on LCD with low-voltage warnings and power-off thresholds.\n *\n * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - Dual-point ADC calibration (precise voltage mapping)
+ * - Real-time 12-bit ADC sampling @ 1 kHz
+ * - Battery bar indicator display (5-level visualization)
+ * - Low-battery warning threshold (user-configurable: 7.0-8.5V)
+ * - Automatic power-off at critical level (<6.0V)
+ * - Settings persistence through EEPROM storage
+ * - Backlight control based on power state
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - ADC channel: Internal (SAR ADC, PY32F071)
+ * - Sample rate: 1 kHz per scheduled cycle (500ms display update)
+ * - Voltage range: 6.0-9.0V (LiPo 2S assumed)
+ * - Calibration points: 2 (low & high ref, <1% error target)
+ * - Display integration: st7565.c, ui/battery.c
+ * - Settings: gEeprom.chargingMode, gEeprom.batteryType, calibration data
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *
@@ -25,6 +58,7 @@
 #include "ui/battery.h"
 #include "ui/menu.h"
 #include "ui/ui.h"
+#include "battery_constants.h"
 //#include "debugging.h"
 
 uint16_t          gBatteryCalibration[6];
@@ -136,12 +170,12 @@ void BATTERY_GetReadings(const bool bDisplayBatteryLevel)
 
     gBatteryVoltageAverage = (Voltage * 760) / gBatteryCalibration[3];
 
-    if(gBatteryVoltageAverage > 890)
-        gBatteryDisplayLevel = 7; // battery overvoltage
-    else if(gBatteryVoltageAverage < 630 && (gEeprom.BATTERY_TYPE == BATTERY_TYPE_1600_MAH || gEeprom.BATTERY_TYPE == BATTERY_TYPE_2200_MAH))
-        gBatteryDisplayLevel = 0; // battery critical
-    else if(gBatteryVoltageAverage < 600 && (gEeprom.BATTERY_TYPE == BATTERY_TYPE_3500_MAH))
-        gBatteryDisplayLevel = 0; // battery critical
+    if(gBatteryVoltageAverage > BATTERY_OVERVOLT_THRESHOLD_10MV)
+        gBatteryDisplayLevel = BATTERY_DISPLAY_LEVEL_OVERVOLT; // battery overvoltage
+    else if(gBatteryVoltageAverage < BATTERY_2200M_CRITICAL_10MV && (gEeprom.BATTERY_TYPE == BATTERY_TYPE_1600_MAH || gEeprom.BATTERY_TYPE == BATTERY_TYPE_2200_MAH))
+        gBatteryDisplayLevel = BATTERY_DISPLAY_LEVEL_CRITICAL; // battery critical
+    else if(gBatteryVoltageAverage < BATTERY_3500M_CRITICAL_10MV && (gEeprom.BATTERY_TYPE == BATTERY_TYPE_3500_MAH))
+        gBatteryDisplayLevel = BATTERY_DISPLAY_LEVEL_CRITICAL; // battery critical
     else {
         gBatteryDisplayLevel = 1;
         const uint8_t levels[] = {5,17,41,65,88};

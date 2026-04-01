@@ -90,7 +90,8 @@ void SYSTEM_DelayUs(uint32_t us)
  // =============================================================================
  // FORWARD DECLARATIONS
  // =============================================================================
- static void Measure(void); 
+static void Measure(void);
+static void UpdateWaterfallQuick(void);
  static void InitScan(void);
  static void ResetPeak(void);
  static void ToggleRX(bool enable);
@@ -120,10 +121,7 @@ static uint16_t GetDisplayWidth(void);
  // EEPROM addresses for persistent spectrum settings (reserved region)
  // Using addresses 0x1E80-0x1E8F for spectrum state (16 bytes)
  #define SPECTRUM_EEPROM_ADDR        0x1E80
- #define SPECTRUM_EEPROM_SIZE        16
- 
- // =============================================================================
- // DATA STRUCTURES
+#define SPECTRUM_EEPROM_SIZE        20  // Increased for ham features
  // =============================================================================
  struct FrequencyBandInfo
  {
@@ -149,6 +147,10 @@ static const CalibrationPoint calTable[] = {
     {43000000,  8},  // 430 MHz: Significant front-end loss, add +8dB
     {52000000, 12}   // 520 MHz: High frequency rolloff, add +12dB
 };
+
+// =============================================================================
+// RESERVED FOR FUTURE FEATURES
+// =============================================================================
  
  // =============================================================================
  // GLOBAL AND STATIC VARIABLES
@@ -202,7 +204,10 @@ static void ProcessSpectrumEnhancements(void);
 static uint16_t peakHold[SPECTRUM_MAX_STEPS];
 static uint8_t  peakAge[SPECTRUM_MAX_STEPS];
 static uint16_t smoothedRssi[SPECTRUM_MAX_STEPS];
-// (Make sure you deleted the old 'static uint8_t peakHold' and 'peakHoldAge')
+
+// Spectrum meter background pattern (precomputed once)
+static uint8_t spectrumMeterBackground[121];
+static bool spectrumMeterBackgroundInit = false;
 
 // Mapping from display column -> best raw measurement index (used for accurate tuning)
 static uint16_t displayBestIndex[SPECTRUM_MAX_STEPS];
@@ -288,7 +293,8 @@ const uint8_t modTypeReg47Values[] = {1, 7, 5};
  }
  
  static int Rssi2DBm(uint16_t rssi) {
-     return (rssi / 2) - 160 + dBmCorrTable[gRxVfo->Band];
+     uint8_t band = SAFE_VFO_BAND(gRxVfo, 0);
+     return (rssi / 2) - 160 + dBmCorrTable[band];
  }
  
  // =============================================================================
@@ -839,10 +845,11 @@ static void UpdateScanInfo() {
      
      // Verify checksum
      uint8_t checksum = 0;
-     for (int i = 0; i < 15; i++) {
+     uint8_t checksumSize = 15;
+     for (int i = 0; i < checksumSize; i++) {
          checksum += buffer[i];
      }
-     if (checksum != buffer[15]) {
+     if (checksum != buffer[SPECTRUM_EEPROM_SIZE - 1]) {
          // Checksum mismatch: EEPROM data is invalid, keep defaults
          return;
      }
@@ -1093,7 +1100,8 @@ static void Measure()
 
 static uint16_t dbm2rssi(int dBm)
 {
-    return (dBm + 160 - dBmCorrTable[gRxVfo->Band]) * 2;
+    uint8_t band = SAFE_VFO_BAND(gRxVfo, 0);
+    return (dBm + 160 - dBmCorrTable[band]) * 2;
 }
 
 static void ClampRssiTriggerLevel()
@@ -1492,7 +1500,7 @@ uint8_t Rssi2PX(uint16_t rssi, uint8_t pxMin, uint8_t pxMax)
 uint8_t Rssi2Y(uint16_t rssi)
 {
     // Adding 5 pixels here pushes the entire graph down to the ruler
-    return (DrawingEndY + 4) - Rssi2PX(rssi, 0, DrawingEndY);
+    return (DrawingEndY + 4) - Rssi2PX(rssi, 0, DrawingEndY) + 1;
 }
 #ifdef ENABLE_FEAT_N7SIX
     // Deprecated: Use DrawSpectrumEnhanced() instead
@@ -1652,7 +1660,7 @@ static void DrawSpectrumEnhanced(void)
 #ifdef ENABLE_FEAT_N7SIX
     const uint16_t bars = GetDisplayWidth();
     extern uint8_t gFrameBuffer[7][128];
-    const uint8_t SHADE_MAX_Y = 32; 
+    const uint8_t SHADE_MAX_Y = DrawingEndY; 
 
     uint8_t prevX = SpecIdxToX(0);
     // Use smoothedRssi for the main trace
@@ -1667,7 +1675,7 @@ static void DrawSpectrumEnhanced(void)
 
         // 2. THE PEAK HOLD DOT
         // Draw a single bright pixel at the highest peak ever reached
-        uint8_t peakY = Rssi2Y(peakHold[i]);
+        uint8_t peakY = Rssi2Y(peakHold[i]) + 1;
         if (peakY < 127) {
             gFrameBuffer[peakY >> 3][currX] |= (1 << (peakY & 7));
         }
@@ -1679,7 +1687,7 @@ static void DrawSpectrumEnhanced(void)
                 uint8_t yStart = prevY + ((currY - prevY) * (x - prevX) / dx);
                 
                 if (yStart < SHADE_MAX_Y) {
-                    for (uint8_t y = yStart + 1; y < SHADE_MAX_Y; y++) {
+                    for (uint8_t y = yStart; y < SHADE_MAX_Y; y++) {
                         if ((x ^ y) & 0x01) {
                             gFrameBuffer[y >> 3][x] |= (1 << (y & 7));
                         }
@@ -1820,21 +1828,28 @@ static void DrawRssiTriggerLevel()
     // Clamp visual marker so it never draws below the grid floor
     if (y > 39) y = 39; 
 
-    uint8_t bank = y >> 3;
-    uint8_t bit  = 1 << (y & 7);
+    // Removed unused variables 'bank' and 'bit' (no longer needed)
 
-    for (uint8_t x = 0; x < 128; x++)
-    {
-        // 1. Draw Side Notches (Professional reference brackets)
-        if (x < 3 || x > 124) 
-        {
-            gFrameBuffer[bank][x] |= bit;
+    // Draw 5-pixel sideways triangle at left edge (points right, base at left)
+    for (uint8_t dx = 0; dx < 5; dx++) {
+        int8_t y0 = y - (2 - dx);
+        int8_t y1 = y + (2 - dx);
+        for (int8_t ty = y0; ty <= y1; ty++) {
+            if (ty >= 0 && ty < 64) {
+                gFrameBuffer[ty >> 3][dx] |= (1 << (ty & 7));
+            }
         }
-        // 2. Draw Stippled Line (Matches Grid Pattern)
-        // If y is exactly 39, we don't stipple to avoid making the grid line look "thick"
-        else if (y < 39 && (x % 4) == 0 && (x % 16 != 0)) 
-        {
-            gFrameBuffer[bank][x] |= bit;
+    }
+
+    // Draw 5-pixel sideways triangle at right edge (points left, base at right)
+    for (uint8_t dx = 0; dx < 5; dx++) {
+        int8_t y0 = y - (2 - dx);
+        int8_t y1 = y + (2 - dx);
+        uint8_t x = 127 - dx;
+        for (int8_t ty = y0; ty <= y1; ty++) {
+            if (ty >= 0 && ty < 64) {
+                gFrameBuffer[ty >> 3][x] |= (1 << (ty & 7));
+            }
         }
     }
 }
@@ -1901,7 +1916,6 @@ static void DrawArrow(uint8_t x)
     }
 }
 
-// --- MAIN RENDER PIPELINE ---
 static void OnKeyDown(uint8_t key, bool longPress)
 {
     switch (key)
@@ -1967,7 +1981,7 @@ static void OnKeyDown(uint8_t key, bool longPress)
         ToggleListeningBW();
         break;
     case KEY_4:
-            ToggleStepsCount();
+        ToggleStepsCount();
         break;
     case KEY_SIDE2:
         ToggleBacklight();
@@ -2292,8 +2306,7 @@ static void DrawPeakHoldDots(void)
         // Only draw the peak if it's actually above the noise floor
         if (peakHold[i] > 0) {
             uint8_t x = SpecIdxToX(i);
-            uint8_t y = Rssi2Y(peakHold[i]);
-            
+            uint8_t y = Rssi2Y(peakHold[i]) + 1;
             // Draw a single dot in the framebuffer
             if (y < 127) { // Safety check
                 gFrameBuffer[y >> 3][x] |= (1 << (y & 7));
@@ -2323,6 +2336,30 @@ static void ProcessSpectrumEnhancements(void)
         }
     }
 }
+
+static void InitSpectrumMeterBackground(void)
+{
+    if (spectrumMeterBackgroundInit)
+        return;
+
+    for (uint8_t i = 0; i < 121; ++i) {
+        if (i % 10 == 0) {
+            spectrumMeterBackground[i] = 0b01110000;
+        } else if (i % 5 == 0) {
+            spectrumMeterBackground[i] = 0b00110000;
+        } else {
+            spectrumMeterBackground[i] = 0b00010000;
+        }
+    }
+
+    spectrumMeterBackgroundInit = true;
+}
+
+// =============================================================================
+// HAM RADIO FEATURE DRAWING FUNCTIONS
+// =============================================================================
+
+// Reserved for future ham radio features
 
 static void RenderSpectrum(void)
 {
@@ -2358,7 +2395,7 @@ static void RenderSpectrum(void)
     // ------------------------------------
 
     DrawRssiTriggerLevel();
-    DrawF(GetCentroidFrequency()); 
+    DrawF(GetCentroidFrequency());
     DrawNums();
     DrawWaterfall();
 }
@@ -2369,17 +2406,8 @@ static void RenderStill()
 
     const uint8_t METER_PAD_LEFT = 3;
 
-    memset(&gFrameBuffer[2][METER_PAD_LEFT], 0b00010000, 121);
-
-    for (int i = 0; i < 121; i += 5)
-    {
-        gFrameBuffer[2][i + METER_PAD_LEFT] = 0b00110000;
-    }
-
-    for (int i = 0; i < 121; i += 10)
-    {
-        gFrameBuffer[2][i + METER_PAD_LEFT] = 0b01110000;
-    }
+    // Copy precomputed base meter background (tick/dot pattern)
+    memcpy(&gFrameBuffer[2][METER_PAD_LEFT], spectrumMeterBackground, sizeof(spectrumMeterBackground));
 
     uint8_t x = Rssi2PX(displayRssi, 0, 121);
     for (int i = 0; i < x; ++i)
@@ -2734,31 +2762,47 @@ static void UpdateListening()
     if (++quietCounter >= 6) 
     {
         quietCounter = 0;
-        
+
         // --- 4. LIVE WATERFALL & SPECTRUM PULSING (heavy path) ---
         if (currentState == SPECTRUM) 
         {
+            // --- RX AUDIO ENVELOPE HEARTBEAT ---
+            // Sample RX audio envelope (0..63) from BK4819
+            uint8_t rxAudioLevel = BK4819_GetAfTxRx();
+            // Scale and smooth for visual effect
+            static uint8_t rxAudioSmooth = 0;
+            rxAudioSmooth = (rxAudioSmooth * 3 + rxAudioLevel) >> 2;
+            // Map to a pulse amplitude (0..16)
+            uint8_t pulse = rxAudioSmooth >> 2;
+
             uint8_t peakDisplay = MapMeasurementToDisplay(peak.i);
+            float pulseFactor = 1.0f + (pulse / 16.0f); // Grows from 1.0 to ~5.0
+            float grassPulseFactor = 1.0f + (pulse / 32.0f); // Grows from 1.0 to ~3.0 (half effect)
             for (int i = 0; i < SPECTRUM_MAX_STEPS; i++)
             {
                 if (i >= (int)peakDisplay - 1 && i <= (int)peakDisplay + 1) {
-                    rssiHistory[i] = peak.rssi + (FastRandom() % 12);
+                    // Amplify the main signal for heartbeat effect
+                    uint16_t base = peak.rssi + (FastRandom() % 12);
+                    uint16_t grown = (uint16_t)(base * pulseFactor);
+                    // Clamp to avoid overflow
+                    rssiHistory[i] = (grown > 65535) ? 65535 : grown;
                 } else {
                     uint16_t baseFloor = scanInfo.rssiMin + 32;
                     int8_t roll = (FastRandom() % 9) - 4;
                     noisePersistence[i] = (noisePersistence[i] * 7 + (baseFloor + roll)) >> 3;
                     uint8_t spike = (FastRandom() % 14);
-                    uint16_t finalGrass = noisePersistence[i] + spike;
-                    if (finalGrass > peak.rssi && peak.rssi > 10)
+                    uint16_t grassBase = noisePersistence[i] + spike;
+                    uint16_t grownGrass = (uint16_t)(grassBase * grassPulseFactor);
+                    // Clamp to avoid overflow and keep below main signal
+                    if (grownGrass > peak.rssi && peak.rssi > 10)
                         rssiHistory[i] = peak.rssi - 5;
                     else
-                        rssiHistory[i] = finalGrass;
+                        rssiHistory[i] = grownGrass;
                 }
             }
             UpdateWaterfall(); 
             redrawScreen = true; 
         }
-
         // --- 5. SQUELCH / STATE MANAGEMENT ---
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
         if ((IsPeakOverLevel() && !tailFound) || monitorMode)
@@ -2927,7 +2971,11 @@ void APP_RunSpectrum(void)
         settings.stepsCount = STEPS_32; 
     } else {
         // VFO MODE: Anchor at Center
-        initialFreq = gTxVfo->pRX->Frequency; 
+        if (!gTxVfo || !gTxVfo->pRX) {
+            initialFreq = 146000000;  // Default 146 MHz (2m band)
+        } else {
+            initialFreq = gTxVfo->pRX->Frequency;
+        } 
         
         // Calculate dynamic start frequency based on current span
         // fStart = Center - ((Steps * StepSize) / 2)
@@ -2936,7 +2984,11 @@ void APP_RunSpectrum(void)
     }
 #else
     // VFO MODE: Anchor at Center
-    initialFreq = gTxVfo->pRX->Frequency;
+    if (!gTxVfo || !gTxVfo->pRX) {
+        initialFreq = 146000000;  // Default 146 MHz (2m band)
+    } else {
+        initialFreq = gTxVfo->pRX->Frequency;
+    }
     uint32_t span = GetStepsCount() * scanStepValues[settings.scanStepIndex];
     currentFreq = initialFreq - (span / 2);
 #endif
@@ -2948,8 +3000,9 @@ void APP_RunSpectrum(void)
     redrawScreen = true;
     newScanStart = true;
 
-    ToggleRX(true), ToggleRX(false); 
-    RADIO_SetModulation(settings.modulationType = gTxVfo->Modulation);
+    ToggleRX(true), ToggleRX(false);
+    ModulationMode_t safe_mod = SAFE_VFO_MODULATION(gTxVfo, MODULATION_FM);
+    RADIO_SetModulation(settings.modulationType = safe_mod);
 
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
     BK4819_SetFilterBandwidth(settings.listenBw, false);
@@ -2968,6 +3021,9 @@ void APP_RunSpectrum(void)
     memset(waterfallHistory, 0, sizeof(waterfallHistory));
     for (uint8_t i = 0; i < SPECTRUM_MAX_STEPS; ++i) displayBestIndex[i] = 0xFFFF;
     waterfallIndex = 0;
+
+    // Initialize cache-based meter background once
+    InitSpectrumMeterBackground();
 
     isInitialized = true;
     while (isInitialized) { Tick(); }

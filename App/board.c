@@ -1,3 +1,40 @@
+/**
+ * =====================================================================================
+ * @file        board.c
+ * @brief       Hardware Board Initialization & GPIO Configuration for UV-K1 Series
+ * @author      muzkr (Board Enhancement, 2025)
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Rock-solid hardware initialization from power-on to operation."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module handles all hardware initialization including GPIO pin configuration,
+ * peripheral setup, clock configuration, and board-level sequencing. It ensures
+ * all hardware is properly initialized before the application starts.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - GPIO CONFIGURATION: 50+ pins configured for radio IC, display, keyboard, LEDs.
+ * - CLOCK SETUP: PLL configuration for 48MHz operation; RTC and timer prescalers.
+ * - PERIPHERAL INIT: SPI, I2C, UART, ADC, GPIO, and timer initialization.
+ * - POWER SEQUENCING: Proper power-on ordering to avoid race conditions.
+ * - PIN MAPPING: Logical grouping (radio, display, keyboard, status) for clarity.
+ * - INTERRUPT VECTORS: SysTick and external interrupts configured for handlers.
+ * - EEPROM INTERFACE: PY25Q16 SPI bus configured with proper CS and timing.
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - MCU: PY32F071 ARM Cortex-M0+ @ 48MHz (7.2MHz × 6.667 PLL multiplier).
+ * - GPIO PORTS: PA[0:15], PB[0:15], PC[0:15] with mixed I/O and AF mappings.
+ * - SPI SPEED: 25MHz for display and EEPROM; 400kHz for BK4819 I2C.
+ * - ADC: 12-bit @ 1MHz sampling for battery, S-meter, and mic level monitoring.
+ * - TIMERS: TIM2 (100µs tick), TIM3 (PWM for backlight), SysTick (10ms main loop).
+ * - SYSCLK SOURCE: Internal HSI oscillator (7.2MHz) ÷ PREDIV ÷ PLL multiplier.
+ *
+ * =====================================================================================
+ */
 /* Copyright 2025 muzkr https://github.com/muzkr
  * Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon

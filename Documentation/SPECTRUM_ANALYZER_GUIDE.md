@@ -1,3 +1,12 @@
+<!--
+=====================================================================================
+Spectrum Analyzer User Guide
+Author: N7SIX, Sean
+Version: v7.6.0 (ApeX Edition)
+License: Apache License, Version 2.0
+=====================================================================================
+-->
+
 # SPECTRUM ANALYZER USER GUIDE
 ## Professional Signal Analysis with Bandscope Mode
 
@@ -47,6 +56,21 @@ Unlike traditional radio "S-meter" which shows one frequency, the spectrum analy
 | **Finding Weak TX** | Detect low-power transmitters |
 | **Monitoring Activity** | Watch network repeater traffic |
 | **Learning RF** | Visual understanding of RF propagation |
+| **General Scanning** | Monitor frequency activity and propagation |
+| **Signal Detection** | Identify active signals across bands |
+| **Spectrum Analysis** | Visual RSSI and peak analysis tools |
+| **Band Planning** | Quick navigation between ham bands |
+
+### Spectrum Analyzer Capabilities
+
+**Core capabilities for RF signal analysis:**
+
+- **Real-time Signal Display**: Live spectrum visualization with waterfall history
+- **Peak Hold Function**: Track maximum signal levels during scan
+- **RSSI Measurement**: Signal strength indicators in dBm and S-units  
+- **Configurable Scanning**: Adjust step size and frequency range
+- **Modulation Display**: Current operating mode (FM/USB/LSB)
+- **Signal Threshold**: Adjustable trigger level for activity detection
 
 ---
 
@@ -266,6 +290,50 @@ S0  S1  S2  S3  S4  S5  S6  S7  S8  S9  +10  +20
 
 ---
 
+## SPECTRUM ANALYZER DISPLAY (Updated v7.6.6+)
+
+**Note:** Contest frequency markers feature has been removed. Standard frequency and modulation display provides all essential spectrum analysis functions.
+
+### Core Display Functions
+
+**Frequency and Signal Information:**
+
+```
+┌─────────────────────────────────────┐
+│  F: 145.500  USB  12.5k             │  ← Current frequency & mode
+├─────────────────────────────────────┤
+│        ╱╲                           │
+│       ╱  ╲     Signal trace        │  ← Real-time signal visualization
+│      ╱    ╲                        │
+│ ────╱──────╲──────────────────      │
+├─────────────────────────────────────┤
+│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     │
+│  ▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     │  ← Waterfall display
+│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     │
+├─────────────────────────────────────┤
+│ Step: 25kHz  Rssi Trig: -95dBm      │  ← Scan configuration
+└─────────────────────────────────────┘
+```
+
+**Standard Key Controls:**
+
+| Key | Function |
+|-----|----------|
+| **[0]** | Toggle modulation (FM/USB/LSB) |
+| **[3]** | Adjust maximum dB range |
+| **[9]** | Adjust minimum dB range |
+| **[MENU]** | Return to main display |
+
+**Frequency Display Examples:**
+
+| Condition | Display Format |
+|-----------|---|
+| Normal scanning | 145.500  FM |
+| Strong signal detected | 146.520  FM |
+| Weak signal | 147.000  USB |
+
+---
+
 ## OPERATING MODES
 
 ### 🔍 MODE 1: BLIND SCANNING (Default)
@@ -286,14 +354,16 @@ Press [* SCAN]           Radio sweeps continuously    Auto-locks frequency
 [EXIT]          Stop scanning, return to VFO
 [UP]/[DOWN]     Manual step (within current view)
 [SIDE1]         Blacklist current frequency (skip future)
-[MENU]          Pause scan, open menu
+[0]             Toggle modulation (FM/USB/LSB)
+[3]             Adjust max dB level
+[9]             Adjust min dB level
 ```
 
 **Typical workflow:**
 1. Press [* SCAN] to begin
 2. Watch for activity (peaks rising in trace)
 3. When signal detected → radio auto-locks
-4. Watch modulation pattern in waterfall
+4. Observe signal strength and pattern
 5. Press [EXIT] when done observing
 
 ---
@@ -994,3 +1064,10 @@ The spectrum analyzer is a powerful tool for:
 **Last Updated:** February 28, 2026
 
 *Professional spectrum analysis at your fingertips—Happy exploring!*
+
+---
+
+## v7.6.5 Visual Improvements
+- Spectrum graph baseline, shade, and peak hold are now 1 pixel lower for improved alignment and clarity.
+- Spectrum and noise grass now pulse upward in sync with RX voice (heartbeat effect).
+- Peak hold trace and shade are visually aligned with the main trace.

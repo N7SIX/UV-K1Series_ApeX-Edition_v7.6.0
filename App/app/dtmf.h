@@ -81,6 +81,7 @@ extern uint8_t           gDTMF_RX_live_timeout;
 extern DTMF_ReplyState_t gDTMF_ReplyState;
 
 bool DTMF_ValidateCodes(char *pCode, const unsigned int size);
+bool DTMF_IsValidChar(char c);
 char DTMF_GetCharacter(const unsigned int code);
 void DTMF_clear_input_box(void);
 void DTMF_Append(const char code);
@@ -115,5 +116,7 @@ bool DTMF_FindContact(const char *pContact, char *pResult);
 void DTMF_HandleRequest(void);
 
 #endif
+
+void DTMF_BufferShiftAppend(char *buffer, uint8_t *len, char c, uint8_t maxlen);
 
 #endif

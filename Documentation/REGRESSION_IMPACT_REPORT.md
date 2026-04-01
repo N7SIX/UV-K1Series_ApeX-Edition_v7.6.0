@@ -1,3 +1,12 @@
+<!--
+=====================================================================================
+Regression Impact Report: Critical Fixes
+Author: N7SIX, Sean
+Version: v7.6.0 (ApeX Edition)
+License: Apache License, Version 2.0
+=====================================================================================
+-->
+
 # REGRESSION IMPACT REPORT: CRITICAL FIXES
 ## UV-K1 Series ApeX Edition v7.6.0
 

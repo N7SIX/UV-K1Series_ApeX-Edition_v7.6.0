@@ -1,3 +1,13 @@
+/**
+ * =====================================================================================
+ * @file        screenshot.h
+ * @brief       Display Screenshot & LCD Memory Export Interface (N7SIX Feature)
+ * @author      Armel (N7SIX - Original)
+ * @author      N7SIX/Professional Enhancement Team (2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * =====================================================================================
+ */
 /* Copyright 2024 Armel N7SIX
  * https://github.com/armel
  *

@@ -1,4 +1,13 @@
 
+<!--
+=====================================================================================
+UV-K1/K5 Series ApeX Edition - Owner's Manual
+Author: N7SIX, Sean
+Version: v7.6.0 (ApeX Edition)
+License: Apache License, Version 2.0
+=====================================================================================
+-->
+
 # UV-K1 SERIES / UV-K5 V3 TRANSCEIVER
 ## ApeX Edition Professional Owner's Manual
 

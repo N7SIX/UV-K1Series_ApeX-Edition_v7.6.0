@@ -28,6 +28,14 @@
 #ifndef __DAP_CONFIG_H__
 #define __DAP_CONFIG_H__
 
+// Ensure __STATIC_INLINE is defined (CMSIS core header)
+#ifndef __STATIC_INLINE
+#include <cmsis_compiler.h> // CMSIS standard compiler abstraction
+#endif
+
+// Ensure DWT is defined (Cortex-M3/M4/M7 core header; adjust if using a different core)
+#include <core_cm3.h>
+
 
 //**************************************************************************************************
 /**
@@ -48,7 +56,7 @@ This information includes:
 #include "RTE_Components.h"
 #include CMSIS_device_header
 #else
-#include "device.h"                             // Debug Unit Cortex-M Processor Header File
+// #include"device.h"                             // Debug Unit Cortex-M Processor Header File
 #endif
 
 /// Processor Clock of the Cortex-M MCU used in the Debug Unit.
@@ -190,7 +198,8 @@ __STATIC_INLINE uint8_t DAP_GetTargetDeviceVendorString (char *str) {
 #if TARGET_FIXED != 0
   uint8_t len;
 
-  strcpy(str, TargetDeviceVendor);
+  strncpy(str, TargetDeviceVendor, 59);
+  str[59] = '\0';
   len = (uint8_t)(strlen(TargetDeviceVendor) + 1U);
   return (len);
 #else
@@ -207,7 +216,8 @@ __STATIC_INLINE uint8_t DAP_GetTargetDeviceNameString (char *str) {
 #if TARGET_FIXED != 0
   uint8_t len;
 
-  strcpy(str, TargetDeviceName);
+  strncpy(str, TargetDeviceName, 59);
+  str[59] = '\0';
   len = (uint8_t)(strlen(TargetDeviceName) + 1U);
   return (len);
 #else
@@ -224,7 +234,8 @@ __STATIC_INLINE uint8_t DAP_GetTargetBoardVendorString (char *str) {
 #if TARGET_FIXED != 0
   uint8_t len;
 
-  strcpy(str, TargetBoardVendor);
+  strncpy(str, TargetBoardVendor, 59);
+  str[59] = '\0';
   len = (uint8_t)(strlen(TargetBoardVendor) + 1U);
   return (len);
 #else
@@ -241,7 +252,8 @@ __STATIC_INLINE uint8_t DAP_GetTargetBoardNameString (char *str) {
 #if TARGET_FIXED != 0
   uint8_t len;
 
-  strcpy(str, TargetBoardName);
+  strncpy(str, TargetBoardName, 59);
+  str[59] = '\0';
   len = (uint8_t)(strlen(TargetBoardName) + 1U);
   return (len);
 #else

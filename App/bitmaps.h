@@ -1,4 +1,15 @@
 
+/**
+ * =====================================================================================
+ * @file        bitmaps.h
+ * @brief       User Interface Bitmap & Icon Assets Interface (Menu, Status, Indicators)
+ * @author      Dual Tachyon (Original)
+ * @author      N7SIX/Professional Enhancement Team (2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * =====================================================================================
+ */
+
 #ifndef BITMAP_H
 #define BITMAP_H
 

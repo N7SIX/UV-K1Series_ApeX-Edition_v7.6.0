@@ -18,6 +18,7 @@
 #include <stdlib.h>
 
 #include "../app/dtmf.h"
+#include "../app/events.h"
 #include "../app/menu.h"
 #include "../bitmaps.h"
 #include "../board.h"
@@ -45,7 +46,7 @@
 #endif
 
 #ifndef VERSION_STRING_2
-    #define VERSION_STRING_2 "v7.6.5"
+    #define VERSION_STRING_2 "v7.6.5br1"
 #endif
 
 
@@ -639,9 +640,11 @@ void UI_DisplayMenu(void)
 
         case MENU_MIC_BAR:
             #ifdef ENABLE_AUDIO_BAR
-                strcpy(String, gSubMenu_OFF_ON[gSubMenuSelection]);
+                strncpy(String, gSubMenu_OFF_ON[gSubMenuSelection], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
             #else
-                strcpy(String, gSubMenu_NA);
+                strncpy(String, gSubMenu_NA, sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
             #endif
             break;
 
@@ -654,7 +657,8 @@ void UI_DisplayMenu(void)
         case MENU_TXP:
             if(gSubMenuSelection == 0)
             {
-                strcpy(String, gSubMenu_TXP[gSubMenuSelection]);
+                strncpy(String, gSubMenu_TXP[gSubMenuSelection], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
             }
             else
             {
@@ -667,25 +671,38 @@ void UI_DisplayMenu(void)
         case MENU_R_DCS:
         case MENU_T_DCS:
             if (gSubMenuSelection == 0)
-                strcpy(String, gSubMenu_OFF_ON[0]);
+            {
+                strncpy(String, gSubMenu_OFF_ON[0], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
+            }
             else if (gSubMenuSelection < 105)
+            {
                 sprintf(String, "D%03oN", DCS_Options[gSubMenuSelection -   1]);
+            }
             else
+            {
                 sprintf(String, "D%03oI", DCS_Options[gSubMenuSelection - 105]);
+            }
             break;
 
         case MENU_R_CTCS:
         case MENU_T_CTCS:
         {
             if (gSubMenuSelection == 0)
-                strcpy(String, gSubMenu_OFF_ON[0]);
+            {
+                strncpy(String, gSubMenu_OFF_ON[0], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
+            }
             else
+            {
                 sprintf(String, "%u.%uHz", CTCSS_Options[gSubMenuSelection - 1] / 10, CTCSS_Options[gSubMenuSelection - 1] % 10);
+            }
             break;
         }
 
         case MENU_SFT_D:
-            strcpy(String, gSubMenu_SFT_D[gSubMenuSelection]);
+            strncpy(String, gSubMenu_SFT_D[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_OFFSET:
@@ -707,12 +724,14 @@ void UI_DisplayMenu(void)
             break;
 
         case MENU_W_N:
-            strcpy(String, gSubMenu_W_N[gSubMenuSelection]);
+            strncpy(String, gSubMenu_W_N[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
 #ifndef ENABLE_FEAT_N7SIX
         case MENU_SCR:
-            strcpy(String, gSubMenu_SCRAMBLER[gSubMenuSelection]);
+            strncpy(String, gSubMenu_SCRAMBLER[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             #if 1
                 if (gSubMenuSelection > 0 && gSetting_ScrambleEnable)
                     BK4819_EnableScramble(gSubMenuSelection - 1);
@@ -726,14 +745,16 @@ void UI_DisplayMenu(void)
             #ifdef ENABLE_VOX
                 sprintf(String, gSubMenuSelection == 0 ? gSubMenu_OFF_ON[0] : "%u", gSubMenuSelection);
             #else
-                strcpy(String, gSubMenu_NA);
+                strncpy(String, gSubMenu_NA, sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
             #endif
             break;
 
         case MENU_ABR:
             if(gSubMenuSelection == 0)
             {
-                strcpy(String, gSubMenu_OFF_ON[0]);
+                strncpy(String, gSubMenu_OFF_ON[0], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
             }
             else if(gSubMenuSelection < 61)
             {
@@ -747,7 +768,8 @@ void UI_DisplayMenu(void)
             }
             else
             {
-                strcpy(String, "ON");
+                strncpy(String, "ON", sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
             }
 
             // Obsolete ???
@@ -766,12 +788,16 @@ void UI_DisplayMenu(void)
             break;
 
         case MENU_AM:
-            strcpy(String, gModulationStr[gSubMenuSelection]);
+            strncpy(String, gModulationStr[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_AUTOLK:
             if (gSubMenuSelection == 0)
-                strcpy(String, gSubMenu_OFF_ON[0]);
+            {
+                strncpy(String, gSubMenu_OFF_ON[0], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
+            }
             else
             {
                 sprintf(String, "%02dm:%02ds", ((gSubMenuSelection * 15) / 60), ((gSubMenuSelection * 15) % 60));
@@ -786,7 +812,8 @@ void UI_DisplayMenu(void)
 
         case MENU_COMPAND:
         case MENU_ABR_ON_TX_RX:
-            strcpy(String, gSubMenu_RX_TX[gSubMenuSelection]);
+            strncpy(String, gSubMenu_RX_TX[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         #ifndef ENABLE_FEAT_N7SIX
@@ -820,7 +847,8 @@ void UI_DisplayMenu(void)
 #ifdef ENABLE_FEAT_N7SIX
         case MENU_SET_TMR:
 #endif
-            strcpy(String, gSubMenu_OFF_ON[gSubMenuSelection]);
+            strncpy(String, gSubMenu_OFF_ON[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_MEM_CH:
@@ -890,7 +918,8 @@ void UI_DisplayMenu(void)
             break;
 
         case MENU_TDR:
-            strcpy(String, gSubMenu_RXMode[gSubMenuSelection]);
+            strncpy(String, gSubMenu_RXMode[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_TOT:
@@ -905,14 +934,16 @@ void UI_DisplayMenu(void)
 
         #ifdef ENABLE_VOICE
             case MENU_VOICE:
-                strcpy(String, gSubMenu_VOICE[gSubMenuSelection]);
+                strncpy(String, gSubMenu_VOICE[gSubMenuSelection], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
                 break;
         #endif
 
         case MENU_SC_REV:
             if(gSubMenuSelection == 0)
             {
-                strcpy(String, "STOP");
+                strncpy(String, "STOP", sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
             }
             else if(gSubMenuSelection < 81)
             {
@@ -937,7 +968,8 @@ void UI_DisplayMenu(void)
             break;
 
         case MENU_MDF:
-            strcpy(String, gSubMenu_MDF[gSubMenuSelection]);
+            strncpy(String, gSubMenu_MDF[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_RP_STE:
@@ -946,13 +978,24 @@ void UI_DisplayMenu(void)
 
         case MENU_S_LIST:
             if (gSubMenuSelection == 0)
-                strcpy(String, "LIST [0]\nNO LIST");
+            {
+                strncpy(String, "LIST [0]\nNO LIST", sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
+            }
             else if (gSubMenuSelection < 4)
+            {
                 sprintf(String, "LIST [%u]", gSubMenuSelection);
+            }
             else if (gSubMenuSelection == 4)
-                strcpy(String, "LISTS\n[1, 2, 3]");
+            {
+                strncpy(String, "LISTS\n[1, 2, 3]", sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
+            }
             else if (gSubMenuSelection == 5)
-                strcpy(String, "ALL");
+            {
+                strncpy(String, "ALL", sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
+            }
             break;
 
         #ifdef ENABLE_ALARM
@@ -963,7 +1006,8 @@ void UI_DisplayMenu(void)
 
 #ifdef ENABLE_DTMF_CALLING
         case MENU_ANI_ID:
-            strcpy(String, gEeprom.ANI_DTMF_ID);
+            strncpy(String, gEeprom.ANI_DTMF_ID, sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 #endif
         case MENU_UPCODE:
@@ -976,7 +1020,8 @@ void UI_DisplayMenu(void)
 
 #ifdef ENABLE_DTMF_CALLING
         case MENU_D_RSP:
-            strcpy(String, gSubMenu_D_RSP[gSubMenuSelection]);
+            strncpy(String, gSubMenu_D_RSP[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_D_HOLD:
@@ -988,29 +1033,34 @@ void UI_DisplayMenu(void)
             break;
 
         case MENU_PTT_ID:
-            strcpy(String, gSubMenu_PTT_ID[gSubMenuSelection]);
+            strncpy(String, gSubMenu_PTT_ID[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_BAT_TXT:
-            strcpy(String, gSubMenu_BAT_TXT[gSubMenuSelection]);
+            strncpy(String, gSubMenu_BAT_TXT[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
 #ifdef ENABLE_DTMF_CALLING
         case MENU_D_LIST:
             gIsDtmfContactValid = DTMF_GetContact((int)gSubMenuSelection - 1, Contact);
             if (!gIsDtmfContactValid)
-                strcpy(String, "NULL");
+                strncpy(String, "NULL", sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
             else
                 memcpy(String, Contact, 8);
             break;
 #endif
 
         case MENU_PONMSG:
-            strcpy(String, gSubMenu_PONMSG[gSubMenuSelection]);
+            strncpy(String, gSubMenu_PONMSG[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_ROGER:
-            strcpy(String, gSubMenu_ROGER[gSubMenuSelection]);
+            strncpy(String, gSubMenu_ROGER[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_VOL:
@@ -1027,18 +1077,34 @@ void UI_DisplayMenu(void)
             break;
 
         case MENU_RESET:
-            strcpy(String, gSubMenu_RESET[gSubMenuSelection]);
+            strncpy(String, gSubMenu_RESET[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_F_LOCK:
-#ifdef ENABLE_FEAT_N7SIX
+        #ifdef ENABLE_FEAT_N7SIX
             if(!gIsInSubMenu && gUnlockAllTxConfCnt>0 && gUnlockAllTxConfCnt<3)
-#else
-            if(!gIsInSubMenu && gUnlockAllTxConfCnt>0 && gUnlockAllTxConfCnt<10)
-#endif
-                strcpy(String, "READ\nMANUAL");
+            {
+                strncpy(String, "READ\nMANUAL", sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
+            }
             else
-                strcpy(String, gSubMenu_F_LOCK[gSubMenuSelection]);
+            {
+                strncpy(String, gSubMenu_F_LOCK[gSubMenuSelection], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
+            }
+        #else
+            if(!gIsInSubMenu && gUnlockAllTxConfCnt>0 && gUnlockAllTxConfCnt<10)
+            {
+                strncpy(String, "READ\nMANUAL", sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
+            }
+            else
+            {
+                strncpy(String, gSubMenu_F_LOCK[gSubMenuSelection], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
+            }
+        #endif
             break;
 
         #ifdef ENABLE_F_CAL_MENU
@@ -1064,7 +1130,8 @@ void UI_DisplayMenu(void)
         }
 
         case MENU_BATTYP:
-            strcpy(String, gSubMenu_BATTYP[gSubMenuSelection]);
+            strncpy(String, gSubMenu_BATTYP[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_F1SHRT:
@@ -1072,14 +1139,16 @@ void UI_DisplayMenu(void)
         case MENU_F2SHRT:
         case MENU_F2LONG:
         case MENU_MLONG:
-            strcpy(String, gSubMenu_SIDEFUNCTIONS[gSubMenuSelection].name);
+            strncpy(String, gSubMenu_SIDEFUNCTIONS[gSubMenuSelection].name, sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
 #ifdef ENABLE_FEAT_N7SIX_SLEEP
         case MENU_SET_OFF:
             if(gSubMenuSelection == 0)
             {
-                strcpy(String, gSubMenu_OFF_ON[0]);
+                strncpy(String, gSubMenu_OFF_ON[0], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
             }
             else if(gSubMenuSelection < 121)
             {
@@ -1100,12 +1169,14 @@ void UI_DisplayMenu(void)
             break;
     
         case MENU_SET_PTT:
-            strcpy(String, gSubMenu_SET_PTT[gSubMenuSelection]);
+            strncpy(String, gSubMenu_SET_PTT[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_SET_TOT:
         case MENU_SET_EOT:
-            strcpy(String, gSubMenu_SET_TOT[gSubMenuSelection]); // Same as SET_TOT
+            strncpy(String, gSubMenu_SET_TOT[gSubMenuSelection], sizeof(String) - 1); // Same as SET_TOT
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_SET_CTR:
@@ -1114,42 +1185,50 @@ void UI_DisplayMenu(void)
                 gSetting_set_ctr = gSubMenuSelection;
                 ST7565_ContrastAndInv();
             #else
-                strcpy(String, gSubMenu_NA);
+                strncpy(String, gSubMenu_NA, sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
             #endif
             break;
 
         case MENU_SET_INV:
             #ifdef ENABLE_FEAT_N7SIX_INV
-                strcpy(String, gSubMenu_OFF_ON[gSubMenuSelection]);
+                strncpy(String, gSubMenu_OFF_ON[gSubMenuSelection], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
                 ST7565_ContrastAndInv();
             #else
-                strcpy(String, gSubMenu_NA);
+                strncpy(String, gSubMenu_NA, sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
             #endif
             break;
 
         case MENU_TX_LOCK:
             if(TX_freq_check(gEeprom.VfoInfo[gEeprom.TX_VFO].pTX->Frequency) == 0)
             {
-                strcpy(String, "Inside\nF Lock\nPlan");
+                strncpy(String, "Inside\nF Lock\nPlan", sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
             }
             else
             {
-                strcpy(String, gSubMenu_OFF_ON[gSubMenuSelection]);
+                strncpy(String, gSubMenu_OFF_ON[gSubMenuSelection], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
             }
             break;
 
         case MENU_SET_LCK:
-            strcpy(String, gSubMenu_SET_LCK[gSubMenuSelection]);
+            strncpy(String, gSubMenu_SET_LCK[gSubMenuSelection], sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             break;
 
         case MENU_SET_MET:
         case MENU_SET_GUI:
-            strcpy(String, gSubMenu_SET_MET[gSubMenuSelection]); // Same as SET_MET
+            strncpy(String, gSubMenu_SET_MET[gSubMenuSelection], sizeof(String) - 1); // Same as SET_MET
+            String[sizeof(String) - 1] = '\0';
             break;
 
         #ifdef ENABLE_FEAT_N7SIX_NARROWER
             case MENU_SET_NFM:
-                strcpy(String, gSubMenu_SET_NFM[gSubMenuSelection]);
+                strncpy(String, gSubMenu_SET_NFM[gSubMenuSelection], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
                 break;
         #endif
 
@@ -1157,7 +1236,8 @@ void UI_DisplayMenu(void)
             case MENU_SET_VOL:
                 if(gSubMenuSelection == 0)
                 {
-                    strcpy(String, gSubMenu_OFF_ON[0]);
+                    strncpy(String, gSubMenu_OFF_ON[0], sizeof(String) - 1);
+                    String[sizeof(String) - 1] = '\0';
                 }
                 else if(gSubMenuSelection < 64)
                 {
@@ -1180,7 +1260,8 @@ void UI_DisplayMenu(void)
 
         #ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
             case MENU_SET_KEY:
-                strcpy(String, gSubMenu_SET_KEY[gSubMenuSelection]);
+                strncpy(String, gSubMenu_SET_KEY[gSubMenuSelection], sizeof(String) - 1);
+                String[sizeof(String) - 1] = '\0';
                 break;                
         #endif
 #endif

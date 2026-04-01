@@ -21,8 +21,7 @@
  * @author    Sean (N7SIX)
  * @version   v7.6.5
  * @brief     Main UI rendering logic and VFO state management.
- * @note      Modified to support custom VFO labels and enhanced 
- * frequency display for the ApeX Edition firmware.
+ * @note      Modified to support custom VFO labels and enhanced frequency display for the ApeX Edition firmware.
  */
 
 #include <string.h>
@@ -1376,9 +1375,10 @@ void UI_DisplayMain(void)
         }
         */
         if (isMainVFO) {
-           if (gMonitor) {
-                strcpy(String, "MONI");
-           } else {
+         if (gMonitor) {
+             strncpy(String, "MONI", sizeof(String) - 1);
+             String[sizeof(String) - 1] = '\0';
+         } else {
                 sprintf(String, "SQL%d", gEeprom.SQUELCH_LEVEL);
            }
 

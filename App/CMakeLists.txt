@@ -15,12 +15,14 @@ target_sources(App INTERFACE
     driver/st7565.c
     driver/system.c
     driver/systick.c
-    # Main
+    # Application
     app/action.c
     app/app.c
     app/chFrScanner.c
     app/common.c
     app/dtmf.c
+    app/events.c
+    app/events_handlers.c
     app/generic.c
     app/main.c
     app/menu.c

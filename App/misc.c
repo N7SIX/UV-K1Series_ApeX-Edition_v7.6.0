@@ -1,3 +1,38 @@
+/**
+ * =====================================================================================
+ * @file        misc.c
+ * @brief       Miscellaneous Utilities & Helper Functions for Quansheng UV-K1 Series
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Efficient utility routines for boot timing and system operations."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module provides miscellaneous utility functions used throughout the firmware
+ * including boot timing counters, diagnostic helpers, and system-level utilities
+ * that don't cleanly fit into other modules.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - BOOT TIMING: 10ms counter for initialization sequencing and startup diagnostics.
+ * - TIME MANAGEMENT: Millisecond delay and timer utilities for event scheduling.
+ * - DEBUGGING: Conditional printf routines for UART-based firmware diagnostics.
+ * - FREQUENCY MATH: BCD encoding/decoding for display and radio IC communication.
+ * - SYSTEM STATE: Global flags for power states, initialization phases, and errors.
+ * - COMPATIBILITY: Provides compatibility shims for hardware-specific functions.
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - BOOT COUNTER: 16-bit volatile counter incremented in 10ms SysTick handler.
+ * - TIME UNIT: All timing measurements in 10ms increments for efficiency.
+ * - FREQUENCY FORMAT: Support for both Hz and BCD representations used by radio IC.
+ * - DEBUG OUTPUT: UART async output; non-blocking with optional output buffering.
+ * - MATH FUNCTIONS: Fast integer arithmetic optimized for MCU execution.
+ * - CONDITIONAL: Debug features disabled in Release builds for size/performance.
+ *
+ * =====================================================================================
+ */
 #include "misc.h"
 
 volatile uint16_t boot_counter_10ms;
@@ -341,7 +376,8 @@ int32_t NUMBER_AddWithWraparound(int32_t Base, int32_t Add, int32_t LowerLimit, 
 unsigned long StrToUL(const char * str)
 {
     unsigned long ul = 0;
-    for(uint8_t i = 0; i < strlen(str); i++){
+    const size_t str_len = strlen(str);  // OPTIMIZATION: Cache strlen instead of recalculating per iteration
+    for(uint8_t i = 0; i < str_len; i++){
         char c = str[i];
         if(c < '0' || c > '9')
             break;

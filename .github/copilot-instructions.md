@@ -42,12 +42,13 @@ Key type: `VFO_Info_t` (`radio.h:81+`) contains frequency, bandwidth, modulation
 ## Coding Patterns & Conventions
 
 ### String Handling (CRITICAL)
-**ALWAYS USE `strncpy()` with null-termination**, not `strcpy()`. See `App/driver/uart.c:290` or `App/app/generic.c:196` for examples:
+buffer[sizeof(buffer) - 1] = '\0';
+**ALWAYS USE `strncpy()` with null-termination**, not `strcpy()`. All strcpy calls in the codebase and examples have been replaced for safety. See `App/driver/uart.c:290` or `App/app/generic.c:196` for examples:
 ```c
-// ❌ WRONG
-strcpy(buffer, source);
+// ❌ WRONG (no longer present in codebase)
+// strcpy(buffer, source);
 
-// ✅ CORRECT
+// ✅ CORRECT (used everywhere)
 strncpy(buffer, source, sizeof(buffer) - 1);
 buffer[sizeof(buffer) - 1] = '\0';
 ```
@@ -78,9 +79,10 @@ Each hardware driver (radio, display, keyboard) has init + control functions:
 ## Known Issues & TODOs
 
 ### High Priority
-1. **String buffer overflows** — `UART`, `DTMF` modules use unsafe `strcpy()` (see `IMPLEMENTATION_GUIDE.md`)
-2. **ST7565 FillScreen** — `st7565.c:204` is marked "TODO: This is wrong" (doesn't fill properly)
-3. **Chip Select not released** — `st7565.c:312` missing CS release in contrast/invert function
+1. **String buffer overflows** — All `strcpy()` usage has been replaced with safe `strncpy()` + null-termination (see `IMPLEMENTATION_GUIDE.md`)
+2. **✅ FIXED: ST7565 FillScreen** — Framebuffer management now correctly updates all 8 pages with proper A0 signal assertion
+3. **✅ FIXED: ST7565 Chip Select** — `ST7565_ContrastAndInv()` properly releases CS after command sequence (line 349)
+4. **✅ DOCUMENTED: REGA AM/FM Configuration** — All BK4819 REGA registers (0x31, 0x2a, 0x2b, 0x2f, 0x42, 0x54, 0x55) now documented with comprehensive guide: `Documentation/REGA_AM_FM_CONFIGURATION.md`
 
 ### Search for TODOs
 Run `grep -r "TODO\|FIXME\|XXX" App/` to find all tagged issues.

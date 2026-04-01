@@ -1,3 +1,41 @@
+/**
+ * =====================================================================================
+ * @file        bk4819.c
+ * @brief       BK4819 Radio IC Driver for Quansheng UV-K1 Series VHF/UHF Transceiver
+ * @author      muzkr (BK4819 Enhancement, 2025)
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Professional-grade RF control with precise gain and filtering."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module provides hardware abstraction for the Beken BK4819 radio IC,
+ * which integrates a complete VHF/UHF transceiver (136-520MHz), audio codec,
+ * and signaling (CTCSS/DCS) processor. It uses I2C communication for register
+ * access and controls modulation, power, filtering, gain, and RF sequencing.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - FREQUENCY TUNING: 10Hz resolution via synthesizer; 136-520MHz with band-specific limits.
+ * - MODULATION MODES: FM (25kHz/12.5kHz/6.25kHz) and AM (25kHz wide) with full control.
+ * - TX POWER LEVELS: 3 levels (5W, 2W, 1W) with software switching via GPIO and registers.
+ * - RX GAIN: Programmable LNA, VGA, BPF stages for dynamic signal conditioning.
+ * - SIGNALING: Full CTCSS tone generation; CDCSS bit-sequence encoding; tail elimination.
+ * - RSSI MEASUREMENT: 16-bit dynamic range RSSI output for spectrum analysis and squelch.
+ * - GPIO CONTROL: 6 programmable GPIO pins for LED, relay, and status indication.
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - COMMUNICATION: I2C @ 400kHz; 32 16-bit registers with address auto-increment.
+ * - SYNTHESIZER: PLL-based with 10Hz step; lock time <5ms for typical operation.
+ * - AUDIO CODEC: 8-bit μ-law; 32kHz sample rate for both TX and RX paths.
+ * - CTCSS ENCODER: 38 CEPT tones or 32 DCCS bit patterns (selectable per TX).
+ * - RX BANDWIDTH: 25kHz wide, 12.5kHz narrow, 6.25kHz ultra-narrow via BPF selection.
+ * - TX OUTPUT: Nominal +30dBm (1W) with 2W and 5W switching via sequencer logic.
+ *
+ * =====================================================================================
+ */
 /* Copyright 2025 muzkr https://github.com/muzkr
  * Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon

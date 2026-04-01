@@ -1,0 +1,6 @@
+{
+  "github.copilot-chat.enabled": false,
+  "github.copilot-chat.experimental.enable": false,
+  "github.copilot.enabled": false,
+  "problems.autoReveal": false
+}

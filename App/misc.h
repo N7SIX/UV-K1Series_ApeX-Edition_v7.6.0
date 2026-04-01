@@ -185,6 +185,10 @@ extern enum BacklightOnRxTx_t gSetting_backlight_on_tx_rx;
     extern bool               gSetting_set_ptt_session;
     #ifdef ENABLE_FEAT_N7SIX_DEBUG
         extern uint8_t            gDebug;
+        extern volatile uint32_t  gScheduler_SysTickCount;
+        extern volatile uint32_t  gScheduler_500msEvents;
+        extern volatile uint32_t  gDisplayUpdateRequestCount;
+        extern volatile uint32_t  gDisplayRenderCount;
     #endif
     extern uint8_t            gDW;
     extern uint8_t            gCB;

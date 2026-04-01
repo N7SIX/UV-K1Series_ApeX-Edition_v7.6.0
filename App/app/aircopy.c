@@ -1,3 +1,39 @@
+/**
+ * =====================================================================================
+ * @file        aircopy.c
+ * @brief       Air-Copy Channel Programming for Quansheng UV-K1 Series (Optional Feature)
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Over-the-air channel data transfer between radios."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module implements an over-the-air channel programming feature that allows
+ * one radio to transmit channel data (frequency, modulation, name) to another radio
+ * in receive mode. This provides a wireless alternative to USB programming.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - AIR-COPY PROTOCOL: Coded transmission of channel data in digital format.
+ * - TX SIDE: Encode selected channel and transmit as FSK or data tones.
+ * - RX SIDE: Decode received channel data and write to memory bank or temporary slot.
+ * - ERROR CHECKING: CRC validation to ensure clean data transfer.
+ * - USER FEEDBACK: Progress bar or status display during transfer.
+ * - SAFETY: Cannot overwrite current operating channel; confirmation required.
+ * - COMPATIBILITY: Works between identical firmware versions (V7.6.x compatible).
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - ENCODING: 8-FSK or tone-based encoding using existing DTMF or voice channel.
+ * - MESSAGE FORMAT: ~200-500ms per channel; includes header, data, and CRC.
+ * - BANDWIDTH: Occupies single channel; compatible with 25kHz repeater standard.
+ * - RANGE: Limited by normal RF propagation; clear-channel operation recommended.
+ * - TIMEOUT: 30-60 second wait-for-signal window; auto-exit on timeout.
+ * - STORAGE: Up to 8 channels transferable in single session (bank dependent).
+ *
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *

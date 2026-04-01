@@ -19,6 +19,7 @@
 
 #include "app/chFrScanner.h"
 #include "app/dtmf.h"
+#include "app/events.h"
 #ifdef ENABLE_FMRADIO
     #include "app/fm.h"
 #endif
@@ -101,4 +102,36 @@ void GUI_SelectNextDisplay(GUI_DisplayType_t Display)
 
     gScreenToDisplay = Display;
     gUpdateDisplay   = true;
+}
+
+// =============================================================================
+// EVENT HANDLERS (Phase 2 Integration)
+// =============================================================================
+
+/**
+ * @brief Event handler for APP_EVENT_SAVE_CHANNEL
+ *
+ * Called when a channel is selected or modified. Requests a display refresh
+ * by setting the gUpdateDisplay flag, which causes the UI module to redraw
+ * the current screen on the next call to GUI_DisplayScreen().
+ *
+ * @param event  APP_EVENT_SAVE_CHANNEL
+ * @param data   Pointer to channel index (uint8_t *) - may be NULL
+ *
+ * EXECUTION TIME: < 1ms (just flag setting)
+ * BLOCKING: No - non-blocking flag operation
+ * REENTRANT: Safe - can be called from ISR (single byte write)
+ *
+ * OPERATION:
+ * 1. Set gUpdateDisplay = true to request display refresh
+ * 2. Next call to APP_Update() → GUI_DisplayScreen() will redraw current view
+ * 3. Channel information (frequency, power, mode) updated on LCD
+ */
+void UI_OnChannelChange(APP_EventType_t event, const void *data)
+{
+    (void)event;   // Unused parameter
+    (void)data;    // Unused parameter (could be channel index if needed)
+    
+    // Request display refresh on next UI update cycle
+    gUpdateDisplay = true;
 }

@@ -1,3 +1,12 @@
+<!--
+=====================================================================================
+Radio-Safe Execution Guardrails Report
+Author: N7SIX, Sean
+Version: v7.6.0 (ApeX Edition)
+License: Apache License, Version 2.0
+=====================================================================================
+-->
+
 # RADIO-SAFE EXECUTION GUARDRAILS REPORT
 ## UV-K1 Series ApeX Edition v7.6.0
 

@@ -1,4 +1,38 @@
 
+/**
+ * =====================================================================================
+ * @file        bitmaps.c
+ * @brief       User Interface Bitmap & Icon Assets (Menu, Status, Power Modes)
+ * @author      Dual Tachyon (Original)
+ * @author      N7SIX/Professional Enhancement Team (2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * "Precomputed bitmap assets for efficient UI rendering on 128x64 LCD display"
+ * =====================================================================================
+ * ARCHITECTURAL OVERVIEW:
+ * Provides precomputed 1-bit bitmap icons and glyphs for ST7565 display rendering.
+ * All images follow 90-degree rotation encoding (monitor rotated anti-clockwise for
+ * visual verification). Optimized for direct SPI transmission without runtime processing.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - Power save mode indicator (PSM icon - 2 variants)
+ * - PTT one-push mode glyph (6×6 pixels, 2 states)
+ * - PTT classic mode glyph (6×8 pixels, 2 states)
+ * - Large menu header letters (F, T, S - 8×8 pixels)
+ * - Status bar icons (signal, battery, encryption)
+ * - Rotating animation frames for active states
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - Bitmap unit: 1-bit per pixel (MSB first within bytes)
+ * - Width alignment: 8-pixel boundaries (1+ bytes per row)
+ * - Height: Variable (typically 6, 8, or 16 pixels)
+ * - Encoding: 90-degree clockwise rotation (visual RAM layout)
+ * - Storage: ROM-based constant arrays (~8 KB total)
+ * - Rendering: Direct framebuffer indexing, no palette lookup
+ * =====================================================================================
+ */
 #include "bitmaps.h"
 
 // all these images are on their right sides

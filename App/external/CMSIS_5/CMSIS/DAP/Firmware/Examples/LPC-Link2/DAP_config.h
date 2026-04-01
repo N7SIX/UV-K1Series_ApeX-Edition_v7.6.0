@@ -192,7 +192,8 @@ __STATIC_INLINE uint8_t DAP_GetSerNumString (char *str) {
 
   ser_num = GetSerialNum();
   if (ser_num != NULL) {
-    strcpy(str, ser_num);
+    strncpy(str, ser_num, 59);
+    str[59] = '\0';
     len = (uint8_t)(strlen(ser_num) + 1U);
   }
 
@@ -211,7 +212,8 @@ __STATIC_INLINE uint8_t DAP_GetTargetDeviceVendorString (char *str) {
 #if TARGET_FIXED != 0
   uint8_t len;
 
-  strcpy(str, TargetDeviceVendor);
+  strncpy(str, TargetDeviceVendor, 59);
+  str[59] = '\0';
   len = (uint8_t)(strlen(TargetDeviceVendor) + 1U);
   return (len);
 #else
@@ -228,7 +230,8 @@ __STATIC_INLINE uint8_t DAP_GetTargetDeviceNameString (char *str) {
 #if TARGET_FIXED != 0
   uint8_t len;
 
-  strcpy(str, TargetDeviceName);
+  strncpy(str, TargetDeviceName, 59);
+  str[59] = '\0';
   len = (uint8_t)(strlen(TargetDeviceName) + 1U);
   return (len);
 #else
@@ -245,7 +248,8 @@ __STATIC_INLINE uint8_t DAP_GetTargetBoardVendorString (char *str) {
 #if TARGET_FIXED != 0
   uint8_t len;
 
-  strcpy(str, TargetBoardVendor);
+  strncpy(str, TargetBoardVendor, 59);
+  str[59] = '\0';
   len = (uint8_t)(strlen(TargetBoardVendor) + 1U);
   return (len);
 #else
@@ -262,7 +266,8 @@ __STATIC_INLINE uint8_t DAP_GetTargetBoardNameString (char *str) {
 #if TARGET_FIXED != 0
   uint8_t len;
 
-  strcpy(str, TargetBoardName);
+  strncpy(str, TargetBoardName, 59);
+  str[59] = '\0';
   len = (uint8_t)(strlen(TargetBoardName) + 1U);
   return (len);
 #else

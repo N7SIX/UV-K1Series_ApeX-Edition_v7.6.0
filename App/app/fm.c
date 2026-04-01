@@ -1,3 +1,40 @@
+/**
+ * =====================================================================================
+ * @file        fm.c
+ * @brief       FM Radio Receiver & Tuning for Quansheng UV-K1 Series (Optional Feature)
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Crystal-clear FM broadcast radio integrated into your radio."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module provides FM broadcast radio receiver functionality (88-108 MHz) using
+ * the BK1080 tuner IC. It includes frequency tuning, station memory, RDS decoding,
+ * and seamless switching between FM and shortwave/VHF/UHF radio modes.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - FM BAND: Full 88-108 MHz broadcast band with 50kHz/100kHz tuning steps.
+ * - AUTO SCAN: Automatic station search with signal strength indicator.
+ * - MEMORY: 5-10 favorite station storage with label support.
+ * - RDS SUPPORT: Optional RDS data decoding for station identification (if BK1080).
+ * - VOLUME CONTROL: Independent FM volume adjust without affecting radio RX/TX.
+ * - MODE SWITCHING: Seamless toggle between FM and radio modes; preserves state.
+ * - DISPLAY: Real-time frequency, signal strength, and station name on LCD.
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - TUNER IC: BK1080 FM tuner via I2C @ 400kHz communication.
+ * - FREQUENCY RANGE: 88.0-108.0 MHz with 100kHz or 50kHz step granularity.
+ * - SIGNAL STRENGTH: RSSI measurement in dBm for muting and quality indication.
+ * - AUDIO PATH: Direct demodulated output to speaker/headphone amplifier (no TX).
+ * - MUTING: Automatic during tuning for clean user experience.
+ * - OSCILLATOR: External crystal sync for ≤100ppm frequency accuracy.
+ * - MEMORY: Up to 10 stations @ ~4 bytes each (~40 bytes EEPROM).
+ *
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *

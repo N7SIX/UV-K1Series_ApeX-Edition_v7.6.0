@@ -1,3 +1,40 @@
+/**
+ * =====================================================================================
+ * @file        audio.c
+ * @brief       Audio System Management & Beep Control for Quansheng UV-K1 Series
+ * @author      muzkr (Audio Enhancement, 2025)
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Crystal-clear audio with smart volume and feedback."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module manages all audio subsystem functionality including speaker output,
+ * microphone input, beep generation, voice cues, and path switching between
+ * earpiece, speaker, and line-out configurations.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - BEEP GENERATION: 8+ tone frequencies (440Hz, 500Hz, 880Hz, 1000Hz) with timing.
+ * - VOICE CODEC: Integration with voice prompt system for RX/TX announcements.
+ * - AUDIO PATH SWITCHING: Dynamic control of speaker, microphone, and headphone paths.
+ * - VOLUME CONTROL: Independent RX/TX volume with AGC-aware gain management.
+ * - SOURCE SELECTION: FM radio, BK4819 demodulator, or digitized voice buffer input.
+ * - FEEDBACK AUDIO: Tone alerts for user actions (mode change, error, confirm).
+ * - TX AUDIO MUTE: Fast path disconnect during TX to prevent feedback oscillation.
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - BEEP TIMING: Precise millisecond control (30ms, 60ms, 200ms, 500ms durations).
+ * - FREQUENCY ACCURACY: ±5% from nominal (440Hz reference via DAC PWM).
+ * - AUDIO DAC: 8-bit PWM-based DAC on BK4819 with 32kHz sample rate support.
+ * - CODEC INTEGRATION: BK4819 internal codec for both TX and RX signal processing.
+ * - SOURCE IMPEDANCE: Microphone preamp (< 10kΩ); speaker driver (8Ω rated).
+ * - SHUTDOWN: Clean path disconnect with biasing to prevent pops during TX/RX transitions.
+ *
+ * =====================================================================================
+ */
 /* Copyright 2025 muzkr https://github.com/muzkr
  * Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon

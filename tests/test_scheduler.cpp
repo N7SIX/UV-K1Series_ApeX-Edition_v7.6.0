@@ -4,6 +4,10 @@
 #include <vector>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+
+#include "adc.h"
+#include "dtmf.h"
 
 // simple assertion helper
 #define ASSERT(expr) do { if (!(expr)) { fprintf(stderr, "Assertion failed: %s\n", #expr); exit(1); } } while(0)
@@ -110,6 +114,32 @@ void test_stress_simulation() {
     }
     isr.join();
     ASSERT(observed.size() > 0);
+}
+
+void test_dtmf_buffer_shift_append() {
+    char buf[5] = "";
+    uint8_t len = 0;
+
+    DTMF_BufferShiftAppend(buf, &len, '1', sizeof(buf));
+    DTMF_BufferShiftAppend(buf, &len, '2', sizeof(buf));
+    DTMF_BufferShiftAppend(buf, &len, '3', sizeof(buf));
+    DTMF_BufferShiftAppend(buf, &len, '4', sizeof(buf));
+    ASSERT(len == 4);
+    ASSERT(strcmp(buf, "1234") == 0);
+
+    // Should shift when full (maxlen 5 includes NUL)
+    DTMF_BufferShiftAppend(buf, &len, '5', sizeof(buf));
+    ASSERT(len == 4);
+    ASSERT(strcmp(buf, "2345") == 0);
+}
+
+void test_adc_channel_number() {
+    ASSERT(ADC_GetChannelNumber((ADC_CH_MASK)(1U << 0)) == 0);
+    ASSERT(ADC_GetChannelNumber((ADC_CH_MASK)(1U << 1)) == 1);
+    ASSERT(ADC_GetChannelNumber((ADC_CH_MASK)(1U << 2)) == 2);
+    ASSERT(ADC_GetChannelNumber((ADC_CH_MASK)(1U << 7)) == 7);
+    ASSERT(ADC_GetChannelNumber((ADC_CH_MASK)(1U << 15)) == 15);
+    ASSERT(ADC_GetChannelNumber((ADC_CH_MASK)0U) == 0);
 }
 
 // main is defined by test_runner.cpp

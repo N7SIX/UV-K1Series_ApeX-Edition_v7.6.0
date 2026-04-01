@@ -1,3 +1,39 @@
+/**
+ * =====================================================================================
+ * @file        generic.c
+ * @brief       Generic Application Utilities & Common Routines for Quansheng UV-K1 Series
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Shared utilities for consistent application behavior across modes."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module provides generic helper functions used across multiple application
+ * modes including VFO/channel info formatting, status display generation, and
+ * common UI updates that don't belong in mode-specific handlers.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - VFO DISPLAY: Format and display active frequency, modulation, and status.
+ * - CHANNEL INFO: Format channel name, number, and full configuration for display.
+ * - STATUS FORMATTING: Generate S-meter bars, battery indicator, timer display.
+ * - BUFFER SAFETY: All string operations use safe strncpy() with null-termination.
+ * - MODE-AGNOSTIC: Reusable across menu, spectrum, scanner, and normal modes.
+ * - CONFIGURATION DISPLAY: Show current bandwidth, TX power, squelch, offsets.
+ * - FREQUENCY FORMATTING: Convert Hz to human-readable MHz.xxkHz format.
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - TEXT BUFFERS: 32-64 byte arrays for display strings (typical 16 visible chars).
+ * - OVERFLOW PROTECTION: All sprintf calls use safe snprintf() variants.
+ * - RADIO STATE: Access to gVfoInfo[] and gEeprom for current configuration.
+ * - DISPLAY PRIMITIVES: Build strings compatible with ST7565 text rendering.
+ * - ENCODING: Support for alphanumeric channel names (1-16 characters storage).
+ * - FORMATTING: Decimal, hex, and special symbols for frequency, power, modes.
+ *
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *

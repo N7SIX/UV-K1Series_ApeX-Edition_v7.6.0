@@ -1,3 +1,40 @@
+/**
+ * =====================================================================================
+ * @file        init.c
+ * @brief       System Initialization Sequence for Quansheng UV-K1 Series
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      Manuel Jedinger (Init Enhancement, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Coordinated startup from zero to ready-to-operate in <2 seconds."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module orchestrates the complete system initialization sequence from power-on
+ * reset through hardware setup, radio IC configuration, settings loading, and UI
+ * boot screen display. It provides checkpoints and recovery mechanisms for startup failures.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - SEQUENTIAL STARTUP: Ordered initialization (MCU → drivers → firmware → radio).
+ * - ERROR RECOVERY: Graceful fallback if initialization fails at any stage.
+ * - SETTINGS RESTORE: Load EEPROM settings or use factory defaults if corrupt.
+ * - RADIO CALIBRATION: Apply frequency offset corrections and AM fix parameters.
+ * - DISPLAY BOOT: Show splash screen or status indicators during initialization.
+ * - AUDIO FEEDBACK: Confirmation beep when initialization completes successfully.
+ * - WATCHDOG RESET: IWDT enabled after init to catch hangs during normal operation.
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - BOOT TIME: 1-2 seconds from power-on to radio ready to RX/TX.
+ * - INIT PHASES: Board → Drivers → Radio → Settings → Display → Audio → Complete.
+ * - EEPROM LOAD: Automatic validation; corrupted settings trigger factory reset.
+ * - RADIO TUNING: BK4819 initialized to last-used frequency from EEPROM.
+ * - MCU INIT: Clock setup, interrupt vector table, peripheral clock distribution.
+ * - WATCHDOG: Enabled with 2-second timeout; must be periodically kicked by main loop.
+ *
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  * Copyright 2023 Manuel Jedinger

@@ -22,24 +22,12 @@
 
 uint8_t ADC_GetChannelNumber(ADC_CH_MASK Mask)
 {
-    if (Mask & ADC_CH15) return 15U;
-    if (Mask & ADC_CH14) return 14U;
-    if (Mask & ADC_CH13) return 13U;
-    if (Mask & ADC_CH12) return 12U;
-    if (Mask & ADC_CH11) return 11U;
-    if (Mask & ADC_CH10) return 10U;
-    if (Mask & ADC_CH9) return 9U;
-    if (Mask & ADC_CH8) return 8U;
-    if (Mask & ADC_CH7) return 7U;
-    if (Mask & ADC_CH6) return 6U;
-    if (Mask & ADC_CH5) return 5U;
-    if (Mask & ADC_CH4) return 4U;
-    if (Mask & ADC_CH3) return 3U;
-    if (Mask & ADC_CH2) return 2U;
-    if (Mask & ADC_CH1) return 1U;
-    if (Mask & ADC_CH0) return 0U;
+    if (Mask == 0U) {
+        return 0U;
+    }
 
-    return 0U;
+    // __builtin_ctz returns the number of trailing 0-bits in Mask (undefined for 0)
+    return (uint8_t)__builtin_ctz(Mask);
 }
 
 void ADC_Disable(void)

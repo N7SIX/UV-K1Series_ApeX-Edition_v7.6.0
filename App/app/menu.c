@@ -1,3 +1,39 @@
+/**
+ * =====================================================================================
+ * @file        menu.c
+ * @brief       Interactive Menu System & User Interface for Quansheng UV-K1 Series
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Intuitive navigation through 50+ configuration pages."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module implements the complete menu system for radio configuration, channel
+ * management, and settings adjustment. It provides hierarchical navigation, real-time
+ * value editing, and visual feedback with on-screen cursor and parameter display.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - MENU HIERARCHY: 50+ settings organized by category (Radio, Audio, Display, TX/RX).
+ * - PARAMETER EDITING: Real-time display with cursoring and multi-option selection.
+ * - CHANNEL EDITING: Frequency, name, modulation, power, squelch, CTCSS/DCS in one screen.
+ * - DUAL VFO SUPPORT: Independent menu access for VFO A and B with cross-tuning display.
+ * - FEATURE TOGGLES: Conditional menu items based on compile-time and runtime flags.
+ * - EEPROM PERSISTENCE: Auto-save to flash on menu exit; no lost settings on power loss.
+ * - TEXT INPUT: Alpha-numeric entry for channel names via optimized keyboard mapping.
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - MENU DEPTH: 2-3 levels; typically 4-8 items per page to fit 64-pixel display.
+ * - CURSOR CONTROL: Up/Down keys navigate; Left/Right adjust values; OK to confirm.
+ * - TEXT WRAPPING: Channel names stored as 16-byte UTF-8 (5 alphanumeric chars typical).
+ * - EDIT RANGES: Hardware-validated limits (136-520MHz, 0-31 dBm, 0-10 squelch, etc.).
+ * - TIMEOUT: 30-second auto-close on inactivity to prevent accidental menu loops.
+ * - DISPLAY UPDATES: Selective refresh to reduce flicker; full redraw on state change.
+ *
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *
@@ -456,9 +492,14 @@ void MENU_AcceptSetting(void)
 
     if (!MENU_GetLimits(UI_MENU_GetCurrentMenuId(), &Min, &Max))
     {
-        if (gSubMenuSelection < Min) gSubMenuSelection = Min;
-        else
-        if (gSubMenuSelection > Max) gSubMenuSelection = Max;
+        if (gSubMenuSelection < Min)
+        {
+            gSubMenuSelection = Min;
+        }
+        else if (gSubMenuSelection > Max)
+        {
+            gSubMenuSelection = Max;
+        }
     }
 
     switch (UI_MENU_GetCurrentMenuId())

@@ -1,3 +1,39 @@
+/**
+ * =====================================================================================
+ * @file        frequencies.c
+ * @brief       Frequency Band & Channel Validation for Quansheng UV-K1 Series
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Worldwide frequency compliance and band management."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module maintains band definitions, TX/RX limits, and channel validation for
+ * compliance with international frequency regulations. It provides lookup functions
+ * to map frequencies to bands and enforce transmission restrictions per region.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - BAND DEFINITIONS: 6 major bands (VHF, UHF, L, S, etc.) with frequency boundaries.
+ * - TX RESTRICTIONS: Transmit enable/disable per band for international compliance.
+ * - RX COVERAGE: Extended receive range beyond typical TX limits for monitoring.
+ * - FILTERING: RX filter path optimization based on frequency band selection.
+ * - VALIDATION: Input frequency range checking before radio IC programming.
+ * - BAND LOOKUP: Fast O(1) band identification from arbitrary frequency input.
+ * - CFG FLEXIBILITY: Configurable band table for different hardware versions/regions.
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - COVERAGE: RX 136-520MHz (nominal HF to UHF); TX band-dependent.
+ * - BAND TABLE: 6 entries with band name, low freq, high freq, TX enable flag.
+ * - RESOLUTION: 10Hz internally (100Hz displayed); 1Hz output on serial.
+ * - VCO RANGE: 68-260MHz internal; uses dividers for final RF output.
+ * - REGULATORY: Compliance per FCC (USA), CE (EU), ARIB (Japan), etc. via band table.
+ * - CALIBRATION: Per-band TX power and RX gain calibration offsets stored in EEPROM.
+ *
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *

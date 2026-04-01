@@ -1,3 +1,39 @@
+/**
+ * =====================================================================================
+ * @file        dcs.c
+ * @brief       DCS Digital Coded Squelch & Tone Management for Quansheng UV-K1 Series
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Reliable digital signaling for secure private communications."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module manages Digital Coded Squelch (DCS) implementation alongside CTCSS
+ * analog tones. DCS provides binary-phase-keyed (BPSK) encoding of access codes
+ * that prevent unwanted reception while maintaining compatibility with analog repeaters.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - DCS CODES: All 104 standard DCS codes (23, 25, 26...754, 759) supported.
+ * - TX ENCODING: Software generation of DCS patterns during TX for access control.
+ * - RX DECODING: Hardware/software detection with tone analysis and validation.
+ * - DUAL MODE: Simultaneous or alternating DCS/CTCSS operation via flags.
+ * - TONE LIBRARY: Indexed lookup tables for fast encode/decode operations.
+ * - FREQUENCY STABILITY: Temperature-compensated tone generation (TCO if available).
+ * - FALLBACK: Automatic mode selection if DCS unavailable on target radio (firmware fallback).
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - DCS TONE: 134.4 Hz baseband; BPSK modulated at ~134.4 bits/second.
+ * - PATTERN: 23-bit Barker-like binary pattern repeating for ~2 seconds per TX.
+ * - FREQUENCY ACCURACY: ±5 Hz stability required for reliable decoder (<50ppm).
+ * - BIT RATE: 134.4 bps ±0.5%; 23-bit pattern provides ~170ms encode duration.
+ * - CODES STANDARD: EIA-95 (now TIA-603) with 3-digit octal notation (e.g., 023, 725).
+ * - ERROR RATE: Target <0.1% bit errors over 2-second burst for >99% carrier detect.
+ *
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *

@@ -1,3 +1,40 @@
+/**
+ * =====================================================================================
+ * @file        scanner.c
+ * @brief       Channel Scanner & Automatic Frequency Search for Quansheng UV-K1 Series
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Fast channel discovery with intelligent signal detection."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module implements channel scanning (memory banks, priority, frequency ranges)
+ * and automatic frequency search with signal-based reporting. It provides configurable
+ * scan parameters (delay, resume, hold time) and works seamlessly with dual-watch
+ * and cross-band monitoring.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - MEMORY SCANNING: Scan all 200 channels, selected banks, or priority channels.
+ * - RANGE SCANNING: Auto-search continuous frequency ranges (VHF, UHF, HF bands).
+ * - SIGNAL REPORTING: Auto-pause on signal detect with squelch-based trigger level.
+ * - CONFIGURABILITY: Scan delay (0.5-30s), resume hold time (5-60s) per EEPROM.
+ * - PRIORITY OVERRIDE: Optional priority channel auto-return after signal release.
+ * - CROSS-BAND SUPPORT: Independent scanning on TX/RX bands with simultaneous mode.
+ * - DISPLAY FEEDBACK: Real-time frequency, signal strength, scan mode indication.
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - SCAN STEP: Fixed 5kHz for frequency-range scans; variable for memory banks.
+ * - SQUELCH LOGIC: Trigger on RSSI > threshold & CTCSS/DCS match (if enabled).
+ * - TIMING: 100-200ms per channel with inter-channel settling (microcontroller dependent).
+ * - PRIORITY HOLD: 5-60 second configurable hold after signal detect before resume.
+ * - MEMORY: Scanned data stored as raw channel indices (200-byte bitmap for full scan).
+ * - INTERRUPTION: ESC key or PTT aborts scan and returns to previous operational mode.
+ *
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *

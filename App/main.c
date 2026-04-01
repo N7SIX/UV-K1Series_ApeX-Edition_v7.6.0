@@ -42,6 +42,8 @@
 
 #include "app/app.h"
 #include "app/dtmf.h"
+#include "app/events.h"
+#include "app/events_handlers.h"
 
 #include "driver/backlight.h"
 #include "driver/bk4819.h"
@@ -374,6 +376,11 @@ void Main(void)
         #endif
     #endif
         
+    // Initialize Event System (Phase 2 Integration)
+    // This must be called AFTER all drivers are initialized but BEFORE APP_Update()
+    APP_EventSystem_Init();          // Initialize event registry
+    APP_InitializeEventHandlers();   // Register all event handlers
+    
     while (true) {
         APP_Update();
 

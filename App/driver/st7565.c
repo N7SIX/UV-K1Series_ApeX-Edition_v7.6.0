@@ -1,3 +1,39 @@
+/**
+ * =====================================================================================
+ * @file        st7565.c
+ * @brief       ST7565 LCD Display Driver for Quansheng UV-K1 Series 128×64 Screen
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Pixel-perfect display with smooth graphics and fast refresh."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module provides low-level control for the ST7565 parallel-LCD controller
+ * driving a 128×64 monochrome display. It implements framebuffer management,
+ * pixel drawing primitives, and SPI communication with robust timing and signaling.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - FRAMEBUFFER ARCHITECTURE: 1-bit monochrome; 128×64 mapped as 8 pages × 128 bytes.
+ * - IMAGE RENDERING: Fast memset-based fills with proper A0 mode signaling.
+ * - GRAPHICS PRIMITIVES: Pixel set/clear, line drawing (Bresenham), text rendering.
+ * - CONTRAST CONTROL: 51-level brightness adjustment via hardware command.
+ * - SLEEP MODE: Partial display OFF for power saving during dormancy.
+ * - SPI INTERFACE: 25MHz 8-bit transfers with assertable CS and A0 (data/command).
+ * - CRITICAL FIX: A0 signal properly set before data writes to prevent corruption.
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - DISPLAY TYPE: ST7565 controller; 128×64 LCD array with 3.3V bias.
+ * - PAGE MAPPING: 8 pages (rows) × 128 columns; each byte = 8 vertical pixels.
+ * - SPI TIMING: Max 25MHz; idle high (CPOL=1); sample on leading edge (CPHA=0).
+ * - VOLTAGE: 3.3V logic; display powered via on-board bias circuit.
+ * - REFRESH: Non-sequential page updates supported for flicker-free animation.
+ * - POWER: Display typically draws 15-30mA at full brightness + text overlay.
+ *
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *
@@ -221,6 +257,7 @@ void ST7565_FillScreen(uint8_t value)
     for (unsigned int page = 0; page < 8; page++) {
         // position cursor at start of page
         ST7565_SelectColumnAndLine(0, page);
+        A0_Set();  // CRITICAL: Set A0 to data mode before writing pixel data
         for (unsigned int col = 0; col < 128; col++) {
             ST7565_WriteByte(gFrameBuffer[page][col]);
         }

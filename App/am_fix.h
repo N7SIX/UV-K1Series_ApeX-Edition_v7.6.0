@@ -1,4 +1,14 @@
 
+/**
+ * =====================================================================================
+ * @file        am_fix.h
+ * @brief       AM Demodulation Saturation Mitigation Interface & Configuration
+ * @author      OneOfEleven (Original)
+ * @author      N7SIX/Professional Enhancement Team (2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * =====================================================================================
+ */
 /* Copyright 2023 OneOfEleven
  * https://github.com/DualTachyon
  *

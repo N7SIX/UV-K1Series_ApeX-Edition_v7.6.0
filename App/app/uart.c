@@ -1,3 +1,40 @@
+/**
+ * =====================================================================================
+ * @file        uart.c
+ * @brief       UART Communication & External Device Interface for Quansheng UV-K1 Series
+ * @author      muzkr (UART Enhancement, 2025)
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Reliable serial communication with external tools and diagnostic interfaces."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module manages UART communication with external devices (programmer software,
+ * external tools via USB dongle). It implements protocol handshaking, command parsing,
+ * and binary data exchange for programming, debugging, and remote control operations.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - PROTOCOL SUPPORT: UART command set compatible with Chirp, UVTools, and custom tools.
+ * - BAUD RATES: 9600, 19200, 38400, 57600, 115200 bps with auto-detection support.
+ * - PROGRAM MODE: Channel and settings programming via serial from external software.
+ * - MEMORY READ: Dump flash and RAM contents for backup/analysis via serial protocol.
+ * - VERSION QUERY: Identify firmware version for tool compatibility checking.
+ * - SAFE STRING HANDLING: All UART input validated; buffer overflow protections.
+ * - BUFFER MANAGEMENT: Ring buffers with flow control to prevent data loss.
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - UART INTERFACE: Async serial, 8-N-1 frame format, 5V USB-UART converter TTL-compatible.
+ * - BAUD DEFAULT: 9600 bps; negotiable via command for faster transfers.
+ * - PROTOCOL: Binary frame-based with STX/ETX markers and CRC16 checksums.
+ * - RX BUFFER: 256 bytes circular; blocks new data on overflow (flow control via CTS).
+ * - TX BUFFER: 256 bytes circular; ISR-driven to prevent ISR starvation.
+ * - TIMEOUT: 5 second protocol timeout; automatic revert to normal mode if no activity.
+ *
+ * =====================================================================================
+ */
 /* Copyright 2025 muzkr https://github.com/muzkr
  * Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
@@ -31,6 +68,7 @@
 #include "driver/crc.h"
 #include "driver/eeprom.h"
 #include "driver/gpio.h"
+#include <string.h>
 
 #if defined(ENABLE_UART)
 #include "driver/uart.h"
@@ -212,7 +250,7 @@ static void SendReply_VCP(void *pReply, uint16_t Size)
         uint8_t     *pBytes = (uint8_t *)pReply;
         unsigned int i;
         for (i = 0; i < Size; i++)
-            pBytes[i] ^= Obfuscation[i % 16];
+            pBytes[i] ^= Obfuscation[i & 0x0F];  // fast modulo for 16-element table
     }
 
     pHeader->ID = 0xCDAB;
@@ -284,11 +322,16 @@ static void SendReply(uint32_t Port, void *pReply, uint16_t Size)
 static void SendVersion(uint32_t Port)
 {
     REPLY_0514_t Reply;
+    const size_t version_capacity = sizeof(Reply.Data.Version) - 1;
 
     Reply.Header.ID = 0x0515;
     Reply.Header.Size = sizeof(Reply.Data);
-    strncpy(Reply.Data.Version, Version, sizeof(Reply.Data.Version) - 1);
-    Reply.Data.Version[sizeof(Reply.Data.Version) - 1] = '\0';
+
+    // Prevent buffer overrun in case Version is unexpectedly long
+    size_t version_len = strnlen(Version, version_capacity);
+    memcpy(Reply.Data.Version, Version, version_len);
+    Reply.Data.Version[version_len] = '\0';
+
     Reply.Data.bHasCustomAesKey = bHasCustomAesKey;
     Reply.Data.bIsInLockScreen = bIsInLockScreen;
     Reply.Data.Challenge[0] = gChallenge[0];

@@ -114,6 +114,12 @@ void usbd_cdc_acm_bulk_out(uint8_t ep, uint32_t nbytes)
         uint32_t pointer = *rx_buf->write_pointer;
         while (nbytes)
         {
+            // CRITICAL: Validate pointer is within bounds
+            if (pointer >= rx_buf->size) {
+                CONFIG_USB_PRINTF("CDC RX: pointer overflow detected: %u >= %u\n", pointer, rx_buf->size);
+                pointer = 0;  // Reset safely
+            }
+            
             const uint32_t rem = rx_buf->size - pointer;
             if (0 == rem)
             {
@@ -122,6 +128,12 @@ void usbd_cdc_acm_bulk_out(uint8_t ep, uint32_t nbytes)
             }
 
             uint32_t size = rem < nbytes ? rem : nbytes;
+            // Additional bounds check before memcpy
+            if ((pointer + size) > rx_buf->size) {
+                CONFIG_USB_PRINTF("CDC RX: buffer would overflow: %u + %u > %u\n", pointer, size, rx_buf->size);
+                break;  // Drop remainder of packet
+            }
+            
             memcpy(rx_buf->buf + pointer, buf, size);
             buf += size;
             nbytes -= size;
@@ -138,8 +150,15 @@ void usbd_cdc_acm_bulk_out(uint8_t ep, uint32_t nbytes)
 void usbd_cdc_acm_bulk_in(uint8_t ep, uint32_t nbytes)
 {
     if ((nbytes % CDC_MAX_MPS) == 0 && nbytes) {
-        /* send zlp */
+        /* send Zero-Length Packet (ZLP) - indicate end of transfer */
+        /* Some USB hosts require accurate ZLP, verify hardware supports NULL buffer */
+        #ifdef CDC_UDC_SUPPORTS_ZLP_NULL
         usbd_ep_start_write(CDC_IN_EP, NULL, 0);
+        #else
+        /* Fallback: Use small ZLP buffer if hardware doesn't support NULL */
+        static const uint8_t zlp_buffer[1] = {0};
+        usbd_ep_start_write(CDC_IN_EP, (uint8_t*)zlp_buffer, 0);
+        #endif
     } else {
         ep_tx_busy_flag = false;
     }

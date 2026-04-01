@@ -60,7 +60,10 @@ enum BK4819_REGISTER_t {
     BK4819_REG_24 = 0x24U,
     BK4819_REG_28 = 0x28U,
     BK4819_REG_29 = 0x29U,
+    BK4819_REG_2A = 0x2AU,  // AM/FM Demodulation Configuration (REGA hack register)
     BK4819_REG_2B = 0x2BU,
+    BK4819_REG_2E = 0x2EU,
+    BK4819_REG_2F = 0x2FU,  // AM/FM Demodulation Configuration (REGA hack register)
     BK4819_REG_30 = 0x30U,
     BK4819_REG_31 = 0x31U,
     BK4819_REG_32 = 0x32U,
@@ -75,6 +78,7 @@ enum BK4819_REGISTER_t {
     BK4819_REG_3D = 0x3DU,
     BK4819_REG_3E = 0x3EU,
     BK4819_REG_3F = 0x3FU,
+    BK4819_REG_42 = 0x42U,  // AM/FM Demodulation Configuration (REGA hack register)
     BK4819_REG_43 = 0x43U,
     BK4819_REG_46 = 0x46U,
     BK4819_REG_47 = 0x47U,
@@ -92,6 +96,8 @@ enum BK4819_REGISTER_t {
     BK4819_REG_50 = 0x50U,
     BK4819_REG_51 = 0x51U,
     BK4819_REG_52 = 0x52U,
+    BK4819_REG_54 = 0x54U,  // AM/FM Demodulation Configuration (REGA hack register)
+    BK4819_REG_55 = 0x55U,  // AM/FM Demodulation Configuration (REGA hack register)
     BK4819_REG_58 = 0x58U,
     BK4819_REG_59 = 0x59U,
     BK4819_REG_5A = 0x5AU,

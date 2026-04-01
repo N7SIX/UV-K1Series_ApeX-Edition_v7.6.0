@@ -1,3 +1,12 @@
+<!--
+=====================================================================================
+Technical Appendix - Professional Spectrum Analyzer In Depth
+Author: N7SIX, Sean
+Version: v7.6.0 (ApeX Edition)
+License: Apache License, Version 2.0
+=====================================================================================
+-->
+
 # TECHNICAL APPENDIX - Professional Spectrum Analyzer in Depth
 
 This document provides technical background for users interested in understanding the spectrum analyzer implementation, signal processing pipeline, and advanced configuration.

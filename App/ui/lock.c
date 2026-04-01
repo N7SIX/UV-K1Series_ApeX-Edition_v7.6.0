@@ -1,3 +1,36 @@
+/**
+ * =====================================================================================
+ * @file        lock.c
+ * @brief       Boot Password Lock & Screen Lock Protection Features
+ * @author      Dual Tachyon (Original)
+ * @author      N7SIX/Professional Enhancement Team (2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * "Secure power-on and activity-based screen lock implementation"
+ * =====================================================================================
+ * ARCHITECTURAL OVERVIEW:
+ * Implements power-on password protection and screen lock features for radio security.
+ * Integrates with keyboard input handling, EEPROM settings persistence, and display
+ * rendering through ST7565 LCD and input validation utilities.
+ *
+ * MAJOR FEATURES (2025-2026):\n * ---------------------------
+ * - Power-on boot password (ENABLE_PWRON_PASSWORD conditional feature)
+ * - Activity-based automatic screen lock with timeout
+ * - Numeric password entry with visual feedback (asterisks)
+ * - Integrated with input dialog box system
+ * - Settings persistence for lock preferences
+ * - Real-time display updates and status rendering
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - Password length: 4-16 digits (numeric only)
+ * - Invalid attempt limit: 3 tries (configurable)
+ * - Screen lock timeout: 10-300s (user-configurable)
+ * - Display: ST7565 (128×64 pixels with custom glyphs)
+ * - Integration: keyboard.c, inputbox.c, ui/helper.c, settings.c
+ * - RAM usage: <256 bytes (password buffer + state)
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *
@@ -8,7 +41,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  *     Unless required by applicable law or agreed to in writing, software
- *     distributed under the License is distributed on an "AS IS" BASIS,
+ *     distributed under the License is distributed on an \"AS IS\" BASIS,
  *     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *     See the License for the specific language governing permissions and
  *     limitations under the License.

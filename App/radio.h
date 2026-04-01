@@ -23,6 +23,19 @@
 #include "dcs.h"
 #include "frequencies.h"
 
+// =============================================================================
+// SAFETY MACROS FOR VFO POINTER ACCESS
+// =============================================================================
+// These macros ensure null-pointer dereference is prevented for global VFO pointers
+#define SAFE_VFO_BAND(vfo, default_band) \
+    ((vfo) && (vfo) != (void*)0 ? (vfo)->Band : (default_band))
+
+#define SAFE_VFO_MODULATION(vfo, default_mod) \
+    ((vfo) && (vfo) != (void*)0 ? (vfo)->Modulation : (default_mod))
+
+#define SAFE_VFO_FREQUENCY(vfo, which, default_freq) \
+    ((vfo) && (vfo) != (void*)0 && which && which != (void*)0 ? which->Frequency : (default_freq))
+
 enum {
     RADIO_CHANNEL_UP   = 0x01u,
     RADIO_CHANNEL_DOWN = 0xFFu,

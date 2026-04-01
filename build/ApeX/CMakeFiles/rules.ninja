@@ -14,7 +14,7 @@
 #############################################
 # Rule for compiling ASM files.
 
-rule ASM_COMPILER__n7six.2eApeX-k1.2ev7.2e6.2e5_Release
+rule ASM_COMPILER__n7six.2eApeX-k1.2ev7.2e6.2e5br1_Release
   depfile = $DEP_FILE
   deps = gcc
   command = /opt/toolchain/bin/arm-none-eabi-gcc $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -24,7 +24,7 @@ rule ASM_COMPILER__n7six.2eApeX-k1.2ev7.2e6.2e5_Release
 #############################################
 # Rule for compiling C files.
 
-rule C_COMPILER__n7six.2eApeX-k1.2ev7.2e6.2e5_Release
+rule C_COMPILER__n7six.2eApeX-k1.2ev7.2e6.2e5br1_Release
   depfile = $DEP_FILE
   deps = gcc
   command = /opt/toolchain/bin/arm-none-eabi-gcc $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -34,7 +34,7 @@ rule C_COMPILER__n7six.2eApeX-k1.2ev7.2e6.2e5_Release
 #############################################
 # Rule for linking C executable.
 
-rule C_EXECUTABLE_LINKER__n7six.2eApeX-k1.2ev7.2e6.2e5_Release
+rule C_EXECUTABLE_LINKER__n7six.2eApeX-k1.2ev7.2e6.2e5br1_Release
   command = $PRE_LINK && /opt/toolchain/bin/arm-none-eabi-gcc $FLAGS $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES && $POST_BUILD
   description = Linking C executable $TARGET_FILE
   restat = $RESTAT

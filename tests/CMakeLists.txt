@@ -7,10 +7,10 @@ cmake_minimum_required(VERSION 3.22)
 
 add_library(test_common INTERFACE)
 target_include_directories(test_common INTERFACE
-    ${CMAKE_SOURCE_DIR}/App/driver
-    ${CMAKE_SOURCE_DIR}/App/app
-    ${CMAKE_SOURCE_DIR}/App
-    ${CMAKE_SOURCE_DIR}/Core/Inc
+    ${CMAKE_SOURCE_DIR}/../App/driver
+    ${CMAKE_SOURCE_DIR}/../App/app
+    ${CMAKE_SOURCE_DIR}/../App
+    ${CMAKE_SOURCE_DIR}/../Core/Inc
     # catching framework removed; no extra include required
 )
 
@@ -21,6 +21,8 @@ add_executable(unit_tests
     test_update_flags.cpp
     test_runner.cpp
     extensive_tests.cpp
+    ${CMAKE_SOURCE_DIR}/../App/driver/adc.c
+    ${CMAKE_SOURCE_DIR}/../App/app/dtmf.c
 )
 
 target_link_libraries(unit_tests PRIVATE test_common pthread)

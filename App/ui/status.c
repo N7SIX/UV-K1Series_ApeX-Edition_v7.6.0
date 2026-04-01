@@ -128,13 +128,25 @@ void UI_DisplayStatus()
     x += 10;  // font character width
 
     #ifdef ENABLE_FEAT_N7SIX_DEBUG
-        // Only for debug
-        // Only for debug
-        // Only for debug
+        // Debug status line: show scheduler and display metrics
+        unsigned int ticks_lo = (unsigned int)(gScheduler_SysTickCount & 0xFFFF);
+        unsigned int ev_lo = (unsigned int)(gScheduler_500msEvents & 0xFFFF);
 
-        sprintf(str, "%d", gDebug);
+        sprintf(str, "T%u", ticks_lo);
         UI_PrintStringSmallBufferNormal(str, line + x + 1);
-        x += 16;
+        x += 20;
+
+        sprintf(str, "E%u", ev_lo);
+        UI_PrintStringSmallBufferNormal(str, line + x + 1);
+        x += 20;
+
+        sprintf(str, "U%u", (unsigned int)(gDisplayUpdateRequestCount & 0xFFFF));
+        UI_PrintStringSmallBufferNormal(str, line + x + 1);
+        x += 20;
+
+        sprintf(str, "R%u", (unsigned int)(gDisplayRenderCount & 0xFFFF));
+        UI_PrintStringSmallBufferNormal(str, line + x + 1);
+        x += 20;
     #else
         #ifdef ENABLE_VOICE
         // VOICE indicator

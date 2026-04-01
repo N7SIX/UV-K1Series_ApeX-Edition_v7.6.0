@@ -82,11 +82,19 @@ void UI_DisplayWelcome(void)
                 BATTERY_VoltsToPercent(gBatteryVoltageAverage));
 
         if (gEeprom.POWER_ON_DISPLAY_MODE == POWER_ON_DISPLAY_MODE_VOLTAGE) {
-            strcpy(WelcomeString0, "VOLTAGE");
-            strcpy(WelcomeString1, WelcomeString2);
+            strncpy(WelcomeString0, "VOLTAGE", sizeof(WelcomeString0) - 1);
+            WelcomeString0[sizeof(WelcomeString0) - 1] = '\0';
+            strncpy(WelcomeString1, WelcomeString2, sizeof(WelcomeString1) - 1);
+            WelcomeString1[sizeof(WelcomeString1) - 1] = '\0';
         } else if(gEeprom.POWER_ON_DISPLAY_MODE == POWER_ON_DISPLAY_MODE_MESSAGE) {
-            if(strlen(WelcomeString0) == 0) strcpy(WelcomeString0, "WELCOME");
-            if(strlen(WelcomeString1) == 0) strcpy(WelcomeString1, "73 Mabuhay!");
+            if(strlen(WelcomeString0) == 0) {
+                strncpy(WelcomeString0, "WELCOME", sizeof(WelcomeString0) - 1);
+                WelcomeString0[sizeof(WelcomeString0) - 1] = '\0';
+            }
+            if(strlen(WelcomeString1) == 0) {
+                strncpy(WelcomeString1, "73 Mabuhay!", sizeof(WelcomeString1) - 1);
+                WelcomeString1[sizeof(WelcomeString1) - 1] = '\0';
+            }
         }
 
         // --- ORIGINAL VERTICAL LAYOUT ---

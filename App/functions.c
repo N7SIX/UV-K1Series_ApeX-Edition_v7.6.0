@@ -1,3 +1,40 @@
+/**
+ * =====================================================================================
+ * @file        functions.c
+ * @brief       Radio Operating Functions & State Machine for Quansheng UV-K1 Series
+ * @author      Dual Tachyon (Original Framework, 2023)
+ * @author      N7SIX (Professional Enhancements, 2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * * "Seamless RX/TX with intelligent squelch and timeout protection."
+ * =====================================================================================
+ * * ARCHITECTURAL OVERVIEW:
+ * This module implements the radio operating functions including receive monitoring,
+ * transmit control, cross-band operation, and dual-watch scanning. It manages the
+ * function state machine that coordinates RX, TX, monitor, incoming call detection,
+ * and proper power-down sequencing.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - FUNCTION STATES: MONITOR, RX, TX, RECEIVE, INCOMING, EMERGENCY, and OFF modes.
+ * - SQUELCH CONTROL: Intelligent noise suppression with CTCSS/CDCSS tone detection.
+ * - TAIL NOTE ELIMINATION: Software-based tail tone removal (0.5-2 second decay).
+ * - CROSS-BAND OPERATION: 4 operating modes (OFF, RX save, RX check, Hold TX).
+ * - DUAL WATCH: VFO A/B switching with configurable hold times and fast switching.
+ * - TX TIMEOUT: Watchdog timer with visual/audio alerts and forced shutdown.
+ * - PRIORITY SCANNING: Automatic return to priority channel after comm completion.
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - STATE TRANSITIONS: Guarded against invalid sequences; atomic update via global flags.
+ * - SQUELCH TIMING: ~100ms response after CTCSS/DCS detection or signal drop.
+ * - MONITOR MODE: Continuous RX with audio path active; no squelch filtering applied.
+ * - TX WATCHDOG: 10ms tick from system timer; default 180s with user range 1-180s.
+ * - CROSS-BAND RX CHECK: 5-second scans on alternate band between TX rotations.
+ * - RX PRIORITY: Dual-watch uses min/max hold times to balance between channels.
+ *
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *

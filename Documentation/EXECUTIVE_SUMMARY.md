@@ -1,3 +1,12 @@
+<!--
+=====================================================================================
+Executive Summary: UV-K1 ApeX Edition Audit Results
+Author: N7SIX, Sean
+Version: v7.6.0 (ApeX Edition)
+License: Apache License, Version 2.0
+=====================================================================================
+-->
+
 # EXECUTIVE SUMMARY: UV-K1 ApeX Edition Audit Results
 
 **Date:** March 1, 2026  

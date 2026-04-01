@@ -1,3 +1,12 @@
+<!--
+=====================================================================================
+Spectrum Analyzer Implementation Analysis
+Author: N7SIX, Sean
+Version: v7.6.0 (ApeX Edition)
+License: Apache License, Version 2.0
+=====================================================================================
+-->
+
 # Spectrum Analyzer Implementation Analysis
 
 **Document Status:** Updated March 2, 2026 (v7.6.4br3)  
@@ -180,4 +189,13 @@ The following refinements were added in the minor br4 update:
 
 All previous analyses and low‑risk items remain valid; the spectrum module is
 production‑ready with these additional enhancements.
+
+---
+
+## v7.6.5 Visual & Pulse Enhancements (March 2026)
+
+- Spectrum graph baseline, shade, and peak hold dot all moved down by 1 pixel for improved professional alignment and clarity.
+- RX audio pulse logic now amplifies the spectrum and noise grass upward, creating a heartbeat/pulse effect in sync with received voice.
+- Peak hold and shade positions are now visually aligned with the main trace.
+- All user documentation and guides updated to reflect these changes.
 

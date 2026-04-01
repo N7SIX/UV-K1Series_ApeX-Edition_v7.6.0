@@ -63,11 +63,13 @@ void UI_DisplayScanner(void)
         bCentered = 0;
 
         if (gScannerSaveState == SCAN_SAVE_CHAN_SEL) {
-            strcpy(String, "SAVE:");
+            strncpy(String, "SAVE:", sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             UI_GenerateChannelStringEx(String + 5, gShowChPrefix, gScanChannel);
             pPrintStr = String;
         } else if (gScanCssState < SCAN_CSS_STATE_FOUND) {
-            strcpy(String, "SCAN");
+            strncpy(String, "SCAN", sizeof(String) - 1);
+            String[sizeof(String) - 1] = '\0';
             memset(String + 4, '.', (gScanProgressIndicator & 7) + 1);
             pPrintStr = String;
         } else if (gScanCssState == SCAN_CSS_STATE_FOUND) {

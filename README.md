@@ -243,7 +243,11 @@ The script `compile-with-docker.sh` performs the following actions:
 ### Usage
 
 ```bash
-./compile-with-docker.sh <Preset> [extra CMake options]
+chmod +x ./compile-with-docker.sh
+```
+
+```bash
+./compile-with-docker.sh
 ```
 
 

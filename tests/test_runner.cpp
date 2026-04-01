@@ -5,6 +5,8 @@ void test_volatile_flag_observed();
 void test_nonvolatile_may_miss();
 void test_multiple_isr_pulses();
 void test_stress_simulation();
+void test_dtmf_buffer_shift_append();
+void test_adc_channel_number();
 
 void test_fillscreen_basic();
 void test_fillscreen_values();
@@ -22,6 +24,8 @@ int main() {
     test_nonvolatile_may_miss();
     test_multiple_isr_pulses();
     test_stress_simulation();
+    test_dtmf_buffer_shift_append();
+    test_adc_channel_number();
     printf("scheduler tests passed\n");
 
     test_fillscreen_basic();

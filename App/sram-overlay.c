@@ -1,3 +1,38 @@
+/**
+ * =====================================================================================
+ * @file        sram-overlay.c
+ * @brief       SRAM Overlay Management & Position-Independent RAM Allocation
+ * @author      Dual Tachyon (Original)
+ * @author      N7SIX/Professional Enhancement Team (2025-2026)
+ * @version     v7.6.0 (ApeX Edition)
+ * @license     Apache License, Version 2.0
+ * "Optimize SRAM layout through position-independent code and dynamic memory management"
+ * =====================================================================================
+ * ARCHITECTURAL OVERVIEW:
+ * Manages overlay and position-independent SRAM sections for the limited 16 KB PY32F071
+ * memory space. Coordinates between bootloader, main application, and feature modules
+ * to maximize available heap/stack regions. Supports optional hibernation and ultra-low
+ * power modes that require reconfigured memory mappings.
+ *
+ * MAJOR FEATURES (2025-2026):
+ * ---------------------------
+ * - Position-independent code (PIC) allocation strategies
+ * - SRAM section overlay management (code swap during low-power modes)
+ * - Dynamic stack/heap boundary optimization
+ * - Bootloader transition memory coordination
+ * - Feature module memory sharing (spectrum, scanner, menu)
+ * - Ultra-low-power mode memory reconfiguration
+ *
+ * TECHNICAL SPECIFICATIONS:
+ * -------------------------
+ * - Total SRAM: 16 KB (PY32F071 device)
+ * - Overlay regions: Configurable (typically 4-8 overlapping sections)
+ * - Alignment: 256-byte boundaries for linker compatibility
+ * - Bootloader: 2 KB reserved (0x00000000-0x00000800)
+ * - Application: 14 KB available (0x00000800-0x00003FFF)
+ * - Stack depth: Minimum 1 KB (configurable per mode)
+ * =====================================================================================
+ */
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *
