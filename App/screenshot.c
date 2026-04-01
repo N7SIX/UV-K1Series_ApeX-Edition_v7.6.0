@@ -53,7 +53,7 @@
 #include "screenshot.h"
 #include "misc.h"
 
-// RAM optimization: Only keep previousFrame static (1024 bytes)
+// RAM optimization: use stack for currentFrame to reduce static RAM usage
 // Build currentFrame on-the-fly and send delta blocks immediately
 static uint8_t previousFrame[1024] = {0};
 static uint8_t forcedBlock = 0;
@@ -61,7 +61,8 @@ static uint8_t keepAlive = 10;
 
 void getScreenShot(bool force)
 {
-    uint8_t currentFrame[1024];  // Stack-allocated local buffer (freed after function returns)
+    uint8_t currentFrame[1024];  // stack-allocated for lower RAM footprint
+
     uint16_t index = 0;
     uint8_t acc = 0;
     uint8_t bitCount = 0;

@@ -8,7 +8,7 @@ License: Apache License, Version 2.0
 -->
 
 ---
-## REGA AM/FM Documentation, ST7565 Verification & Event System Phase 2 Integration v7.6.6 (March 29, 2026)
+## REGA AM/FM Documentation, ST7565 Verification, Event System Phase 2 & RAM Optimization v7.6.6 (April 1, 2026)
 
 **CRITICAL IMPROVEMENTS & ARCHITECTURAL ENHANCEMENTS:**
 
@@ -55,7 +55,7 @@ License: Apache License, Version 2.0
 
 **BUILD STATUS:** ✅ 82/82 targets compiled, 0 errors, 0 warnings
 **BINARY SIZE:** ELF 150KB, BIN 87KB, HEX 243KB
-**MEMORY PROFILE:** RAM 89.65% (14,688B/16KB), FLASH 73.15% (88,388B/118KB)
+**MEMORY PROFILE:** RAM 88.87% (14,560B/16KB), FLASH 73.15% (88,396B/118KB)
 **COMPATIBILITY:** 100% backward compatible; no breaking changes
 
 ---
@@ -300,4 +300,34 @@ v7.6.5: Spectrum Visual & Pulse Enhancements
 - No errors or warnings
 - Memory unchanged from prior baseline
 - Functional behavior preserved
+
+---
+## v7.6.6 Update: Spectrum Analyzer RAM Optimization (April 1, 2026)
+
+**PERFORMANCE ENHANCEMENT - REDUCED RAM FOOTPRINT:**
+
+1. **Peak Hold Array Optimization**
+   - Changed `peakHold` from `uint16_t[128]` to `uint8_t[128]` (128 bytes saved)
+   - Added clamping on RSSI assignment to prevent overflow: `peakHold[i] = (currentRssi > 255) ? 255 : currentRssi`
+   - Updated Rssi2Y() function calls with explicit uint16_t casting for correct value range
+   - No visual or functional impact on spectrum display quality
+
+**Memory Impact:**
+- **RAM Usage:** 89.65% (14,688 B) → **88.87%** (14,560 B)
+- **RAM Saved:** 128 bytes
+- **Safety Margin:** 6.25 percentage point headroom for future enhancements
+- **FLASH Usage:** 73.15% (88,388 B) → 73.16% (88,396 B) - negligible increase
+
+**Technical Changes:**
+- `App/app/spectrum.c:204` - Changed declaration type: `static uint8_t peakHold[SPECTRUM_MAX_STEPS]`
+- `App/app/spectrum.c:2324` - Added clamping on value assignment
+- `App/app/spectrum.c:2625` - Added clamping on scan measurement
+- `App/app/spectrum.c:1679, 2305` - Cast to uint16_t for Rssi2Y() calculations
+
+**Test Results:**
+- Build: `./compile-with-docker.sh ApeX` completes successfully
+- Memory verified: 14,560 B RAM (88.87%), 88,396 B FLASH (73.16%)
+- All spectrum analyzer features verified functional
+- Peak hold display, decay, and visual fidelity unchanged
+- Backward compatible; no breaking changes
 

@@ -192,25 +192,26 @@ static const CalibrationPoint calTable[] = {
  
  // Spectrum and Waterfall Buffers
  uint16_t rssiHistory[SPECTRUM_MAX_STEPS];
-uint8_t waterfallHistory[SPECTRUM_MAX_STEPS][WATERFALL_HISTORY_DEPTH / 2]; 
+ uint8_t waterfallHistory[SPECTRUM_MAX_STEPS][WATERFALL_HISTORY_DEPTH / 2];
  uint8_t waterfallIndex = 0;
  uint16_t waterfallUpdateCounter = 0;
-static uint16_t smoothedRssi[SPECTRUM_MAX_STEPS] = {0};
+ static uint16_t smoothedRssi[SPECTRUM_MAX_STEPS];
  
  // --- 1. PROTOTYPES (Add this near other static prototypes) ---
-static void ProcessSpectrumEnhancements(void);
+ static void ProcessSpectrumEnhancements(void);
 
 // --- 2. CONSOLIDATED VARIABLES (Replace the conflicting lines 196-203) ---
-static uint16_t peakHold[SPECTRUM_MAX_STEPS];
-static uint8_t  peakAge[SPECTRUM_MAX_STEPS];
-static uint16_t smoothedRssi[SPECTRUM_MAX_STEPS];
+ static uint8_t peakHold[SPECTRUM_MAX_STEPS];
+ static uint8_t  peakAge[SPECTRUM_MAX_STEPS];
+ // (smoothedRssi is declared above)
+
 
 // Spectrum meter background pattern (precomputed once)
 static uint8_t spectrumMeterBackground[121];
 static bool spectrumMeterBackgroundInit = false;
 
 // Mapping from display column -> best raw measurement index (used for accurate tuning)
-static uint16_t displayBestIndex[SPECTRUM_MAX_STEPS];
+static uint8_t displayBestIndex[SPECTRUM_MAX_STEPS];
  
  // Frequency input buffer
  uint8_t freqInputIndex = 0;
@@ -736,7 +737,7 @@ static void RelaunchScan() {
     Measure(); 
     scanInfo.rssiMin = scanInfo.rssi;
     // reset display->best measurement mapping
-    for (uint8_t i = 0; i < SPECTRUM_MAX_STEPS; ++i) displayBestIndex[i] = 0xFFFF;
+    for (uint8_t i = 0; i < SPECTRUM_MAX_STEPS; ++i) displayBestIndex[i] = 0xFF;
 }
 
 static void UpdateScanInfo() {
@@ -1675,7 +1676,7 @@ static void DrawSpectrumEnhanced(void)
 
         // 2. THE PEAK HOLD DOT
         // Draw a single bright pixel at the highest peak ever reached
-        uint8_t peakY = Rssi2Y(peakHold[i]) + 1;
+        uint8_t peakY = Rssi2Y((uint16_t)peakHold[i]) + 1;
         if (peakY < 127) {
             gFrameBuffer[peakY >> 3][currX] |= (1 << (peakY & 7));
         }
@@ -1765,11 +1766,10 @@ static void DrawNums()
         {
             sprintf(String, "%ux", GetStepsCount());
         }
-        // Moved Y from 1 to 0 (keeping top info at top)
         GUI_DisplaySmallest(String, 0, 0, false, true);
-        
+
         sprintf(String, "%u.%02uk", GetScanStep() / 100, GetScanStep() % 100);
-                GUI_DisplaySmallest(String, 0, 6, false, true);
+        GUI_DisplaySmallest(String, 0, 6, false, true);
     }
 
     if (IsCenterMode())
@@ -1777,25 +1777,21 @@ static void DrawNums()
         sprintf(String, "%u.%05u \x7F%u.%02uk", currentFreq / 100000,
                 currentFreq % 100000, settings.frequencyChangeStep / 100,
                 settings.frequencyChangeStep % 100);
-        
-        // MOVED: Y coordinate 38 -> 34
         GUI_DisplaySmallest(String, 36, 34, false, true);
     }
     else
     {
         sprintf(String, "%u.%05u", GetFStart() / 100000, GetFStart() % 100000);
-        // MOVED: Y coordinate 38 -> 34
         GUI_DisplaySmallest(String, 0, 34, false, true);
 
         sprintf(String, "\x7F%u.%02uk", settings.frequencyChangeStep / 100,
                 settings.frequencyChangeStep % 100);
-        // MOVED: Y coordinate 38 -> 34
         GUI_DisplaySmallest(String, 48, 34, false, true);
 
         sprintf(String, "%u.%05u", GetFEnd() / 100000, GetFEnd() % 100000);
-        // MOVED: Y coordinate 38 -> 34
         GUI_DisplaySmallest(String, 93, 34, false, true);
     }
+
 }
 
 // --- TRIGGER LEVEL HELPER ---
@@ -2306,7 +2302,7 @@ static void DrawPeakHoldDots(void)
         // Only draw the peak if it's actually above the noise floor
         if (peakHold[i] > 0) {
             uint8_t x = SpecIdxToX(i);
-            uint8_t y = Rssi2Y(peakHold[i]) + 1;
+            uint8_t y = Rssi2Y((uint16_t)peakHold[i]) + 1;
             // Draw a single dot in the framebuffer
             if (y < 127) { // Safety check
                 gFrameBuffer[y >> 3][x] |= (1 << (y & 7));
@@ -2325,7 +2321,7 @@ static void ProcessSpectrumEnhancements(void)
 
         // 2. PEAK HOLD
         if (currentRssi > peakHold[i]) {
-            peakHold[i] = currentRssi;
+            peakHold[i] = (currentRssi > 255) ? 255 : currentRssi;
             peakAge[i] = 20; 
         } else {
             if (peakAge[i] > 0) {
@@ -2626,7 +2622,7 @@ static void UpdateScan()
         uint8_t dIdx = MapMeasurementToDisplay(scanInfo.i);
         if (scanInfo.rssi > peakHold[dIdx])
         {
-            peakHold[dIdx] = scanInfo.rssi;
+            peakHold[dIdx] = (scanInfo.rssi > 255) ? 255 : scanInfo.rssi;
         }
     }
 
@@ -3019,7 +3015,7 @@ void APP_RunSpectrum(void)
 
     memset(rssiHistory, 0, sizeof(rssiHistory));
     memset(waterfallHistory, 0, sizeof(waterfallHistory));
-    for (uint8_t i = 0; i < SPECTRUM_MAX_STEPS; ++i) displayBestIndex[i] = 0xFFFF;
+    for (uint8_t i = 0; i < SPECTRUM_MAX_STEPS; ++i) displayBestIndex[i] = 0xFF;
     waterfallIndex = 0;
 
     // Initialize cache-based meter background once

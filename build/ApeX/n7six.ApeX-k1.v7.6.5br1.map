@@ -1091,7 +1091,7 @@ LOAD /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtn.o
                 0x08002800                g_pfnVectors
                 0x080028c0                        . = ALIGN (0x4)
 
-.text           0x080028c0    0x13600
+.text           0x080028c0    0x13608
                 0x080028c0                        . = ALIGN (0x4)
  *(.text)
  .text          0x080028c0       0x14 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_sqi.o)
@@ -2342,695 +2342,695 @@ LOAD /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtn.o
                 0x08012b88      0x114 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
                 0x08012b88                OnKeyDownStill
  .text.APP_RunSpectrum
-                0x08012c9c      0xebc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08012c9c      0xec4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
                 0x08012c9c                APP_RunSpectrum
  .text.HandleUserInput.isra.0
-                0x08013b58       0xec CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08013b60       0xec CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
  .text.rand_custom
-                0x08013c44       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x08013c44                rand_custom
- .text.reset    0x08013c64       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x08013c64                reset
+                0x08013c4c       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08013c4c                rand_custom
+ .text.reset    0x08013c6c       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08013c6c                reset
  .text.playBeep
-                0x08013c84       0x24 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x08013c84                playBeep
+                0x08013c8c       0x24 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08013c8c                playBeep
  .text.drawScore
-                0x08013ca8       0x8c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x08013ca8                drawScore
+                0x08013cb0       0x8c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08013cb0                drawScore
  .text.initBall
-                0x08013d34       0x54 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x08013d34                initBall
+                0x08013d3c       0x54 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08013d3c                initBall
  .text.initWall
-                0x08013d88       0x68 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x08013d88                initWall
+                0x08013d90       0x68 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08013d90                initWall
  .text.drawWall
-                0x08013df0      0x144 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x08013df0                drawWall
+                0x08013df8      0x144 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08013df8                drawWall
  .text.initRacket
-                0x08013f34       0x4c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x08013f34                initRacket
+                0x08013f3c       0x4c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08013f3c                initRacket
  .text.drawBall
-                0x08013f80      0x1bc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x08013f80                drawBall
+                0x08013f88      0x1bc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08013f88                drawBall
  .text.drawRacket
-                0x0801413c       0x94 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x0801413c                drawRacket
+                0x08014144       0x94 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08014144                drawRacket
  .text.APP_RunBreakout
-                0x080141d0       0xf4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x080141d0                APP_RunBreakout
+                0x080141d8       0xf4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x080141d8                APP_RunBreakout
  .text.getScreenShot
-                0x080142c4      0x1a4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/screenshot.c.obj
-                0x080142c4                getScreenShot
+                0x080142cc      0x1a4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/screenshot.c.obj
+                0x080142cc                getScreenShot
  .text.usbd_class_event_notify_handler
-                0x08014468       0x24 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x08014470       0x24 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
  .text.usbd_set_endpoint
-                0x0801448c       0x2c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x08014494       0x2c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
  .text.usbd_setup_request_handler.constprop.0
-                0x080144b8      0x380 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x080144c0      0x380 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
  .text.usbd_event_resume_handler
-                0x08014838        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
-                0x08014838                usbd_event_resume_handler
+                0x08014840        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x08014840                usbd_event_resume_handler
  .text.usbd_event_suspend_handler
-                0x08014844        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
-                0x08014844                usbd_event_suspend_handler
+                0x0801484c        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x0801484c                usbd_event_suspend_handler
  .text.usbd_event_reset_handler
-                0x08014850       0x38 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
-                0x08014850                usbd_event_reset_handler
+                0x08014858       0x38 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x08014858                usbd_event_reset_handler
  .text.usbd_event_ep0_setup_complete_handler
-                0x08014888       0x94 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
-                0x08014888                usbd_event_ep0_setup_complete_handler
+                0x08014890       0x94 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x08014890                usbd_event_ep0_setup_complete_handler
  .text.usbd_event_ep_in_complete_handler
-                0x0801491c       0x58 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
-                0x0801491c                usbd_event_ep_in_complete_handler
+                0x08014924       0x58 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x08014924                usbd_event_ep_in_complete_handler
  .text.usbd_event_ep_out_complete_handler
-                0x08014974       0x64 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
-                0x08014974                usbd_event_ep_out_complete_handler
+                0x0801497c       0x64 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x0801497c                usbd_event_ep_out_complete_handler
  .text.usbd_desc_register
-                0x080149d8       0x14 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
-                0x080149d8                usbd_desc_register
+                0x080149e0       0x14 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x080149e0                usbd_desc_register
  .text.usbd_add_interface
-                0x080149ec       0x2c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
-                0x080149ec                usbd_add_interface
+                0x080149f4       0x2c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x080149f4                usbd_add_interface
  .text.usbd_add_endpoint
-                0x08014a18       0x2c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
-                0x08014a18                usbd_add_endpoint
+                0x08014a20       0x2c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x08014a20                usbd_add_endpoint
  .text.usbd_initialize
-                0x08014a44        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
-                0x08014a44                usbd_initialize
+                0x08014a4c        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x08014a4c                usbd_initialize
  .text.pyusb_write_packet
-                0x08014a4c       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x08014a54       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
  .text.usbd_ep0_set_zlp_flag
-                0x08014a6c        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x08014a6c                usbd_ep0_set_zlp_flag
+                0x08014a74        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x08014a74                usbd_ep0_set_zlp_flag
  .text.usb_dc_low_level_init
-                0x08014a78        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x08014a78                usb_dc_low_level_init
- *fill*         0x08014a7a        0x2 
+                0x08014a80        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x08014a80                usb_dc_low_level_init
+ *fill*         0x08014a82        0x2 
  .text.usb_dc_init
-                0x08014a7c       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x08014a7c                usb_dc_init
+                0x08014a84       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x08014a84                usb_dc_init
  .text.usbd_set_address
-                0x08014a9c       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x08014a9c                usbd_set_address
+                0x08014aa4       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x08014aa4                usbd_set_address
  .text.usbd_ep_open
-                0x08014ab4      0x124 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x08014ab4                usbd_ep_open
+                0x08014abc      0x124 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x08014abc                usbd_ep_open
  .text.usbd_ep_close
-                0x08014bd8        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x08014bd8                usbd_ep_close
+                0x08014be0        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x08014be0                usbd_ep_close
  .text.usbd_ep_set_stall
-                0x08014bdc       0x4c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x08014bdc                usbd_ep_set_stall
+                0x08014be4       0x4c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x08014be4                usbd_ep_set_stall
  .text.usbd_ep_clear_stall
-                0x08014c28       0x50 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x08014c28                usbd_ep_clear_stall
+                0x08014c30       0x50 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x08014c30                usbd_ep_clear_stall
  .text.usbd_ep_is_stalled
-                0x08014c78       0x34 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x08014c78                usbd_ep_is_stalled
+                0x08014c80       0x34 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x08014c80                usbd_ep_is_stalled
  .text.usbd_ep_start_write
-                0x08014cac      0x10c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x08014cac                usbd_ep_start_write
+                0x08014cb4      0x10c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x08014cb4                usbd_ep_start_write
  .text.usbd_ep_start_read
-                0x08014db8       0x94 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x08014db8                usbd_ep_start_read
+                0x08014dc0       0x94 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x08014dc0                usbd_ep_start_read
  .text.USB_IRQHandler
-                0x08014e4c      0x2a8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x08014e4c                USB_IRQHandler
+                0x08014e54      0x2a8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x08014e54                USB_IRQHandler
  .text.cdc_notify_handler
-                0x080150f4        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj
- *fill*         0x080150f6        0x2 
+                0x080150fc        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj
+ *fill*         0x080150fe        0x2 
  .text.usbd_cdc_acm_init_intf
-                0x080150f8       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj
-                0x080150f8                usbd_cdc_acm_init_intf
+                0x08015100       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj
+                0x08015100                usbd_cdc_acm_init_intf
  .text.usbd_cdc_acm_set_line_coding
-                0x08015110        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj
-                0x08015110                usbd_cdc_acm_set_line_coding
+                0x08015118        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj
+                0x08015118                usbd_cdc_acm_set_line_coding
  .text.usbd_cdc_acm_get_line_coding
-                0x08015112       0x1c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj
-                0x08015112                usbd_cdc_acm_get_line_coding
+                0x0801511a       0x1c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj
+                0x0801511a                usbd_cdc_acm_get_line_coding
  .text.usbd_cdc_acm_set_rts
-                0x0801512e        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj
-                0x0801512e                usbd_cdc_acm_set_rts
+                0x08015136        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj
+                0x08015136                usbd_cdc_acm_set_rts
  .text.cdc_acm_class_interface_request_handler
-                0x08015130       0x70 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj
+                0x08015138       0x70 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj
  .text.__muldi3
-                0x080151a0       0x5c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(_muldi3.o)
-                0x080151a0                __aeabi_lmul
-                0x080151a0                __muldi3
+                0x080151a8       0x5c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(_muldi3.o)
+                0x080151a8                __aeabi_lmul
+                0x080151a8                __muldi3
  .text.__fixunssfsi
-                0x080151fc       0x30 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(_fixunssfsi.o)
-                0x080151fc                __aeabi_f2uiz
-                0x080151fc                __fixunssfsi
+                0x08015204       0x30 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(_fixunssfsi.o)
+                0x08015204                __aeabi_f2uiz
+                0x08015204                __fixunssfsi
  .text.__aeabi_fadd
-                0x0801522c      0x340 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(addsf3.o)
-                0x0801522c                __aeabi_fadd
+                0x08015234      0x340 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(addsf3.o)
+                0x08015234                __aeabi_fadd
  .text.__aeabi_fmul
-                0x0801556c      0x280 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(mulsf3.o)
-                0x0801556c                __aeabi_fmul
+                0x08015574      0x280 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(mulsf3.o)
+                0x08015574                __aeabi_fmul
  .text.__aeabi_fsub
-                0x080157ec      0x38c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(subsf3.o)
-                0x080157ec                __aeabi_fsub
+                0x080157f4      0x38c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(subsf3.o)
+                0x080157f4                __aeabi_fsub
  .text.__aeabi_f2iz
-                0x08015b78       0x40 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(fixsfsi.o)
-                0x08015b78                __aeabi_f2iz
+                0x08015b80       0x40 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(fixsfsi.o)
+                0x08015b80                __aeabi_f2iz
  .text.__aeabi_i2f
-                0x08015bb8       0x94 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(floatsisf.o)
-                0x08015bb8                __aeabi_i2f
- .text.__eqsf2  0x08015c4c       0x50 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(eqsf2.o)
-                0x08015c4c                __nesf2
-                0x08015c4c                __eqsf2
- .text.__gesf2  0x08015c9c       0x94 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(gesf2.o)
-                0x08015c9c                __gtsf2
-                0x08015c9c                __gesf2
- .text.__lesf2  0x08015d30       0x90 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(lesf2.o)
-                0x08015d30                __lesf2
-                0x08015d30                __ltsf2
+                0x08015bc0       0x94 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(floatsisf.o)
+                0x08015bc0                __aeabi_i2f
+ .text.__eqsf2  0x08015c54       0x50 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(eqsf2.o)
+                0x08015c54                __nesf2
+                0x08015c54                __eqsf2
+ .text.__gesf2  0x08015ca4       0x94 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(gesf2.o)
+                0x08015ca4                __gtsf2
+                0x08015ca4                __gesf2
+ .text.__lesf2  0x08015d38       0x90 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/libgcc.a(lesf2.o)
+                0x08015d38                __lesf2
+                0x08015d38                __ltsf2
  .text.__libc_init_array
-                0x08015dc0       0x48 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-init.o)
-                0x08015dc0                __libc_init_array
- .text.memmove  0x08015e08       0x24 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memmove.o)
-                0x08015e08                memmove
- .text.memset   0x08015e2c       0x10 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memset.o)
-                0x08015e2c                memset
- .text.memcpy   0x08015e3c       0x12 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memcpy-stub.o)
-                0x08015e3c                memcpy
- .text.strncpy  0x08015e4e       0x28 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-strncpy.o)
-                0x08015e4e                strncpy
- .text.strnlen  0x08015e76       0x16 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-strnlen.o)
-                0x08015e76                strnlen
- .text.memcmp   0x08015e8c       0x1c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memcmp.o)
-                0x08015e8c                memcmp
+                0x08015dc8       0x48 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-init.o)
+                0x08015dc8                __libc_init_array
+ .text.memmove  0x08015e10       0x24 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memmove.o)
+                0x08015e10                memmove
+ .text.memset   0x08015e34       0x10 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memset.o)
+                0x08015e34                memset
+ .text.memcpy   0x08015e44       0x12 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memcpy-stub.o)
+                0x08015e44                memcpy
+ .text.strncpy  0x08015e56       0x28 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-strncpy.o)
+                0x08015e56                strncpy
+ .text.strnlen  0x08015e7e       0x16 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-strnlen.o)
+                0x08015e7e                strnlen
+ .text.memcmp   0x08015e94       0x1c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memcmp.o)
+                0x08015e94                memcmp
  *(.glue_7)
- .glue_7        0x08015ea8        0x0 linker stubs
+ .glue_7        0x08015eb0        0x0 linker stubs
  *(.glue_7t)
- .glue_7t       0x08015ea8        0x0 linker stubs
+ .glue_7t       0x08015eb0        0x0 linker stubs
  *(.eh_frame)
- .eh_frame      0x08015ea8        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtbegin.o
+ .eh_frame      0x08015eb0        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtbegin.o
  *(.init)
- .init          0x08015ea8        0x4 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crti.o
-                0x08015ea8                _init
- .init          0x08015eac        0x8 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtn.o
+ .init          0x08015eb0        0x4 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crti.o
+                0x08015eb0                _init
+ .init          0x08015eb4        0x8 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtn.o
  *(.fini)
- .fini          0x08015eb4        0x4 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crti.o
-                0x08015eb4                _fini
- .fini          0x08015eb8        0x8 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtn.o
-                0x08015ec0                        . = ALIGN (0x4)
-                0x08015ec0                        _etext = .
+ .fini          0x08015ebc        0x4 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crti.o
+                0x08015ebc                _fini
+ .fini          0x08015ec0        0x8 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtn.o
+                0x08015ec8                        . = ALIGN (0x4)
+                0x08015ec8                        _etext = .
 
-.vfp11_veneer   0x08015ec0        0x0
- .vfp11_veneer  0x08015ec0        0x0 linker stubs
+.vfp11_veneer   0x08015ec8        0x0
+ .vfp11_veneer  0x08015ec8        0x0 linker stubs
 
-.v4_bx          0x08015ec0        0x0
- .v4_bx         0x08015ec0        0x0 linker stubs
+.v4_bx          0x08015ec8        0x0
+ .v4_bx         0x08015ec8        0x0 linker stubs
 
-.iplt           0x08015ec0        0x0
- .iplt          0x08015ec0        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtbegin.o
+.iplt           0x08015ec8        0x0
+ .iplt          0x08015ec8        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtbegin.o
 
-.rodata         0x08015ec0     0x1fb4
-                0x08015ec0                        . = ALIGN (0x4)
+.rodata         0x08015ec8     0x1fb4
+                0x08015ec8                        . = ALIGN (0x4)
  *(.rodata)
- .rodata        0x08015ec0       0x64 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
- .rodata        0x08015f24       0x14 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/menu.c.obj
- .rodata        0x08015f38       0x70 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
- .rodata        0x08015fa8        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/vcp.c.obj
+ .rodata        0x08015ec8       0x64 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
+ .rodata        0x08015f2c       0x14 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/menu.c.obj
+ .rodata        0x08015f40       0x70 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
+ .rodata        0x08015fb0        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/vcp.c.obj
  *(.rodata*)
  .rodata.HSIFreqTable
-                0x08015fb4       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Core/Src/system_py32f071.c.obj
-                0x08015fb4                HSIFreqTable
+                0x08015fbc       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Core/Src/system_py32f071.c.obj
+                0x08015fbc                HSIFreqTable
  .rodata.APBPrescTable
-                0x08015fd4       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Core/Src/system_py32f071.c.obj
-                0x08015fd4                APBPrescTable
+                0x08015fdc       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Core/Src/system_py32f071.c.obj
+                0x08015fdc                APBPrescTable
  .rodata.AHBPrescTable
-                0x08015ff4       0x40 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Core/Src/system_py32f071.c.obj
-                0x08015ff4                AHBPrescTable
+                0x08015ffc       0x40 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Core/Src/system_py32f071.c.obj
+                0x08015ffc                AHBPrescTable
  .rodata.CHANNEL_OFFSET_TAB
-                0x08016034        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Drivers/PY32F071_HAL_Driver/Src/py32f071_ll_dma.c.obj
- .rodata.value  0x0801603b        0xb CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/backlight.c.obj
-                0x0801603b                value
+                0x0801603c        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Drivers/PY32F071_HAL_Driver/Src/py32f071_ll_dma.c.obj
+ .rodata.value  0x08016043        0xb CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/backlight.c.obj
+                0x08016043                value
  .rodata.BK4819_Init.str1.1
-                0x08016046      0x681 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
+                0x0801604e      0x681 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
                                  0x11 (size before relaxing)
- *fill*         0x080166c7        0x1 
+ *fill*         0x080166cf        0x1 
  .rodata.CSWTCH.58
-                0x080166c8        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
+                0x080166d0        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
  .rodata.FSK_RogerTable
-                0x080166d0        0xe CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
+                0x080166d8        0xe CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
  .rodata.keyboard
-                0x080166de       0x14 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/keyboard.c.obj
- *fill*         0x080166f2        0x2 
+                0x080166e6       0x14 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/keyboard.c.obj
+ *fill*         0x080166fa        0x2 
  .rodata.HandleFunction_fn_table
-                0x080166f4       0x1c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/app.c.obj
+                0x080166fc       0x1c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/app.c.obj
  .rodata.CSWTCH.21
-                0x08016710        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/dtmf.c.obj
+                0x08016718        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/dtmf.c.obj
  .rodata.MENU_Key_UP_DOWN.str1.1
-                0x08016716        0xf CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/menu.c.obj
+                0x0801671e        0xf CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/menu.c.obj
  .rodata.CSWTCH.17
-                0x08016716       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/audio.c.obj
+                0x0801671e       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/audio.c.obj
  .rodata.BITMAP_PowerUser
-                0x08016726        0x3 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016726                BITMAP_PowerUser
+                0x0801672e        0x3 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801672e                BITMAP_PowerUser
  .rodata.BITMAP_compand
-                0x08016729        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016729                BITMAP_compand
+                0x08016731        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016731                BITMAP_compand
  .rodata.BITMAP_ScanListAll
-                0x0801672f       0x13 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801672f                BITMAP_ScanListAll
+                0x08016737       0x13 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016737                BITMAP_ScanListAll
  .rodata.BITMAP_ScanList123
-                0x08016742       0x13 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016742                BITMAP_ScanList123
+                0x0801674a       0x13 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801674a                BITMAP_ScanList123
  .rodata.BITMAP_ScanListE
-                0x08016755        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016755                BITMAP_ScanListE
+                0x0801675d        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801675d                BITMAP_ScanListE
  .rodata.BITMAP_ScanList3
-                0x0801675c        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801675c                BITMAP_ScanList3
+                0x08016764        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016764                BITMAP_ScanList3
  .rodata.BITMAP_ScanList2
-                0x08016763        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016763                BITMAP_ScanList2
+                0x0801676b        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801676b                BITMAP_ScanList2
  .rodata.BITMAP_ScanList1
-                0x0801676a        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801676a                BITMAP_ScanList1
+                0x08016772        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016772                BITMAP_ScanList1
  .rodata.BITMAP_ScanList0
-                0x08016771        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016771                BITMAP_ScanList0
+                0x08016779        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016779                BITMAP_ScanList0
  .rodata.BITMAP_VFO_NotDefault
-                0x08016778        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016778                BITMAP_VFO_NotDefault
+                0x08016780        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016780                BITMAP_VFO_NotDefault
  .rodata.BITMAP_VFO_Default
-                0x0801677f        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801677f                BITMAP_VFO_Default
+                0x08016787        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016787                BITMAP_VFO_Default
  .rodata.BITMAP_VFO_Lock
-                0x08016786        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016786                BITMAP_VFO_Lock
+                0x0801678e        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801678e                BITMAP_VFO_Lock
  .rodata.BITMAP_Antenna
-                0x0801678d        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801678d                BITMAP_Antenna
+                0x08016795        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016795                BITMAP_Antenna
  .rodata.gFontVox
-                0x08016792        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016792                gFontVox
+                0x0801679a        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801679a                gFontVox
  .rodata.BITMAP_BatteryLevel1
-                0x0801679e       0x11 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801679e                BITMAP_BatteryLevel1
+                0x080167a6       0x11 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080167a6                BITMAP_BatteryLevel1
  .rodata.BITMAP_BatteryLevel
-                0x080167af        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080167af                BITMAP_BatteryLevel
+                0x080167b7        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080167b7                BITMAP_BatteryLevel
  .rodata.gFontHold
-                0x080167b1        0xa CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080167b1                gFontHold
+                0x080167b9        0xa CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080167b9                gFontHold
  .rodata.gFontRO
-                0x080167bb        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080167bb                gFontRO
+                0x080167c3        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080167c3                gFontRO
  .rodata.gFontDWR
-                0x080167c7       0x12 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080167c7                gFontDWR
+                0x080167cf       0x12 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080167cf                gFontDWR
  .rodata.gFontMO
-                0x080167d9        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080167d9                gFontMO
+                0x080167e1        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080167e1                gFontMO
  .rodata.gFontXB
-                0x080167e5        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080167e5                gFontXB
+                0x080167ed        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080167ed                gFontXB
  .rodata.gFontMute
-                0x080167f1        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080167f1                gFontMute
+                0x080167f9        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080167f9                gFontMute
  .rodata.gFontLight
-                0x080167fd        0x9 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080167fd                gFontLight
+                0x08016805        0x9 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016805                gFontLight
  .rodata.gFontKeyLock
-                0x08016806        0x9 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016806                gFontKeyLock
+                0x0801680e        0x9 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801680e                gFontKeyLock
  .rodata.gFontS
-                0x0801680f        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801680f                gFontS
+                0x08016817        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016817                gFontS
  .rodata.gFontF
-                0x08016815        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016815                gFontF
+                0x0801681d        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801681d                gFontF
  .rodata.gFontPttClassic
-                0x0801681d        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801681d                gFontPttClassic
+                0x08016825        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016825                gFontPttClassic
  .rodata.gFontPttOnePush
-                0x08016829        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016829                gFontPttOnePush
+                0x08016831        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016831                gFontPttOnePush
  .rodata.gFontPowerSave
-                0x08016835        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016835                gFontPowerSave
- *fill*         0x08016841        0x1 
+                0x0801683d        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801683d                gFontPowerSave
+ *fill*         0x08016849        0x1 
  .rodata.DCS_Options
-                0x08016842       0xd0 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/dcs.c.obj
-                0x08016842                DCS_Options
+                0x0801684a       0xd0 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/dcs.c.obj
+                0x0801684a                DCS_Options
  .rodata.CTCSS_Options
-                0x08016912       0x64 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/dcs.c.obj
-                0x08016912                CTCSS_Options
+                0x0801691a       0x64 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/dcs.c.obj
+                0x0801691a                CTCSS_Options
  .rodata.gFont3x5
-                0x08016976      0x120 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
-                0x08016976                gFont3x5
+                0x0801697e      0x120 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
+                0x0801697e                gFont3x5
  .rodata.gFontSmallBold
-                0x08016a96      0x234 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
-                0x08016a96                gFontSmallBold
+                0x08016a9e      0x234 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
+                0x08016a9e                gFontSmallBold
  .rodata.gFontSmall
-                0x08016cca      0x234 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
-                0x08016cca                gFontSmall
+                0x08016cd2      0x234 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
+                0x08016cd2                gFontSmall
  .rodata.gFontBigDigits
-                0x08016efe       0xdc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
-                0x08016efe                gFontBigDigits
+                0x08016f06       0xdc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
+                0x08016f06                gFontBigDigits
  .rodata.gFontBig
-                0x08016fda      0x524 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
-                0x08016fda                gFontBig
+                0x08016fe2      0x524 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
+                0x08016fe2                gFontBig
  .rodata.StepSortedIndexes
-                0x080174fe       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
-                0x080174fe                StepSortedIndexes
+                0x08017506       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
+                0x08017506                StepSortedIndexes
  .rodata.gStepFrequencyTable
-                0x08017516       0x30 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
-                0x08017516                gStepFrequencyTable
- *fill*         0x08017546        0x2 
+                0x0801751e       0x30 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
+                0x0801751e                gStepFrequencyTable
+ *fill*         0x0801754e        0x2 
  .rodata.frequencyBandTable
-                0x08017548       0x38 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
-                0x08017548                frequencyBandTable
+                0x08017550       0x38 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
+                0x08017550                frequencyBandTable
  .rodata.BX4819_band2
-                0x08017580        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
-                0x08017580                BX4819_band2
- .rodata.BX4819_band1
                 0x08017588        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
-                0x08017588                BX4819_band1
+                0x08017588                BX4819_band2
+ .rodata.BX4819_band1
+                0x08017590        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
+                0x08017590                BX4819_band1
  .rodata.BATTERY_GetReadings.str1.1
-                0x08017590        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/helper/battery.c.obj
+                0x08017598        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/helper/battery.c.obj
  .rodata.Voltage2PercentageTable
-                0x08017590       0x8c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/helper/battery.c.obj
-                0x08017590                Voltage2PercentageTable
+                0x08017598       0x8c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/helper/battery.c.obj
+                0x08017598                Voltage2PercentageTable
  .rodata.gMicGain_dB2
-                0x0801761c        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x0801761c                gMicGain_dB2
- *fill*         0x08017621        0x1 
+                0x08017624        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
+                0x08017624                gMicGain_dB2
+ *fill*         0x08017629        0x1 
  .rodata.vox_stop_count_down_10ms
-                0x08017622        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017622                vox_stop_count_down_10ms
- .rodata.power_save2_10ms
-                0x08017624        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017624                power_save2_10ms
- .rodata.power_save1_10ms
-                0x08017626        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017626                power_save1_10ms
- .rodata.battery_save_count_10ms
-                0x08017628        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017628                battery_save_count_10ms
- .rodata.scan_pause_delay_in_5_10ms
                 0x0801762a        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x0801762a                scan_pause_delay_in_5_10ms
- .rodata.scan_pause_delay_in_3_10ms
+                0x0801762a                vox_stop_count_down_10ms
+ .rodata.power_save2_10ms
                 0x0801762c        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x0801762c                scan_pause_delay_in_3_10ms
- .rodata.scan_pause_delay_in_2_10ms
+                0x0801762c                power_save2_10ms
+ .rodata.power_save1_10ms
                 0x0801762e        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x0801762e                scan_pause_delay_in_2_10ms
- .rodata.scan_pause_delay_in_1_10ms
+                0x0801762e                power_save1_10ms
+ .rodata.battery_save_count_10ms
                 0x08017630        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017630                scan_pause_delay_in_1_10ms
- .rodata.dual_watch_count_toggle_10ms
+                0x08017630                battery_save_count_10ms
+ .rodata.scan_pause_delay_in_5_10ms
                 0x08017632        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017632                dual_watch_count_toggle_10ms
- .rodata.dual_watch_count_after_vox_10ms
+                0x08017632                scan_pause_delay_in_5_10ms
+ .rodata.scan_pause_delay_in_3_10ms
                 0x08017634        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017634                dual_watch_count_after_vox_10ms
- .rodata.dual_watch_count_after_2_10ms
+                0x08017634                scan_pause_delay_in_3_10ms
+ .rodata.scan_pause_delay_in_2_10ms
                 0x08017636        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017636                dual_watch_count_after_2_10ms
- .rodata.dual_watch_count_after_rx_10ms
+                0x08017636                scan_pause_delay_in_2_10ms
+ .rodata.scan_pause_delay_in_1_10ms
                 0x08017638        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017638                dual_watch_count_after_rx_10ms
- .rodata.dual_watch_count_after_tx_10ms
+                0x08017638                scan_pause_delay_in_1_10ms
+ .rodata.dual_watch_count_toggle_10ms
                 0x0801763a        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x0801763a                dual_watch_count_after_tx_10ms
- .rodata.scan_delay_10ms
-                0x0801763c        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x0801763c                scan_delay_10ms
- *fill*         0x0801763d        0x1 
- .rodata.key_debounce_10ms
+                0x0801763a                dual_watch_count_toggle_10ms
+ .rodata.dual_watch_count_after_vox_10ms
+                0x0801763c        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
+                0x0801763c                dual_watch_count_after_vox_10ms
+ .rodata.dual_watch_count_after_2_10ms
                 0x0801763e        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x0801763e                key_debounce_10ms
- .rodata.key_repeat_10ms
+                0x0801763e                dual_watch_count_after_2_10ms
+ .rodata.dual_watch_count_after_rx_10ms
                 0x08017640        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017640                key_repeat_10ms
- .rodata.key_repeat_delay_10ms
+                0x08017640                dual_watch_count_after_rx_10ms
+ .rodata.dual_watch_count_after_tx_10ms
                 0x08017642        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017642                key_repeat_delay_10ms
- .rodata.key_input_timeout_500ms
+                0x08017642                dual_watch_count_after_tx_10ms
+ .rodata.scan_delay_10ms
                 0x08017644        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017644                key_input_timeout_500ms
- .rodata.DTMF_RX_live_timeout_500ms
-                0x08017645        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017645                DTMF_RX_live_timeout_500ms
- .rodata.menu_timeout_long_500ms
+                0x08017644                scan_delay_10ms
+ *fill*         0x08017645        0x1 
+ .rodata.key_debounce_10ms
                 0x08017646        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017646                menu_timeout_long_500ms
- .rodata.menu_timeout_500ms
-                0x08017648        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017648                menu_timeout_500ms
- .rodata.vfo_state_resume_countdown_500ms
-                0x08017649        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017649                vfo_state_resume_countdown_500ms
- .rodata.fm_restore_countdown_10ms
+                0x08017646                key_debounce_10ms
+ .rodata.key_repeat_10ms
+                0x08017648        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
+                0x08017648                key_repeat_10ms
+ .rodata.key_repeat_delay_10ms
                 0x0801764a        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x0801764a                fm_restore_countdown_10ms
- .rodata.fm_play_countdown_noscan_10ms
-                0x0801764c        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x0801764c                fm_play_countdown_noscan_10ms
- .rodata.fm_play_countdown_scan_10ms
+                0x0801764a                key_repeat_delay_10ms
+ .rodata.key_input_timeout_500ms
+                0x0801764c        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
+                0x0801764c                key_input_timeout_500ms
+ .rodata.DTMF_RX_live_timeout_500ms
+                0x0801764d        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
+                0x0801764d                DTMF_RX_live_timeout_500ms
+ .rodata.menu_timeout_long_500ms
                 0x0801764e        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x0801764e                fm_play_countdown_scan_10ms
- .rodata.fm_radio_countdown_500ms
+                0x0801764e                menu_timeout_long_500ms
+ .rodata.menu_timeout_500ms
                 0x08017650        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
-                0x08017650                fm_radio_countdown_500ms
+                0x08017650                menu_timeout_500ms
+ .rodata.vfo_state_resume_countdown_500ms
+                0x08017651        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
+                0x08017651                vfo_state_resume_countdown_500ms
+ .rodata.fm_restore_countdown_10ms
+                0x08017652        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
+                0x08017652                fm_restore_countdown_10ms
+ .rodata.fm_play_countdown_noscan_10ms
+                0x08017654        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
+                0x08017654                fm_play_countdown_noscan_10ms
+ .rodata.fm_play_countdown_scan_10ms
+                0x08017656        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
+                0x08017656                fm_play_countdown_scan_10ms
+ .rodata.fm_radio_countdown_500ms
+                0x08017658        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/misc.c.obj
+                0x08017658                fm_radio_countdown_500ms
  .rodata.dividers.1
-                0x08017651        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/radio.c.obj
+                0x08017659        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/radio.c.obj
  .rodata.gModulationStr
-                0x08017657        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/radio.c.obj
-                0x08017657                gModulationStr
+                0x0801765f        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/radio.c.obj
+                0x0801765f                gModulationStr
  .rodata.str1.1
-                0x08017663       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/radio.c.obj
- *fill*         0x08017663        0x1 
+                0x0801766b       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/radio.c.obj
+ *fill*         0x0801766b        0x1 
  .rodata.afDacGainRegSpec
-                0x08017664        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/radio.c.obj
+                0x0801766c        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/radio.c.obj
  .rodata.afcDisableRegSpec
-                0x08017670        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/radio.c.obj
+                0x08017678        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/radio.c.obj
  .rodata.SETTINGS_InitEEPROM.str1.1
-                0x0801767c        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/settings.c.obj
+                0x08017684        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/settings.c.obj
  .rodata.SETTINGS_UpdateChannel.str1.1
-                0x0801767c        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/settings.c.obj
+                0x08017684        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/settings.c.obj
  .rodata.UI_GenerateChannelString.str1.1
-                0x0801767c        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/helper.c.obj
+                0x08017684        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/helper.c.obj
  .rodata.UI_GenerateChannelStringEx.str1.1
-                0x0801767c       0x12 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/helper.c.obj
+                0x08017684       0x12 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/helper.c.obj
  .rodata.UI_DisplayPopup.str1.1
-                0x0801767c        0xb CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/helper.c.obj
+                0x08017684        0xb CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/helper.c.obj
  .rodata.DisplayRSSIBar.str1.1
-                0x0801767c       0x1d CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
+                0x08017684       0x1d CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
  .rodata.UI_DisplayMain.str1.1
-                0x0801767c       0xa8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
+                0x08017684       0xa8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
  .rodata.str1.1
-                0x0801767c       0x4b CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
+                0x08017684       0x4b CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
  .rodata.dBmCorrTable
-                0x0801767c        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
-                0x0801767c                dBmCorrTable
+                0x08017684        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
+                0x08017684                dBmCorrTable
  .rodata.UI_DisplayMenu.str1.1
-                0x08017683      0x178 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x0801768b      0x178 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
  .rodata.gSubMenu_SIDEFUNCTIONS_size
-                0x08017683        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x08017683                gSubMenu_SIDEFUNCTIONS_size
+                0x0801768b        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x0801768b                gSubMenu_SIDEFUNCTIONS_size
  .rodata.str1.1
-                0x08017684      0x1e7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x0801768c      0x1e7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
  .rodata.gSubMenu_SIDEFUNCTIONS
-                0x08017684       0x98 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x08017684                gSubMenu_SIDEFUNCTIONS
+                0x0801768c       0x98 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x0801768c                gSubMenu_SIDEFUNCTIONS
  .rodata.gSubMenu_SET_KEY
-                0x0801771c       0x2d CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x0801771c                gSubMenu_SET_KEY
+                0x08017724       0x2d CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x08017724                gSubMenu_SET_KEY
  .rodata.gSubMenu_SET_NFM
-                0x08017749       0x12 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x08017749                gSubMenu_SET_NFM
+                0x08017751       0x12 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x08017751                gSubMenu_SET_NFM
  .rodata.gSubMenu_SET_MET
-                0x0801775b       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x0801775b                gSubMenu_SET_MET
+                0x08017763       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x08017763                gSubMenu_SET_MET
  .rodata.gSubMenu_SET_LCK
-                0x0801776b       0x12 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x0801776b                gSubMenu_SET_LCK
+                0x08017773       0x12 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x08017773                gSubMenu_SET_LCK
  .rodata.gSubMenu_SET_TOT
-                0x0801777d       0x1c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x0801777d                gSubMenu_SET_TOT
+                0x08017785       0x1c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x08017785                gSubMenu_SET_TOT
  .rodata.gSubMenu_SET_PTT
-                0x08017799       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x08017799                gSubMenu_SET_PTT
+                0x080177a1       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x080177a1                gSubMenu_SET_PTT
  .rodata.gSubMenu_SET_PWR
-                0x080177a9       0x2a CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x080177a9                gSubMenu_SET_PWR
+                0x080177b1       0x2a CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x080177b1                gSubMenu_SET_PWR
  .rodata.gSubMenu_BATTYP
-                0x080177d3       0x3c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x080177d3                gSubMenu_BATTYP
+                0x080177db       0x3c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x080177db                gSubMenu_BATTYP
  .rodata.gSubMenu_BAT_TXT
-                0x0801780f       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x0801780f                gSubMenu_BAT_TXT
+                0x08017817       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x08017817                gSubMenu_BAT_TXT
  .rodata.gSubMenu_RX_TX
-                0x08017827       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x08017827                gSubMenu_RX_TX
- *fill*         0x0801783f        0x1 
+                0x0801782f       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x0801782f                gSubMenu_RX_TX
+ *fill*         0x08017847        0x1 
  .rodata.gSubMenu_F_LOCK
-                0x08017840       0x2c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x08017840                gSubMenu_F_LOCK
+                0x08017848       0x2c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x08017848                gSubMenu_F_LOCK
  .rodata.gSubMenu_RESET
-                0x0801786c        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x0801786c                gSubMenu_RESET
+                0x08017874        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x08017874                gSubMenu_RESET
  .rodata.gSubMenu_ROGER
-                0x08017874       0x12 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x08017874                gSubMenu_ROGER
+                0x0801787c       0x12 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x0801787c                gSubMenu_ROGER
  .rodata.gSubMenu_PONMSG
-                0x08017886       0x28 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x08017886                gSubMenu_PONMSG
- *fill*         0x080178ae        0x2 
+                0x0801788e       0x28 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x0801788e                gSubMenu_PONMSG
+ *fill*         0x080178b6        0x2 
  .rodata.gSubMenu_PTT_ID
-                0x080178b0       0x14 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x080178b0                gSubMenu_PTT_ID
+                0x080178b8       0x14 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x080178b8                gSubMenu_PTT_ID
  .rodata.gSubMenu_MDF
-                0x080178c4       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x080178c4                gSubMenu_MDF
+                0x080178cc       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x080178cc                gSubMenu_MDF
  .rodata.gSubMenu_RXMode
-                0x080178d4       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x080178d4                gSubMenu_RXMode
+                0x080178dc       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x080178dc                gSubMenu_RXMode
  .rodata.gSubMenu_OFF_ON
-                0x080178e4        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x080178e4                gSubMenu_OFF_ON
+                0x080178ec        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x080178ec                gSubMenu_OFF_ON
  .rodata.gSubMenu_W_N
-                0x080178ec        0xe CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x080178ec                gSubMenu_W_N
+                0x080178f4        0xe CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x080178f4                gSubMenu_W_N
  .rodata.gSubMenu_SFT_D
-                0x080178fa        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x080178fa                gSubMenu_SFT_D
+                0x08017902        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x08017902                gSubMenu_SFT_D
  .rodata.gSubMenu_TXP
-                0x08017906       0x30 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x08017906                gSubMenu_TXP
+                0x0801790e       0x30 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x0801790e                gSubMenu_TXP
  .rodata.FIRST_HIDDEN_MENU_ITEM
-                0x08017936        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x08017936                FIRST_HIDDEN_MENU_ITEM
+                0x0801793e        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x0801793e                FIRST_HIDDEN_MENU_ITEM
  .rodata.MenuList
-                0x08017937      0x258 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
-                0x08017937                MenuList
+                0x0801793f      0x258 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/menu.c.obj
+                0x0801793f                MenuList
  .rodata.UI_DisplayScanner.str1.1
-                0x08017b8f       0x63 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/scanner.c.obj
+                0x08017b97       0x63 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/scanner.c.obj
  .rodata.convertTime.constprop.0.str1.1
-                0x08017b8f        0xa CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/status.c.obj
+                0x08017b97        0xa CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/status.c.obj
  .rodata.UI_DisplayStatus.str1.1
-                0x08017b8f       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/status.c.obj
- *fill*         0x08017b8f        0x1 
+                0x08017b97       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/status.c.obj
+ *fill*         0x08017b97        0x1 
  .rodata.UI_DisplayStatus.cst2
-                0x08017b90        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/status.c.obj
+                0x08017b98        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/status.c.obj
  .rodata.UI_DisplayReleaseKeys.str1.1
-                0x08017b92       0x11 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/welcome.c.obj
+                0x08017b9a       0x11 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/welcome.c.obj
  .rodata.UI_DisplayWelcome.str1.1
-                0x08017b92       0x35 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/welcome.c.obj
+                0x08017b9a       0x35 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/welcome.c.obj
  .rodata.UART_Version
-                0x08017b92       0x2a CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/version.c.obj
-                0x08017b92                UART_Version
+                0x08017b9a       0x2a CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/version.c.obj
+                0x08017b9a                UART_Version
  .rodata.Edition
-                0x08017bbc        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/version.c.obj
-                0x08017bbc                Edition
+                0x08017bc4        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/version.c.obj
+                0x08017bc4                Edition
  .rodata.Version
-                0x08017bc1       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/version.c.obj
-                0x08017bc1                Version
- *fill*         0x08017bd1        0x3 
+                0x08017bc9       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/version.c.obj
+                0x08017bc9                Version
+ *fill*         0x08017bd9        0x3 
  .rodata.ADDR_MAPPINGS
-                0x08017bd4       0xb8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/eeprom_compat.c.obj
+                0x08017bdc       0xb8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/eeprom_compat.c.obj
  .rodata.Obfuscation
-                0x08017c8c       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/uart.c.obj
+                0x08017c94       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/uart.c.obj
  .rodata.cdc_descriptor
-                0x08017c9c       0x9e CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/usb/usbd_cdc_if.c.obj
- .rodata.lim.0  0x08017d3a        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk1080.c.obj
- .rodata.lim.1  0x08017d42        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk1080.c.obj
+                0x08017ca4       0x9e CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/usb/usbd_cdc_if.c.obj
+ .rodata.lim.0  0x08017d42        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk1080.c.obj
+ .rodata.lim.1  0x08017d4a        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk1080.c.obj
  .rodata.BK1080_RegisterTable
-                0x08017d4a       0x44 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk1080.c.obj
+                0x08017d52       0x44 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk1080.c.obj
  .rodata.UI_DisplayFM.str1.1
-                0x08017d8e       0x61 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/fmradio.c.obj
+                0x08017d96       0x61 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/fmradio.c.obj
  .rodata.Obfuscation
-                0x08017d8e       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/aircopy.c.obj
+                0x08017d96       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/aircopy.c.obj
  .rodata.UI_DisplayAircopy.str1.1
-                0x08017d9e       0x5d CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/aircopy.c.obj
+                0x08017da6       0x5d CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/aircopy.c.obj
  .rodata.DrawF.str1.1
-                0x08017d9e       0x11 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017da6       0x11 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .rodata.RenderSpectrum.str1.1
-                0x08017d9e       0x29 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017da6       0x29 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .rodata.APP_RunSpectrum.str1.1
-                0x08017d9e       0x24 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017da6       0x24 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .rodata.bayerMatrix.0
-                0x08017d9e       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017da6       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .rodata.registers_to_save
-                0x08017dae        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017db6        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .rodata.str1.1
-                0x08017db5       0x41 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017dbd       0x41 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .rodata.VGAOptions
-                0x08017db5        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x08017db5                VGAOptions
- .rodata.LNAOptions
                 0x08017dbd        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x08017dbd                LNAOptions
+                0x08017dbd                VGAOptions
+ .rodata.LNAOptions
+                0x08017dc5        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017dc5                LNAOptions
  .rodata.LNAsOptions
-                0x08017dc5        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x08017dc5                LNAsOptions
+                0x08017dcd        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017dcd                LNAsOptions
  .rodata.modulationTypeTuneSteps
-                0x08017dc9        0x3 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x08017dc9                modulationTypeTuneSteps
+                0x08017dd1        0x3 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017dd1                modulationTypeTuneSteps
  .rodata.bwOptions
-                0x08017dcc        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x08017dcc                bwOptions
+                0x08017dd4        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017dd4                bwOptions
  .rodata.calTable
-                0x08017dd8       0x30 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017de0       0x30 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .rodata.listenBWRegValues
-                0x08017e08        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017e10        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .rodata.scanStepValues
-                0x08017e0e       0x1e CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017e16       0x1e CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .rodata.U8RssiMap
-                0x08017e2c        0xa CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x08017e34        0xa CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .rodata.HandleUserInput.isra.0.str1.1
-                0x08017e36        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08017e3e        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
  .rodata.drawScore.str1.1
-                0x08017e36       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08017e3e       0x20 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
  .rodata.drawWall.str1.1
-                0x08017e36       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08017e3e       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
  .rodata.drawBall.str1.1
-                0x08017e36        0xa CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08017e3e        0xa CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
  .rodata.BITMAP_block
-                0x08017e36       0x3c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x08017e36                BITMAP_block
-                0x08017e74                        . = ALIGN (0x4)
- *fill*         0x08017e72        0x2 
+                0x08017e3e       0x3c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x08017e3e                BITMAP_block
+                0x08017e7c                        . = ALIGN (0x4)
+ *fill*         0x08017e7a        0x2 
 
-.rel.dyn        0x08017e74        0x0
- .rel.iplt      0x08017e74        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtbegin.o
+.rel.dyn        0x08017e7c        0x0
+ .rel.iplt      0x08017e7c        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtbegin.o
 
 .ARM.extab
  *(.ARM.extab* .gnu.linkonce.armextab.*)
 
-.ARM            0x08017e74        0x0
-                0x08017e74                        __exidx_start = .
+.ARM            0x08017e7c        0x0
+                0x08017e7c                        __exidx_start = .
  *(.ARM.exidx*)
-                0x08017e74                        __exidx_end = .
+                0x08017e7c                        __exidx_end = .
 
-.preinit_array  0x08017e74        0x0
-                0x08017e74                        PROVIDE (__preinit_array_start = .)
+.preinit_array  0x08017e7c        0x0
+                0x08017e7c                        PROVIDE (__preinit_array_start = .)
  *(.preinit_array*)
-                0x08017e74                        PROVIDE (__preinit_array_end = .)
+                0x08017e7c                        PROVIDE (__preinit_array_end = .)
 
-.init_array     0x08017e74        0x4
-                0x08017e74                        PROVIDE (__init_array_start = .)
+.init_array     0x08017e7c        0x4
+                0x08017e7c                        PROVIDE (__init_array_start = .)
  *(SORT_BY_NAME(.init_array.*))
  *(.init_array*)
- .init_array    0x08017e74        0x4 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtbegin.o
-                0x08017e78                        PROVIDE (__init_array_end = .)
+ .init_array    0x08017e7c        0x4 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtbegin.o
+                0x08017e80                        PROVIDE (__init_array_end = .)
 
-.fini_array     0x08017e78        0x4
+.fini_array     0x08017e80        0x4
                 [!provide]                        PROVIDE (__fini_array_start = .)
  *(SORT_BY_NAME(.fini_array.*))
  *(.fini_array*)
- .fini_array    0x08017e78        0x4 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtbegin.o
+ .fini_array    0x08017e80        0x4 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtbegin.o
                 [!provide]                        PROVIDE (__fini_array_end = .)
-                0x08017e7c                        _sidata = LOADADDR (.data)
+                0x08017e84                        _sidata = LOADADDR (.data)
 
-.data           0x20000000      0x168 load address 0x08017e7c
+.data           0x20000000      0x168 load address 0x08017e84
                 0x20000000                        . = ALIGN (0x4)
                 0x20000000                        _sdata = .
  *(.data)
@@ -3148,21 +3148,21 @@ LOAD /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtn.o
                 0x20000168                        _edata = .
 
 .tm_clone_table
-                0x20000168        0x0 load address 0x08017fe4
+                0x20000168        0x0 load address 0x08017fec
  .tm_clone_table
                 0x20000168        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtbegin.o
  .tm_clone_table
                 0x20000168        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtend.o
 
-.igot.plt       0x20000168        0x0 load address 0x08017fe4
+.igot.plt       0x20000168        0x0 load address 0x08017fec
  .igot.plt      0x20000168        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtbegin.o
 
-.noncacheable   0x20000168      0x160 load address 0x08017fe4
+.noncacheable   0x20000168      0x160 load address 0x08017fec
  .noncacheable  0x20000168      0x160 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
                 0x20000168                usbd_core_cfg
                 0x200002c8                        . = ALIGN (0x4)
 
-.bss            0x200002e0     0x3080 load address 0x08018144
+.bss            0x200002e0     0x3000 load address 0x0801814c
                 0x200002e0                        _sbss = .
                 0x200002e0                        __bss_start__ = _sbss
  *(.bss)
@@ -3951,113 +3951,113 @@ LOAD /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtn.o
  .bss.spectrumMeterBackground
                 0x200024f3       0x79 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .bss.peakAge   0x2000256c       0x80 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
- .bss.peakHold  0x200025ec      0x100 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+ .bss.peakHold  0x200025ec       0x80 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .bss.smoothedRssi
-                0x200026ec      0x100 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x2000266c      0x100 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .bss.waterfallIndex
-                0x200027ec        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x200027ec                waterfallIndex
+                0x2000276c        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x2000276c                waterfallIndex
  .bss.waterfallHistory
-                0x200027ed      0x400 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x200027ed                waterfallHistory
- *fill*         0x20002bed        0x1 
+                0x2000276d      0x400 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x2000276d                waterfallHistory
+ *fill*         0x20002b6d        0x1 
  .bss.rssiHistory
-                0x20002bee      0x100 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x20002bee                rssiHistory
- *fill*         0x20002cee        0x2 
- .bss.vfo       0x20002cf0        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x20002cf0                vfo
- .bss.tempFreq  0x20002cf4        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x20002cf4                tempFreq
+                0x20002b6e      0x100 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x20002b6e                rssiHistory
+ *fill*         0x20002c6e        0x2 
+ .bss.vfo       0x20002c70        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x20002c70                vfo
+ .bss.tempFreq  0x20002c74        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x20002c74                tempFreq
  .bss.currentFreq
-                0x20002cf8        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x20002cf8                currentFreq
- .bss.fMeasure  0x20002cfc        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x20002cfc                fMeasure
+                0x20002c78        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x20002c78                currentFreq
+ .bss.fMeasure  0x20002c7c        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x20002c7c                fMeasure
  .bss.initialFreq
-                0x20002d00        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x20002c80        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
  .bss.displayRssi
-                0x20002d04        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
- *fill*         0x20002d06        0x2 
- .bss.scanInfo  0x20002d08       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x20002d08                scanInfo
- .bss.peak      0x20002d20        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x20002d20                peak
+                0x20002c84        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+ *fill*         0x20002c86        0x2 
+ .bss.scanInfo  0x20002c88       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x20002c88                scanInfo
+ .bss.peak      0x20002ca0        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x20002ca0                peak
  .bss.previousState
-                0x20002d2c        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x20002d2c                previousState
+                0x20002cac        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x20002cac                previousState
  .bss.currentState
-                0x20002d2d        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x20002d2d                currentState
- .bss.lockAGC   0x20002d2e        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x20002d2e                lockAGC
+                0x20002cad        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x20002cad                currentState
+ .bss.lockAGC   0x20002cae        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x20002cae                lockAGC
  .bss.redrawScreen
-                0x20002d2f        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x20002d2f                redrawScreen
+                0x20002caf        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x20002caf                redrawScreen
  .bss.monitorMode
-                0x20002d30        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
-                0x20002d30                monitorMode
+                0x20002cb0        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+                0x20002cb0                monitorMode
  .bss.isInitialized
-                0x20002d31        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
- .bss.swap.0    0x20002d32        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
- *fill*         0x20002d33        0x1 
- .bss.ball      0x20002d34        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x20002d34                ball
- .bss.racket    0x20002d3c        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x20002d3c                racket
- .bss.brick     0x20002d41       0x6c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x20002d41                brick
- .bss.str       0x20002dad        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x20002dad                str
- *fill*         0x20002db9        0x1 
- .bss.score     0x20002dba        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x20002dba                score
- .bss.tone      0x20002dbc        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x20002dbc                tone
- .bss.isBeep    0x20002dbe        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x20002dbe                isBeep
- .bss.isPaused  0x20002dbf        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
-                0x20002dbf                isPaused
+                0x20002cb1        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/spectrum.c.obj
+ .bss.swap.0    0x20002cb2        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+ *fill*         0x20002cb3        0x1 
+ .bss.ball      0x20002cb4        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x20002cb4                ball
+ .bss.racket    0x20002cbc        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x20002cbc                racket
+ .bss.brick     0x20002cc1       0x6c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x20002cc1                brick
+ .bss.str       0x20002d2d        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x20002d2d                str
+ *fill*         0x20002d39        0x1 
+ .bss.score     0x20002d3a        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x20002d3a                score
+ .bss.tone      0x20002d3c        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x20002d3c                tone
+ .bss.isBeep    0x20002d3e        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x20002d3e                isBeep
+ .bss.isPaused  0x20002d3f        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x20002d3f                isPaused
  .bss.isInitialized
-                0x20002dc0        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x20002d40        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
  .bss.blockAnim
-                0x20002dc1        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
+                0x20002d41        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/breakout.c.obj
  .bss.forcedBlock
-                0x20002dc2        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/screenshot.c.obj
+                0x20002d42        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/screenshot.c.obj
  .bss.previousFrame
-                0x20002dc3      0x400 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/screenshot.c.obj
- *fill*         0x200031c3        0x1 
- .bss.bos_desc  0x200031c4        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x20002d43      0x400 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/screenshot.c.obj
+ *fill*         0x20003143        0x1 
+ .bss.bos_desc  0x20003144        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
  .bss.msosv2_desc
-                0x200031c8        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x20003148        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
  .bss.msosv1_desc
-                0x200031cc        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x2000314c        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
  .bss.usbd_intf_head
-                0x200031d0        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
-                0x200031d0                usbd_intf_head
- .bss.zlp_flag  0x200031d4        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x200031d4                zlp_flag
+                0x20003150        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/core/usbd_core.c.obj
+                0x20003150                usbd_intf_head
+ .bss.zlp_flag  0x20003154        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x20003154                zlp_flag
  .bss.usb_ep0_state
-                0x200031d5        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
- *fill*         0x200031d6        0xa 
+                0x20003155        0x1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+ *fill*         0x20003156        0xa 
  .bss.g_pyusb_udc
-                0x200031e0      0x180 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
-                0x200031e0                g_pyusb_udc
+                0x20003160      0x180 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj
+                0x20003160                g_pyusb_udc
  *(COMMON)
-                0x20003360                        . = ALIGN (0x4)
-                0x20003360                        _ebss = .
-                0x20003360                        __bss_end__ = _ebss
+                0x200032e0                        . = ALIGN (0x4)
+                0x200032e0                        _ebss = .
+                0x200032e0                        __bss_end__ = _ebss
 
 ._user_heap_stack
-                0x20003360      0x600 load address 0x08018144
-                0x20003360                        . = ALIGN (0x8)
+                0x200032e0      0x600 load address 0x0801814c
+                0x200032e0                        . = ALIGN (0x8)
                 [!provide]                        PROVIDE (end = .)
                 [!provide]                        PROVIDE (_end = .)
-                0x20003560                        . = (. + _Min_Heap_Size)
- *fill*         0x20003360      0x200 
-                0x20003960                        . = (. + _Min_Stack_Size)
- *fill*         0x20003560      0x400 
-                0x20003960                        . = ALIGN (0x8)
+                0x200034e0                        . = (. + _Min_Heap_Size)
+ *fill*         0x200032e0      0x200 
+                0x200038e0                        . = (. + _Min_Stack_Size)
+ *fill*         0x200034e0      0x400 
+                0x200038e0                        . = ALIGN (0x8)
 
 /DISCARD/
  libc.a(*)

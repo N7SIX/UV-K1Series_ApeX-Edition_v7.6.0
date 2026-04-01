@@ -27,9 +27,9 @@ Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" p
 The CXX compiler identification is GNU, found in "/src/build/ApeX/CMakeFiles/3.25.1/CompilerIdCXX/CMakeCXXCompilerId.o"
 
 Detecting C compiler ABI info compiled with the following output:
-Change Dir: /src/build/ApeX/CMakeFiles/CMakeScratch/TryCompile-IPy1bQ
+Change Dir: /src/build/ApeX/CMakeFiles/CMakeScratch/TryCompile-8vLX5b
 
-Run Build Command(s):/usr/bin/ninja cmTC_eda34 && [1/2] Building C object CMakeFiles/cmTC_eda34.dir/CMakeCCompilerABI.c.obj
+Run Build Command(s):/usr/bin/ninja cmTC_ddf8c && [1/2] Building C object CMakeFiles/cmTC_ddf8c.dir/CMakeCCompilerABI.c.obj
 Using built-in specs.
 COLLECT_GCC=/opt/toolchain/bin/arm-none-eabi-gcc
 Target: arm-none-eabi
@@ -37,8 +37,8 @@ Configured with: /data/jenkins/workspace/GNU-toolchain/arm-13/src/gcc/configure 
 Thread model: single
 Supported LTO compression algorithms: zlib
 gcc version 13.3.1 20240614 (Arm GNU Toolchain 13.3.Rel1 (Build arm-13.24)) 
-COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-v' '-std=gnu11' '-o' 'CMakeFiles/cmTC_eda34.dir/CMakeCCompilerABI.c.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_eda34.dir/'
- /opt/toolchain/bin/../libexec/gcc/arm-none-eabi/13.3.1/cc1 -quiet -v -imultilib thumb/v6-m/nofp -iprefix /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/ -isysroot /opt/toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /usr/share/cmake-3.25/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_eda34.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb -mlibarch=armv6s-m -march=armv6s-m -Wall -std=gnu11 -version -fdata-sections -ffunction-sections -o /tmp/cc0KcbAJ.s
+COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-v' '-std=gnu11' '-o' 'CMakeFiles/cmTC_ddf8c.dir/CMakeCCompilerABI.c.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_ddf8c.dir/'
+ /opt/toolchain/bin/../libexec/gcc/arm-none-eabi/13.3.1/cc1 -quiet -v -imultilib thumb/v6-m/nofp -iprefix /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/ -isysroot /opt/toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /usr/share/cmake-3.25/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_ddf8c.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb -mlibarch=armv6s-m -march=armv6s-m -Wall -std=gnu11 -version -fdata-sections -ffunction-sections -o /tmp/ccfg5Cit.s
 GNU C11 (Arm GNU Toolchain 13.3.Rel1 (Build arm-13.24)) version 13.3.1 20240614 (arm-none-eabi)
 	compiled by GNU C version 4.8.5 20150623 (Red Hat 4.8.5-44), GMP version 6.2.1, MPFR version 3.1.6, MPC version 1.0.3, isl version isl-0.15-1-g835ea3a-GMP
 
@@ -55,13 +55,13 @@ ignoring duplicate directory "/opt/toolchain/bin/../arm-none-eabi/include"
  /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/include
 End of search list.
 Compiler executable checksum: 9c2ae77c272b305506938e8b4c3643b8
-COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-v' '-std=gnu11' '-o' 'CMakeFiles/cmTC_eda34.dir/CMakeCCompilerABI.c.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_eda34.dir/'
- /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/as -v -march=armv6s-m -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_eda34.dir/CMakeCCompilerABI.c.obj /tmp/cc0KcbAJ.s
+COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-v' '-std=gnu11' '-o' 'CMakeFiles/cmTC_ddf8c.dir/CMakeCCompilerABI.c.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_ddf8c.dir/'
+ /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/as -v -march=armv6s-m -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_ddf8c.dir/CMakeCCompilerABI.c.obj /tmp/ccfg5Cit.s
 GNU assembler version 2.42.0 (arm-none-eabi) using BFD version (Arm GNU Toolchain 13.3.Rel1 (Build arm-13.24)) 2.42.0.20240614
 COMPILER_PATH=/opt/toolchain/bin/../libexec/gcc/arm-none-eabi/13.3.1/:/opt/toolchain/bin/../libexec/gcc/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/
 LIBRARY_PATH=/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/:/opt/toolchain/bin/../arm-none-eabi/lib/thumb/v6-m/nofp/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/:/opt/toolchain/bin/../lib/gcc/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/:/opt/toolchain/bin/../arm-none-eabi/lib/
-COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-v' '-std=gnu11' '-o' 'CMakeFiles/cmTC_eda34.dir/CMakeCCompilerABI.c.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_eda34.dir/CMakeCCompilerABI.c.'
-[2/2] Linking C static library libcmTC_eda34.a
+COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-v' '-std=gnu11' '-o' 'CMakeFiles/cmTC_ddf8c.dir/CMakeCCompilerABI.c.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_ddf8c.dir/CMakeCCompilerABI.c.'
+[2/2] Linking C static library libcmTC_ddf8c.a
 
 
 
@@ -80,9 +80,9 @@ Parsed C implicit include dir info from above output: rv=done
 
 Parsed C implicit link information from above output:
   link line regex: [^( *|.*[/\])(arm-none-eabi-g\+\+|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
-  ignore line: [Change Dir: /src/build/ApeX/CMakeFiles/CMakeScratch/TryCompile-IPy1bQ]
+  ignore line: [Change Dir: /src/build/ApeX/CMakeFiles/CMakeScratch/TryCompile-8vLX5b]
   ignore line: []
-  ignore line: [Run Build Command(s):/usr/bin/ninja cmTC_eda34 && [1/2] Building C object CMakeFiles/cmTC_eda34.dir/CMakeCCompilerABI.c.obj]
+  ignore line: [Run Build Command(s):/usr/bin/ninja cmTC_ddf8c && [1/2] Building C object CMakeFiles/cmTC_ddf8c.dir/CMakeCCompilerABI.c.obj]
   ignore line: [Using built-in specs.]
   ignore line: [COLLECT_GCC=/opt/toolchain/bin/arm-none-eabi-gcc]
   ignore line: [Target: arm-none-eabi]
@@ -90,8 +90,8 @@ Parsed C implicit link information from above output:
   ignore line: [Thread model: single]
   ignore line: [Supported LTO compression algorithms: zlib]
   ignore line: [gcc version 13.3.1 20240614 (Arm GNU Toolchain 13.3.Rel1 (Build arm-13.24)) ]
-  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-v' '-std=gnu11' '-o' 'CMakeFiles/cmTC_eda34.dir/CMakeCCompilerABI.c.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_eda34.dir/']
-  ignore line: [ /opt/toolchain/bin/../libexec/gcc/arm-none-eabi/13.3.1/cc1 -quiet -v -imultilib thumb/v6-m/nofp -iprefix /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/ -isysroot /opt/toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /usr/share/cmake-3.25/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_eda34.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb -mlibarch=armv6s-m -march=armv6s-m -Wall -std=gnu11 -version -fdata-sections -ffunction-sections -o /tmp/cc0KcbAJ.s]
+  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-v' '-std=gnu11' '-o' 'CMakeFiles/cmTC_ddf8c.dir/CMakeCCompilerABI.c.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_ddf8c.dir/']
+  ignore line: [ /opt/toolchain/bin/../libexec/gcc/arm-none-eabi/13.3.1/cc1 -quiet -v -imultilib thumb/v6-m/nofp -iprefix /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/ -isysroot /opt/toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /usr/share/cmake-3.25/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_ddf8c.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb -mlibarch=armv6s-m -march=armv6s-m -Wall -std=gnu11 -version -fdata-sections -ffunction-sections -o /tmp/ccfg5Cit.s]
   ignore line: [GNU C11 (Arm GNU Toolchain 13.3.Rel1 (Build arm-13.24)) version 13.3.1 20240614 (arm-none-eabi)]
   ignore line: [	compiled by GNU C version 4.8.5 20150623 (Red Hat 4.8.5-44)  GMP version 6.2.1  MPFR version 3.1.6  MPC version 1.0.3  isl version isl-0.15-1-g835ea3a-GMP]
   ignore line: []
@@ -108,13 +108,13 @@ Parsed C implicit link information from above output:
   ignore line: [ /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/include]
   ignore line: [End of search list.]
   ignore line: [Compiler executable checksum: 9c2ae77c272b305506938e8b4c3643b8]
-  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-v' '-std=gnu11' '-o' 'CMakeFiles/cmTC_eda34.dir/CMakeCCompilerABI.c.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_eda34.dir/']
-  ignore line: [ /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/as -v -march=armv6s-m -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_eda34.dir/CMakeCCompilerABI.c.obj /tmp/cc0KcbAJ.s]
+  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-v' '-std=gnu11' '-o' 'CMakeFiles/cmTC_ddf8c.dir/CMakeCCompilerABI.c.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_ddf8c.dir/']
+  ignore line: [ /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/as -v -march=armv6s-m -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_ddf8c.dir/CMakeCCompilerABI.c.obj /tmp/ccfg5Cit.s]
   ignore line: [GNU assembler version 2.42.0 (arm-none-eabi) using BFD version (Arm GNU Toolchain 13.3.Rel1 (Build arm-13.24)) 2.42.0.20240614]
   ignore line: [COMPILER_PATH=/opt/toolchain/bin/../libexec/gcc/arm-none-eabi/13.3.1/:/opt/toolchain/bin/../libexec/gcc/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/]
   ignore line: [LIBRARY_PATH=/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/:/opt/toolchain/bin/../arm-none-eabi/lib/thumb/v6-m/nofp/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/:/opt/toolchain/bin/../lib/gcc/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/:/opt/toolchain/bin/../arm-none-eabi/lib/]
-  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-v' '-std=gnu11' '-o' 'CMakeFiles/cmTC_eda34.dir/CMakeCCompilerABI.c.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_eda34.dir/CMakeCCompilerABI.c.']
-  ignore line: [[2/2] Linking C static library libcmTC_eda34.a]
+  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-v' '-std=gnu11' '-o' 'CMakeFiles/cmTC_ddf8c.dir/CMakeCCompilerABI.c.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_ddf8c.dir/CMakeCCompilerABI.c.']
+  ignore line: [[2/2] Linking C static library libcmTC_ddf8c.a]
   ignore line: []
   ignore line: []
   implicit libs: []
@@ -124,9 +124,9 @@ Parsed C implicit link information from above output:
 
 
 Detecting CXX compiler ABI info compiled with the following output:
-Change Dir: /src/build/ApeX/CMakeFiles/CMakeScratch/TryCompile-lK0bEd
+Change Dir: /src/build/ApeX/CMakeFiles/CMakeScratch/TryCompile-JsmjX7
 
-Run Build Command(s):/usr/bin/ninja cmTC_b5c61 && [1/2] Building CXX object CMakeFiles/cmTC_b5c61.dir/CMakeCXXCompilerABI.cpp.obj
+Run Build Command(s):/usr/bin/ninja cmTC_f018b && [1/2] Building CXX object CMakeFiles/cmTC_f018b.dir/CMakeCXXCompilerABI.cpp.obj
 Using built-in specs.
 COLLECT_GCC=/opt/toolchain/bin/arm-none-eabi-g++
 Target: arm-none-eabi
@@ -134,8 +134,8 @@ Configured with: /data/jenkins/workspace/GNU-toolchain/arm-13/src/gcc/configure 
 Thread model: single
 Supported LTO compression algorithms: zlib
 gcc version 13.3.1 20240614 (Arm GNU Toolchain 13.3.Rel1 (Build arm-13.24)) 
-COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-fno-rtti' '-fno-exceptions' '-fno-threadsafe-statics' '-v' '-o' 'CMakeFiles/cmTC_b5c61.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_b5c61.dir/'
- /opt/toolchain/bin/../libexec/gcc/arm-none-eabi/13.3.1/cc1plus -quiet -v -imultilib thumb/v6-m/nofp -iprefix /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/ -isysroot /opt/toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /usr/share/cmake-3.25/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_b5c61.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb -mlibarch=armv6s-m -march=armv6s-m -Wall -version -fdata-sections -ffunction-sections -fno-rtti -fno-exceptions -fno-threadsafe-statics -o /tmp/ccfYCwPK.s
+COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-fno-rtti' '-fno-exceptions' '-fno-threadsafe-statics' '-v' '-o' 'CMakeFiles/cmTC_f018b.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_f018b.dir/'
+ /opt/toolchain/bin/../libexec/gcc/arm-none-eabi/13.3.1/cc1plus -quiet -v -imultilib thumb/v6-m/nofp -iprefix /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/ -isysroot /opt/toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /usr/share/cmake-3.25/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_f018b.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb -mlibarch=armv6s-m -march=armv6s-m -Wall -version -fdata-sections -ffunction-sections -fno-rtti -fno-exceptions -fno-threadsafe-statics -o /tmp/ccjp4Ig4.s
 GNU C++17 (Arm GNU Toolchain 13.3.Rel1 (Build arm-13.24)) version 13.3.1 20240614 (arm-none-eabi)
 	compiled by GNU C version 4.8.5 20150623 (Red Hat 4.8.5-44), GMP version 6.2.1, MPFR version 3.1.6, MPC version 1.0.3, isl version isl-0.15-1-g835ea3a-GMP
 
@@ -158,13 +158,13 @@ ignoring duplicate directory "/opt/toolchain/bin/../arm-none-eabi/include"
  /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/include
 End of search list.
 Compiler executable checksum: 69c9079aa1e4c9516429742f1abb9d10
-COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-fno-rtti' '-fno-exceptions' '-fno-threadsafe-statics' '-v' '-o' 'CMakeFiles/cmTC_b5c61.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_b5c61.dir/'
- /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/as -v -march=armv6s-m -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_b5c61.dir/CMakeCXXCompilerABI.cpp.obj /tmp/ccfYCwPK.s
+COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-fno-rtti' '-fno-exceptions' '-fno-threadsafe-statics' '-v' '-o' 'CMakeFiles/cmTC_f018b.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_f018b.dir/'
+ /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/as -v -march=armv6s-m -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_f018b.dir/CMakeCXXCompilerABI.cpp.obj /tmp/ccjp4Ig4.s
 GNU assembler version 2.42.0 (arm-none-eabi) using BFD version (Arm GNU Toolchain 13.3.Rel1 (Build arm-13.24)) 2.42.0.20240614
 COMPILER_PATH=/opt/toolchain/bin/../libexec/gcc/arm-none-eabi/13.3.1/:/opt/toolchain/bin/../libexec/gcc/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/
 LIBRARY_PATH=/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/:/opt/toolchain/bin/../arm-none-eabi/lib/thumb/v6-m/nofp/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/:/opt/toolchain/bin/../lib/gcc/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/:/opt/toolchain/bin/../arm-none-eabi/lib/
-COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-fno-rtti' '-fno-exceptions' '-fno-threadsafe-statics' '-v' '-o' 'CMakeFiles/cmTC_b5c61.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_b5c61.dir/CMakeCXXCompilerABI.cpp.'
-[2/2] Linking CXX static library libcmTC_b5c61.a
+COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-fno-rtti' '-fno-exceptions' '-fno-threadsafe-statics' '-v' '-o' 'CMakeFiles/cmTC_f018b.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_f018b.dir/CMakeCXXCompilerABI.cpp.'
+[2/2] Linking CXX static library libcmTC_f018b.a
 
 
 
@@ -189,9 +189,9 @@ Parsed CXX implicit include dir info from above output: rv=done
 
 Parsed CXX implicit link information from above output:
   link line regex: [^( *|.*[/\])(arm-none-eabi-g\+\+|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
-  ignore line: [Change Dir: /src/build/ApeX/CMakeFiles/CMakeScratch/TryCompile-lK0bEd]
+  ignore line: [Change Dir: /src/build/ApeX/CMakeFiles/CMakeScratch/TryCompile-JsmjX7]
   ignore line: []
-  ignore line: [Run Build Command(s):/usr/bin/ninja cmTC_b5c61 && [1/2] Building CXX object CMakeFiles/cmTC_b5c61.dir/CMakeCXXCompilerABI.cpp.obj]
+  ignore line: [Run Build Command(s):/usr/bin/ninja cmTC_f018b && [1/2] Building CXX object CMakeFiles/cmTC_f018b.dir/CMakeCXXCompilerABI.cpp.obj]
   ignore line: [Using built-in specs.]
   ignore line: [COLLECT_GCC=/opt/toolchain/bin/arm-none-eabi-g++]
   ignore line: [Target: arm-none-eabi]
@@ -199,8 +199,8 @@ Parsed CXX implicit link information from above output:
   ignore line: [Thread model: single]
   ignore line: [Supported LTO compression algorithms: zlib]
   ignore line: [gcc version 13.3.1 20240614 (Arm GNU Toolchain 13.3.Rel1 (Build arm-13.24)) ]
-  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-fno-rtti' '-fno-exceptions' '-fno-threadsafe-statics' '-v' '-o' 'CMakeFiles/cmTC_b5c61.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_b5c61.dir/']
-  ignore line: [ /opt/toolchain/bin/../libexec/gcc/arm-none-eabi/13.3.1/cc1plus -quiet -v -imultilib thumb/v6-m/nofp -iprefix /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/ -isysroot /opt/toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /usr/share/cmake-3.25/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_b5c61.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb -mlibarch=armv6s-m -march=armv6s-m -Wall -version -fdata-sections -ffunction-sections -fno-rtti -fno-exceptions -fno-threadsafe-statics -o /tmp/ccfYCwPK.s]
+  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-fno-rtti' '-fno-exceptions' '-fno-threadsafe-statics' '-v' '-o' 'CMakeFiles/cmTC_f018b.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_f018b.dir/']
+  ignore line: [ /opt/toolchain/bin/../libexec/gcc/arm-none-eabi/13.3.1/cc1plus -quiet -v -imultilib thumb/v6-m/nofp -iprefix /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/ -isysroot /opt/toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /usr/share/cmake-3.25/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_f018b.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb -mlibarch=armv6s-m -march=armv6s-m -Wall -version -fdata-sections -ffunction-sections -fno-rtti -fno-exceptions -fno-threadsafe-statics -o /tmp/ccjp4Ig4.s]
   ignore line: [GNU C++17 (Arm GNU Toolchain 13.3.Rel1 (Build arm-13.24)) version 13.3.1 20240614 (arm-none-eabi)]
   ignore line: [	compiled by GNU C version 4.8.5 20150623 (Red Hat 4.8.5-44)  GMP version 6.2.1  MPFR version 3.1.6  MPC version 1.0.3  isl version isl-0.15-1-g835ea3a-GMP]
   ignore line: []
@@ -223,13 +223,13 @@ Parsed CXX implicit link information from above output:
   ignore line: [ /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/include]
   ignore line: [End of search list.]
   ignore line: [Compiler executable checksum: 69c9079aa1e4c9516429742f1abb9d10]
-  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-fno-rtti' '-fno-exceptions' '-fno-threadsafe-statics' '-v' '-o' 'CMakeFiles/cmTC_b5c61.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_b5c61.dir/']
-  ignore line: [ /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/as -v -march=armv6s-m -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_b5c61.dir/CMakeCXXCompilerABI.cpp.obj /tmp/ccfYCwPK.s]
+  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-fno-rtti' '-fno-exceptions' '-fno-threadsafe-statics' '-v' '-o' 'CMakeFiles/cmTC_f018b.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_f018b.dir/']
+  ignore line: [ /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/as -v -march=armv6s-m -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_f018b.dir/CMakeCXXCompilerABI.cpp.obj /tmp/ccjp4Ig4.s]
   ignore line: [GNU assembler version 2.42.0 (arm-none-eabi) using BFD version (Arm GNU Toolchain 13.3.Rel1 (Build arm-13.24)) 2.42.0.20240614]
   ignore line: [COMPILER_PATH=/opt/toolchain/bin/../libexec/gcc/arm-none-eabi/13.3.1/:/opt/toolchain/bin/../libexec/gcc/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/]
   ignore line: [LIBRARY_PATH=/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/:/opt/toolchain/bin/../arm-none-eabi/lib/thumb/v6-m/nofp/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/:/opt/toolchain/bin/../lib/gcc/:/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/:/opt/toolchain/bin/../arm-none-eabi/lib/]
-  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-fno-rtti' '-fno-exceptions' '-fno-threadsafe-statics' '-v' '-o' 'CMakeFiles/cmTC_b5c61.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_b5c61.dir/CMakeCXXCompilerABI.cpp.']
-  ignore line: [[2/2] Linking CXX static library libcmTC_b5c61.a]
+  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m0plus' '-Wall' '-fdata-sections' '-ffunction-sections' '-fno-rtti' '-fno-exceptions' '-fno-threadsafe-statics' '-v' '-o' 'CMakeFiles/cmTC_f018b.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mfloat-abi=soft' '-mthumb' '-mlibarch=armv6s-m' '-march=armv6s-m' '-dumpdir' 'CMakeFiles/cmTC_f018b.dir/CMakeCXXCompilerABI.cpp.']
+  ignore line: [[2/2] Linking CXX static library libcmTC_f018b.a]
   ignore line: []
   ignore line: []
   implicit libs: []
