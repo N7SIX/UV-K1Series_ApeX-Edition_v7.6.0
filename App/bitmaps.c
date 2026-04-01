@@ -211,26 +211,40 @@ const uint8_t BITMAP_VFO_Lock[7] =
     0b01111100,
 };
 
-const uint8_t BITMAP_VFO_Default[7] =
+const uint8_t BITMAP_VFO_Default[5] =
 {
-    0b01111111,
-    0b01111111,
-    0b00111110,
-    0b00111110,
-    0b00011100,
-    0b00011100,
-    0b00001000
+    0b11111111,  // Column 1: full height
+    0b01111111,  // Column 2: 7 pixels
+    0b00111111,  // Column 3: 6 pixels
+    0b00011111,  // Column 4: 5 pixels
+    0b00001111   // Column 5: 4 pixels (pointer tip)
 };
 
-const uint8_t BITMAP_VFO_NotDefault[7] =
+const uint8_t BITMAP_VFO_NotDefault[5] =
 {
-    0b01000001,
-    0b01000001,
-    0b00100010,
-    0b00100010,
-    0b00010100,
-    0b00010100,
-    0b00001000
+    0b10000001,  // Column 1: top and bottom only
+    0b01000010,  // Column 2: outline
+    0b00100100,  // Column 3: outline
+    0b00011000,  // Column 4: outline
+    0b00001000   // Column 5: pointer tip
+};
+
+const uint8_t BITMAP_RX[5] =
+{
+    0b01111100,  // R: top bar
+    0b01000100,  // R: left side
+    0b01111100,  // R: middle bar
+    0b01010100,  // R+X: legs
+    0b01000100   // R: bottom
+};
+
+const uint8_t BITMAP_TX[5] =
+{
+    0b00000010,  // T: top
+    0b00000010,  // T: stem
+    0b01111110,  // T: crossbar
+    0b00000010,  // T: stem
+    0b00000010   // T: bottom
 };
 
 const uint8_t BITMAP_ScanList0[7] =

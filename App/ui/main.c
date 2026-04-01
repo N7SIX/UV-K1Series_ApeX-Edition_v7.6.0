@@ -335,10 +335,10 @@ void DisplayRSSIBar(const bool now)
     if(RxLine >= 0 && center_line != CENTER_LINE_IN_USE)
     {
         if (RxBlink == 0 || RxBlink == 1) {
-            UI_PrintStringSmallBold("RX", 8, 0, RxLine);
+            memcpy(gFrameBuffer[RxLine] + 8, BITMAP_RX, sizeof(BITMAP_RX));
             if (RxBlink == 1) RxBlink = 2;
         } else {
-            for (uint8_t i = 8; i < 24; i++)
+            for (uint8_t i = 8; i < 8 + sizeof(BITMAP_RX); i++)
             {
                 gFrameBuffer[RxLine][i] = 0x00;
             }
@@ -814,7 +814,7 @@ void UI_DisplayMain(void)
                 if (activeTxVFO == vfo_num)
                 {   // show the TX symbol
                     mode = VFO_MODE_TX;
-                    UI_PrintStringSmallBold("TX", 8, 0, line);
+                    memcpy(p_line0 + 8, BITMAP_TX, sizeof(BITMAP_TX));
                 }
             }
         }

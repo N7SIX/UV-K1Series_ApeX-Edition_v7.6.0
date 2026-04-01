@@ -2570,139 +2570,143 @@ LOAD /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtn.o
  .rodata.value  0x080160f7        0xb CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/backlight.c.obj
                 0x080160f7                value
  .rodata.BK4819_Init.str1.1
-                0x08016102      0x677 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
+                0x08016102      0x674 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
                                  0x11 (size before relaxing)
- *fill*         0x08016779        0x1 
  .rodata.CSWTCH.58
-                0x0801677a        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
+                0x08016776        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
  .rodata.FSK_RogerTable
-                0x08016782        0xe CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
+                0x0801677e        0xe CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/bk4829.c.obj
  .rodata.keyboard
-                0x08016790       0x14 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/keyboard.c.obj
+                0x0801678c       0x14 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/driver/keyboard.c.obj
  .rodata.HandleFunction_fn_table
-                0x080167a4       0x1c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/app.c.obj
+                0x080167a0       0x1c CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/app.c.obj
  .rodata.CSWTCH.21
-                0x080167c0        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/dtmf.c.obj
+                0x080167bc        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/dtmf.c.obj
  .rodata.MENU_Key_UP_DOWN.str1.1
-                0x080167c6        0xf CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/menu.c.obj
+                0x080167c2        0xf CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/app/menu.c.obj
  .rodata.CSWTCH.17
-                0x080167c6       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/audio.c.obj
+                0x080167c2       0x10 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/audio.c.obj
  .rodata.BITMAP_PowerUser
-                0x080167d6        0x3 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080167d6                BITMAP_PowerUser
+                0x080167d2        0x3 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080167d2                BITMAP_PowerUser
  .rodata.BITMAP_compand
-                0x080167d9        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080167d9                BITMAP_compand
+                0x080167d5        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080167d5                BITMAP_compand
  .rodata.BITMAP_ScanListAll
-                0x080167df       0x13 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080167df                BITMAP_ScanListAll
+                0x080167db       0x13 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080167db                BITMAP_ScanListAll
  .rodata.BITMAP_ScanList123
-                0x080167f2       0x13 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080167f2                BITMAP_ScanList123
+                0x080167ee       0x13 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080167ee                BITMAP_ScanList123
  .rodata.BITMAP_ScanListE
-                0x08016805        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016805                BITMAP_ScanListE
+                0x08016801        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016801                BITMAP_ScanListE
  .rodata.BITMAP_ScanList3
-                0x0801680c        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801680c                BITMAP_ScanList3
+                0x08016808        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016808                BITMAP_ScanList3
  .rodata.BITMAP_ScanList2
-                0x08016813        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016813                BITMAP_ScanList2
+                0x0801680f        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801680f                BITMAP_ScanList2
  .rodata.BITMAP_ScanList1
-                0x0801681a        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801681a                BITMAP_ScanList1
+                0x08016816        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016816                BITMAP_ScanList1
  .rodata.BITMAP_ScanList0
-                0x08016821        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016821                BITMAP_ScanList0
+                0x0801681d        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801681d                BITMAP_ScanList0
+ .rodata.BITMAP_TX
+                0x08016824        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016824                BITMAP_TX
+ .rodata.BITMAP_RX
+                0x08016829        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016829                BITMAP_RX
  .rodata.BITMAP_VFO_NotDefault
-                0x08016828        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016828                BITMAP_VFO_NotDefault
+                0x0801682e        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801682e                BITMAP_VFO_NotDefault
  .rodata.BITMAP_VFO_Default
-                0x0801682f        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801682f                BITMAP_VFO_Default
+                0x08016833        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016833                BITMAP_VFO_Default
  .rodata.BITMAP_VFO_Lock
-                0x08016836        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016836                BITMAP_VFO_Lock
+                0x08016838        0x7 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016838                BITMAP_VFO_Lock
  .rodata.BITMAP_Antenna
-                0x0801683d        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801683d                BITMAP_Antenna
+                0x0801683f        0x5 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801683f                BITMAP_Antenna
  .rodata.gFontVox
-                0x08016842        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016842                gFontVox
+                0x08016844        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016844                gFontVox
  .rodata.BITMAP_BatteryLevel1
-                0x0801684e       0x11 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801684e                BITMAP_BatteryLevel1
+                0x08016850       0x11 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016850                BITMAP_BatteryLevel1
  .rodata.BITMAP_BatteryLevel
-                0x0801685f        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801685f                BITMAP_BatteryLevel
+                0x08016861        0x2 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016861                BITMAP_BatteryLevel
  .rodata.gFontHold
-                0x08016861        0xa CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016861                gFontHold
+                0x08016863        0xa CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016863                gFontHold
  .rodata.gFontRO
-                0x0801686b        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x0801686b                gFontRO
+                0x0801686d        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801686d                gFontRO
  .rodata.gFontDWR
-                0x08016877       0x12 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016877                gFontDWR
+                0x08016879       0x12 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016879                gFontDWR
  .rodata.gFontMO
-                0x08016889        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016889                gFontMO
+                0x0801688b        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x0801688b                gFontMO
  .rodata.gFontXB
-                0x08016895        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x08016895                gFontXB
+                0x08016897        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x08016897                gFontXB
  .rodata.gFontMute
-                0x080168a1        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080168a1                gFontMute
+                0x080168a3        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080168a3                gFontMute
  .rodata.gFontLight
-                0x080168ad        0x9 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080168ad                gFontLight
+                0x080168af        0x9 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080168af                gFontLight
  .rodata.gFontKeyLock
-                0x080168b6        0x9 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080168b6                gFontKeyLock
+                0x080168b8        0x9 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080168b8                gFontKeyLock
  .rodata.gFontS
-                0x080168bf        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080168bf                gFontS
+                0x080168c1        0x6 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080168c1                gFontS
  .rodata.gFontF
-                0x080168c5        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080168c5                gFontF
+                0x080168c7        0x8 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080168c7                gFontF
  .rodata.gFontPttClassic
-                0x080168cd        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080168cd                gFontPttClassic
+                0x080168cf        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080168cf                gFontPttClassic
  .rodata.gFontPttOnePush
-                0x080168d9        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080168d9                gFontPttOnePush
+                0x080168db        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080168db                gFontPttOnePush
  .rodata.gFontPowerSave
-                0x080168e5        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
-                0x080168e5                gFontPowerSave
- *fill*         0x080168f1        0x1 
+                0x080168e7        0xc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/bitmaps.c.obj
+                0x080168e7                gFontPowerSave
+ *fill*         0x080168f3        0x1 
  .rodata.DCS_Options
-                0x080168f2       0xd0 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/dcs.c.obj
-                0x080168f2                DCS_Options
+                0x080168f4       0xd0 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/dcs.c.obj
+                0x080168f4                DCS_Options
  .rodata.CTCSS_Options
-                0x080169c2       0x64 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/dcs.c.obj
-                0x080169c2                CTCSS_Options
+                0x080169c4       0x64 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/dcs.c.obj
+                0x080169c4                CTCSS_Options
  .rodata.gFont3x5
-                0x08016a26      0x120 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
-                0x08016a26                gFont3x5
+                0x08016a28      0x120 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
+                0x08016a28                gFont3x5
  .rodata.gFontSmallBold
-                0x08016b46      0x234 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
-                0x08016b46                gFontSmallBold
+                0x08016b48      0x234 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
+                0x08016b48                gFontSmallBold
  .rodata.gFontSmall
-                0x08016d7a      0x234 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
-                0x08016d7a                gFontSmall
+                0x08016d7c      0x234 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
+                0x08016d7c                gFontSmall
  .rodata.gFontBigDigits
-                0x08016fae       0xdc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
-                0x08016fae                gFontBigDigits
+                0x08016fb0       0xdc CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
+                0x08016fb0                gFontBigDigits
  .rodata.gFontBig
-                0x0801708a      0x524 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
-                0x0801708a                gFontBig
+                0x0801708c      0x524 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/font.c.obj
+                0x0801708c                gFontBig
  .rodata.StepSortedIndexes
-                0x080175ae       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
-                0x080175ae                StepSortedIndexes
+                0x080175b0       0x18 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
+                0x080175b0                StepSortedIndexes
  .rodata.gStepFrequencyTable
-                0x080175c6       0x30 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
-                0x080175c6                gStepFrequencyTable
- *fill*         0x080175f6        0x2 
+                0x080175c8       0x30 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
+                0x080175c8                gStepFrequencyTable
  .rodata.frequencyBandTable
                 0x080175f8       0x38 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/frequencies.c.obj
                 0x080175f8                frequencyBandTable
@@ -2823,9 +2827,9 @@ LOAD /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtn.o
  .rodata.UI_DisplayPopup.str1.1
                 0x0801772c        0xb CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/helper.c.obj
  .rodata.DisplayRSSIBar.str1.1
-                0x0801772c       0x1d CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
+                0x0801772c       0x1a CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
  .rodata.UI_DisplayMain.str1.1
-                0x0801772c       0xa1 CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
+                0x0801772c       0x9e CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
  .rodata.str1.1
                 0x0801772c       0x4b CMakeFiles/n7six.ApeX-k1.v7.6.5br1.dir/App/ui/main.c.obj
  .rodata.dBmCorrTable
