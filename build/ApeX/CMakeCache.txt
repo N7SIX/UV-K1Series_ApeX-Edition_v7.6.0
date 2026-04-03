@@ -245,6 +245,9 @@ ENABLE_AM_FIX_SHOW_DATA:BOOL=FALSE
 ENABLE_AUDIO_BAR:BOOL=TRUE
 
 //No help, variable specified on the command line.
+ENABLE_AUDIO_SPECTRUM:BOOL=TRUE
+
+//No help, variable specified on the command line.
 ENABLE_BIG_FREQ:BOOL=TRUE
 
 //No help, variable specified on the command line.

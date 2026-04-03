@@ -56,6 +56,9 @@
  #include "am_fix.h"
  #include "app/spectrum.h"
  #include "audio.h"
+#ifdef ENABLE_AUDIO_SPECTRUM
+#include "app/audio_spectrum.h"
+#endif
  #include "frequencies.h"
  #include "functions.h"
  #include "main.h"
@@ -100,6 +103,10 @@ static uint16_t GetDisplayWidth(void);
 static void MarkSpectrumSettingsDirty(void);
 static void ServiceSpectrumSettingsAutosave(void);
 static void ResetPeakHold(void);
+#ifdef ENABLE_AUDIO_SPECTRUM
+static bool TryUpdateAudioSpectrum(void);
+static void ToggleSpectrumDisplayMode(void);
+#endif
  
  // =============================================================================
  // CONSTANTS AND CONFIGURATION
@@ -700,6 +707,9 @@ static uint32_t GetCentroidFrequency()
         ToggleAFDAC(true);
         ToggleAFBit(true);
         SetBandLed(fMeasure, false, true);
+    #ifdef ENABLE_AUDIO_SPECTRUM
+        AUDIO_SPECTRUM_Enable(true);
+    #endif
     #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
         listenT = settings.listenTScan;
         BK4819_WriteRegister(0x43, listenBWRegValues[settings.listenBw]);
@@ -707,6 +717,9 @@ static uint32_t GetCentroidFrequency()
     #endif
     }
     else {
+#ifdef ENABLE_AUDIO_SPECTRUM
+        AUDIO_SPECTRUM_Enable(false);
+#endif
         ToggleAudio(false);
         ToggleAFDAC(false);
         ToggleAFBit(false);
@@ -1923,6 +1936,11 @@ static void DrawF(uint32_t f)
     sprintf(String, "%4sk", bwOptions[settings.listenBw]);
     GUI_DisplaySmallest(String, 108, 6, false, true);
 
+#ifdef ENABLE_AUDIO_SPECTRUM
+    sprintf(String, "%2s", (AUDIO_SPECTRUM_GetMode() == SPECTRUM_MODE_AUDIO) ? "AF" : "RF");
+    GUI_DisplaySmallest(String, 116, 12, false, true);
+#endif
+
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
     ShowChannelName(f);
 #endif
@@ -2166,7 +2184,15 @@ static void OnKeyDown(uint8_t key, bool longPress)
         TuneToPeak();
         break;
     case KEY_MENU:
+#ifdef ENABLE_AUDIO_SPECTRUM
+        if (longPress) {
+            ToggleSpectrumDisplayMode();
+        } else {
+            TogglePeakHold();
+        }
+#else
         TogglePeakHold();
+#endif
         break;
         case KEY_EXIT:
         // if the user hits EXIT while a scan range is active, clear it and
@@ -2648,16 +2674,22 @@ static bool HandleUserInput()
         
         // INSTANT TRIGGER AT THRESHOLD (Long Press)
         // --- HandleUserInput() ---
-        if (kbd.counter == 16 && kbd.current == KEY_5)
+        if (kbd.counter == 16)
         {
-            settings.useTicksGrid = !settings.useTicksGrid;
-            
-            // toastMessage = settings.useTicksGrid ? "GRID MODE" : "CLEAR"; // <-- COMMENT OUT
-            // messageTimer = 30;                                           // <-- COMMENT OUT
-            
-            redrawScreen = true;
-            kbd.counter = 17; 
-            return true;
+            if (kbd.current == KEY_5)
+            {
+                settings.useTicksGrid = !settings.useTicksGrid;
+                redrawScreen = true;
+                kbd.counter = 17;
+                return true;
+            }
+
+            if (kbd.current == KEY_MENU)
+            {
+                OnKeyDown(KEY_MENU, true);
+                kbd.counter = 17;
+                return true;
+            }
         }
         SYSTEM_DelayMs(20);
     }
@@ -2669,12 +2701,16 @@ static bool HandleUserInput()
         {
             OnKeyDown(KEY_5, false);
         }
+        if (kbd.prev == KEY_MENU && kbd.counter >= 3 && kbd.counter < 16)
+        {
+            OnKeyDown(KEY_MENU, false);
+        }
         kbd.counter = 0;
     }
 
     // --- OTHER KEYS ---
-    // Handle all other keys at counter 3, excluding KEY_5
-    if (kbd.counter == 3 && kbd.current != KEY_5)
+    // Handle all other keys at counter 3, excluding keys with custom press/release handling
+    if (kbd.counter == 3 && kbd.current != KEY_5 && kbd.current != KEY_MENU)
     {
         switch (currentState) {
             case SPECTRUM:    OnKeyDown(kbd.current, false); break;
@@ -2815,9 +2851,98 @@ static void UpdateStill()
 // Noise persistence array for smoothed grass generation
 static uint16_t noisePersistence[128]; 
 
+#ifdef ENABLE_AUDIO_SPECTRUM
+static void ToggleSpectrumDisplayMode(void)
+{
+    SpectrumMode_t mode = AUDIO_SPECTRUM_GetMode();
+    if (mode == SPECTRUM_MODE_AUDIO) {
+        AUDIO_SPECTRUM_SetMode(SPECTRUM_MODE_RF);
+    } else {
+        AUDIO_SPECTRUM_SetMode(SPECTRUM_MODE_AUDIO);
+        AUDIO_SPECTRUM_ResetPeaks();
+    }
+
+    memset(rssiHistory, 0, sizeof(rssiHistory));
+    memset(smoothedRssi, 0, sizeof(smoothedRssi));
+    redrawStatus = true;
+    redrawScreen = true;
+}
+
+static bool TryUpdateAudioSpectrum(void)
+{
+    if (AUDIO_SPECTRUM_GetMode() != SPECTRUM_MODE_AUDIO) {
+        return false;
+    }
+
+    uint16_t binCount = 0;
+    AUDIO_SPECTRUM_Process();
+    const uint8_t *bins = AUDIO_SPECTRUM_GetMagnitudes(&binCount);
+    if (bins == NULL || binCount == 0) {
+        return false;
+    }
+
+    uint16_t bars = GetDisplayWidth();
+    if (bars == 0) {
+        return false;
+    }
+
+    if (bars == 1) {
+        rssiHistory[0] = scanInfo.rssiMin;
+        peak.i = 0;
+        RecomputeSmoothedTrace(1);
+        UpdateWaterfall();
+        return true;
+    }
+
+    uint16_t traceFloor = dbm2rssi(settings.dbMin + 6);
+    uint16_t traceCeil = dbm2rssi(settings.dbMax - 6);
+    uint16_t span = (traceCeil > traceFloor) ? (traceCeil - traceFloor) : 1;
+    uint16_t peakLocal = 0;
+    uint8_t peakIndex = 0;
+
+    for (uint16_t i = 0; i < bars; i++) {
+        uint16_t src = (uint16_t)((i * (binCount - 1U)) / (bars - 1U));
+        uint16_t mag = bins[src];
+
+        // Gate low-level hiss and apply quadratic shaping for cleaner peaks.
+        if (mag < 6U) {
+            mag = 0;
+        } else {
+            mag -= 6U;
+        }
+        uint16_t shaped = (uint16_t)(((uint32_t)mag * (uint32_t)mag + 255U) >> 8);
+        uint16_t value = traceFloor + (uint16_t)(((uint32_t)shaped * span) / 255U);
+
+        // Keep any active AF energy slightly above the floor so the line does
+        // not collapse into the ruler while still preserving dynamics.
+        if (mag != 0U && value < (traceFloor + 4U)) {
+            value = traceFloor + 4U;
+        }
+
+        rssiHistory[i] = value;
+        if (value > peakLocal) {
+            peakLocal = value;
+            peakIndex = i;
+        }
+    }
+
+    if (bars < SPECTRUM_MAX_STEPS) {
+        memset(&rssiHistory[bars], 0, (SPECTRUM_MAX_STEPS - bars) * sizeof(rssiHistory[0]));
+    }
+
+    // Keep `peak.rssi` sourced from Measure() so RX hold/squelch decisions
+    // continue to use RF-level strength, not AF-bin magnitudes.
+    peak.i = peakIndex;
+    RecomputeSmoothedTrace(bars);
+    UpdateWaterfall();
+    return true;
+}
+#endif
+
 static void UpdateListening()
 {
     preventKeypress = false;
+    static uint8_t afRxActivity = 0;
     
     // --- 1. HANDLE TIMERS & TAIL DETECTION ---
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
@@ -2847,7 +2972,23 @@ static void UpdateListening()
     // --- 2. ALWAYS-ON MEASUREMENT / QUICK WATERFALL ---
     Measure();                    // read RSSI every tick
     peak.rssi = scanInfo.rssi;
+#ifdef ENABLE_AUDIO_SPECTRUM
+    if (currentState == SPECTRUM && AUDIO_SPECTRUM_GetMode() == SPECTRUM_MODE_AUDIO) {
+        // AF mode: TryUpdateAudioSpectrum() calls UpdateWaterfall() itself.
+        // Skip UpdateWaterfallQuick() to prevent double-advancement
+        // (one empty row + one data row per tick) that breaks the waterfall.
+        uint8_t af = BK4819_GetAfTxRx();
+        afRxActivity = (uint8_t)((afRxActivity * 3U + af) >> 2);
+        if (TryUpdateAudioSpectrum()) {
+            redrawScreen = true;
+        }
+    } else {
+        UpdateWaterfallQuick();   // RF mode: advance waterfall pointer each tick
+        afRxActivity = 0;
+    }
+#else
     UpdateWaterfallQuick();       // keep the waterfall moving
+#endif
     
     // NOTE (Issue #2): Removed continuous listening-mode auto-adjust that was conflicting
     // with manual threshold adjustments. The AutoTriggerLevel() called during spectrum
@@ -2864,6 +3005,10 @@ static void UpdateListening()
         // --- 4. LIVE WATERFALL & SPECTRUM PULSING (heavy path) ---
         if (currentState == SPECTRUM) 
         {
+#ifdef ENABLE_AUDIO_SPECTRUM
+            if (AUDIO_SPECTRUM_GetMode() != SPECTRUM_MODE_AUDIO)
+#endif
+            {
             // --- RX AUDIO ENVELOPE HEARTBEAT ---
             // Sample RX audio envelope (0..63) from BK4819
             uint8_t rxAudioLevel = BK4819_GetAfTxRx();
@@ -2900,15 +3045,36 @@ static void UpdateListening()
             RecomputeSmoothedTrace(GetDisplayWidth());
             UpdateWaterfall(); 
             redrawScreen = true; 
+            }
         }
         // --- 5. SQUELCH / STATE MANAGEMENT ---
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
+#ifdef ENABLE_AUDIO_SPECTRUM
+        if (AUDIO_SPECTRUM_GetMode() == SPECTRUM_MODE_AUDIO)
+        {
+            if ((afRxActivity > 1U) || (IsPeakOverLevel() && !tailFound) || monitorMode)
+            {
+                listenT = settings.listenTScan;
+                return;
+            }
+        }
+#endif
         if ((IsPeakOverLevel() && !tailFound) || monitorMode)
         {
             listenT = settings.listenTScan;
             return;
         }
 #else
+#ifdef ENABLE_AUDIO_SPECTRUM
+        if (AUDIO_SPECTRUM_GetMode() == SPECTRUM_MODE_AUDIO)
+        {
+            if ((afRxActivity > 1U) || IsPeakOverLevel() || monitorMode)
+            {
+                listenT = settings.listenTStill;
+                return;
+            }
+        }
+#endif
         if (IsPeakOverLevel() || monitorMode)
         {
             listenT = settings.listenTStill;
@@ -3095,6 +3261,11 @@ void APP_RunSpectrum(void)
 #endif
 
     BackupRegisters();
+
+#ifdef ENABLE_AUDIO_SPECTRUM
+    AUDIO_SPECTRUM_Init(NULL);
+    AUDIO_SPECTRUM_SetMode(SPECTRUM_MODE_RF);
+#endif
 
     isListening = true; 
     redrawStatus = true;
