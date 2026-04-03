@@ -98,7 +98,7 @@ Core keypad behavior depends on current mode.
 
 Global/common:
 - UP/DOWN: tune or move selection
-- MENU: enter or confirm (context dependent)
+- MENU: toggle peak hold on/off in scan mode; cycles register-tuning pages in Still mode
 - EXIT: back/cancel/close mode
 - F: function modifier
 - PTT: transmit (context dependent)
@@ -160,7 +160,7 @@ Current behavior highlights:
 - Channel name support during listening contexts (when available)
 
 Important current-state note:
-- Peak-hold overlay visualization has been removed for cleaner real-time trace readability.
+- Peak-hold overlay is **active** in this build. Toggle with `MENU` in scan mode (`PH` shown in status bar). Dotted line decays and fully fades ~5 seconds after a signal goes inactive.
 
 ### Spectrum Controls (Current Implementation)
 
@@ -176,6 +176,7 @@ In Spectrum state:
 - 5: open frequency input
 - SIDE1: blacklist function
 - SIDE2: backlight toggle
+- MENU: toggle peak hold (scan mode); cycles register-tuning pages (Still mode)
 - EXIT: leave spectrum (saves settings)
 
 In Still state:
@@ -187,7 +188,7 @@ In Still state:
 
 Three distinct spectrum controls:
 1. Scan step (for example 25.00k / 50.00k / 100.00k)
-2. Frequency movement offset (displayed as plus/minus k value)
+2. Frequency movement offset (displayed as plus/minus k value; capped at ±2500.00k)
 3. Horizontal resolution multiplier (16x to 128x display density behavior)
 
 What they affect:
@@ -303,7 +304,8 @@ Removed from current spectrum implementation:
 - Contest marker overlays
 - DX marker overlays
 - Digital mode marker overlays
-- Legacy peak-hold dashed overlay visualization
+
+(Peak-hold dashed line was previously removed but has been re-implemented as a decaying dotted overlay. See Spectrum Controls section.)
 
 Why removed:
 - Cleaner visual interpretation
@@ -412,7 +414,7 @@ Software architecture:
 | `6` | Cycle listen bandwidth (25k → 12.5k → 6.25k) |
 | `★` | RSSI trigger level — raise |
 | `F` | RSSI trigger level — lower |
-| `MENU` | (no action in scan mode) |
+| `MENU` | Toggle peak hold on/off (`PH` shown in status bar when active) |
 | `EXIT` | Exit spectrum analyzer → return to main VFO |
 
 ### Still Mode Keys
@@ -479,6 +481,9 @@ All spectrum settings are stored at EEPROM address `0x1E80` (20 bytes, last byte
   - Removed outdated peak-hold-overlay and contest-marker guidance.
   - Aligned modulation, bandwidth, and autosave behavior documentation with current implementation.
   - Added Appendix A (key reference) and Appendix B (EEPROM storage map) derived from source.
+  - Updated for peak hold re-introduction: decaying dotted overlay, KEY_MENU toggle, PH status indicator.
+  - Corrected frequency shift step cap (±2500.00k max, ±1000.00k first-boot default).
+  - Updated Removed Features section: peak hold is no longer removed.
 
 - March 2026 and earlier
   - Prior drafts included legacy visualization and transitional feature notes.

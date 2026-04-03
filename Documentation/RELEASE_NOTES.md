@@ -19,6 +19,14 @@ License: Apache License, Version 2.0
 **Build Variant:** ApeX Edition (all-in-one; all features included)  
 **MCU Platform:** PY32F071 (ARM Cortex-M0+)
 
+### April 2026 — Spectrum Peak Hold, Frequency Step Limits & Runtime Refinements
+
+This update adds the peak hold feature to the spectrum analyzer, reduces the frequency shift step cap to a sensible range, and tunes the decay timing.
+
+- Added decaying peak hold overlay to spectrum scan mode. `KEY_MENU` toggles on/off. Active signal bins refresh their held maximum; inactive bins decay at a fixed rate and fully fade after approximately 5 seconds. `PH` indicator shown in status bar when active.
+- Frequency shift step (KEY_2/KEY_8) hard cap reduced from ±6000.00k to **±2500.00k**; first-boot default reduced from ±6000.00k to **±1000.00k**. EEPROM clamp updated to match.
+- Fixed misleading comment on `frequencyChangeStep` default value.
+
 ### April 2026 — Spectrum Runtime Reliability & UX Consistency Update
 
 This maintenance update refines Spectrum behavior for real-world operation and persistent user experience consistency.

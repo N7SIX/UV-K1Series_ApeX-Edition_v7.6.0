@@ -14,7 +14,7 @@ License: Apache License, Version 2.0
 **Firmware:** v7.6.4br3+ (v7.6.0+ supported; range alignment fixed in v7.6.4br3)  
 **Document Version:** 1.2 (Updated April 3, 2026)
 
-**April 2026 Note:** Peak-hold overlay visualization has been removed in current Spectrum builds for cleaner live-trace readability. Any legacy "peak-hold dashed line" references in older sections should be treated as historical behavior.
+**April 2026 Note:** Peak-hold overlay is **active** in current builds. `KEY_MENU` in scan mode toggles it on/off. The dotted line decays and fully fades approximately 5 seconds after a signal goes inactive. `PH` appears in the status bar when enabled. Maximum frequency shift step is now capped at ±2500.00k (first-boot default ±1000.00k).
 
 ---
 
@@ -68,7 +68,7 @@ Unlike traditional radio "S-meter" which shows one frequency, the spectrum analy
 **Core capabilities for RF signal analysis:**
 
 - **Real-time Signal Display**: Live spectrum visualization with waterfall history
-- **Clean Live Trace**: No peak-hold overlay; direct view of active signal movement
+- **Decaying Peak Hold**: optional dotted-line overlay (KEY_MENU); fades ~5 s after signal ends
 - **RSSI Measurement**: Signal strength indicators in dBm and S-units  
 - **Configurable Scanning**: Adjust step size and frequency range
 - **Modulation Display**: Current operating mode (FM/USB/LSB)
@@ -111,7 +111,7 @@ Result: Radio begins sweeping through frequency range
 ### Step 4: Interpret What You See
 - **Blue trace peaks** = Strong signals
 - **Flat baseline** = Noise floor
-- **Dashed line above** = Peak history (peak hold)
+- **Dashed/dotted line above** = Peak history (peak hold — toggle with MENU, fades ~5 s after signal ends)
 - **Waterfall scrolling** = Real-time activity
 
 ### Step 5: Stop Scanning
@@ -324,7 +324,7 @@ S0  S1  S2  S3  S4  S5  S6  S7  S8  S9  +10  +20
 | **[0]** | Toggle modulation (FM/USB/LSB) |
 | **[3]** | Adjust maximum dB range |
 | **[9]** | Adjust minimum dB range |
-| **[MENU]** | Return to main display |
+| **[MENU]** | Toggle peak hold on/off (`PH` shown in status bar when active) |
 
 **Frequency Display Examples:**
 
@@ -393,7 +393,7 @@ Up/down stepping         (Listen mode)        Waterfall shows activity
 ```
 [EXIT]          Resume scanning (exit listen mode)
 [UP]/[DOWN]     Manually step frequency (within scan range)
-[MENU]          Open settings
+[MENU]          Open settings (Still mode only; scan-mode MENU = peak hold toggle)
 ```
 
 ---
@@ -579,21 +579,21 @@ RESULT: RF path behavior documented! 📉
 
 ```
 SETUP:
-  • Enable peak hold (should be ON by default)
+  • Press [MENU] in scan mode to enable peak hold (PH shown in status bar)
   • Set DBMin to -130 dBm (maximum sensitivity)
-  • Start scanning via [* SCAN]
-  • Walk away or let scan run unattended
+  • Start scanning and let it run unattended
 
 DETECTION:
   Current trace:    Only noise visible
-  Peak hold line:   Shows historical max even if signal ended
+  Peak hold line:   Dotted line shows historical max even after signal ends
   Waterfall:        Vertical "flash" shows TX burst time
+  Fade behavior:    Dotted line decays to zero ~5 s after signal stops
   
 Result: Even if you missed the live signal,
-        peak hold shows it was there! 👻
+        peak hold shows it was there and where it was!
 
 STEP 2: IDENTIFY EXACT FREQUENCY
-  • Use peak hold position to identify frequency
+  • Use peak hold dotted line position to identify frequency
   • May require retuning to narrow down
   • Note on waterfall when bursts occur (timing pattern)
   • Verify with audio monitoring
@@ -877,30 +877,23 @@ STEP 3: Reload spectrum
 
 ---
 
-### ❓ Problem: Peak Hold Disappears Instantly
+### ❓ Problem: Peak Hold Dotted Line Not Visible
 
 **Explanation:**
 
 ```
-BEHAVIOR: Peak hold present, then vanishes when signal ends
+CHECK 1: Is peak hold enabled?
+  → Press [MENU] in scan mode to toggle.
+  → Status bar shows "PH" when active.
 
-This is EXPECTED! Here's why:
+CHECK 2: Has the signal faded?
+  → Peak hold decays at a fixed rate per sweep.
+  → Full fade takes approximately 5 seconds after signal ends.
+  → This is intentional — stale history clears automatically.
 
-Peak hold formula: peakHold = (peakHold * 7/8) + (currentSignal * 1/8)
-
-When signal present (e.g., 80 dB):
-  peakHold = (80 * 7/8) + (80 * 1/8) = 80  ✓ Stays high
-
-When signal ends (= 0 dB):
-  peakHold = (80 * 7/8) + (0 * 1/8) = 70   → Decays gradually
-              ↓ next cycle
-  peakHold = (70 * 7/8) + (0 * 1/8) = 61   → More decay
-  ...after ~30 seconds → reaches baseline ~= 0
-
-SOLUTION: Keep signal present to hold peak
-  • Don't press [EXIT] immediately
-  • Let waterfall scroll to show activity
-  • New signal will show new peak hold
+CHECK 3: Was a signal ever seen?
+  → Peak hold only shows where a signal exceeded the noise floor.
+  → If no signal has been received since enabling, nothing to show yet.
 ```
 
 ---
@@ -1028,7 +1021,7 @@ ZOOM IN:              [F] + step down
 ZOOM OUT:             [F] + step up
 ADJUST SQUELCH:       [F] + [UP]/[DOWN]
 BLACKLIST FREQ:       [SIDE1] during scan
-MENU:                 [MENU]
+PEAK HOLD:            [MENU] (scan mode; PH shown in status bar)
 LISTEN MODE:          Auto (when signal detected)
 EXIT LISTEN:          [EXIT]
 ```

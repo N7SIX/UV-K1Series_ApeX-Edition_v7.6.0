@@ -8,6 +8,40 @@ License: Apache License, Version 2.0
 -->
 
 ---
+## Spectrum Peak Hold, Frequency Step Limits & Decay Tuning (April 3, 2026)
+
+**SCOPE:** New peak hold feature in spectrum scan mode, frequency shift step cap reduction, and dotted-line decay timing.
+
+### Core Firmware Changes
+
+1. **Peak Hold Feature (Scan Mode)**
+   - Added `peakHoldRssi[128]` per-column maximum buffer.
+   - `KEY_MENU` in scan mode toggles peak hold on/off (previously a no-op).
+   - Active: dotted line (even columns) displayed at per-bin maximum above live trace.
+   - Status bar shows `PH` label while peak hold is active.
+   - Decaying: any bin without an active signal loses `PEAK_HOLD_DECAY_STEP` RSSI units per sweep (~5 second full fade at nominal scan rate).
+   - Frequency change / `RelaunchScan()` clears the peak hold buffer so stale data never persists across a retune.
+
+2. **Frequency Shift Step Limits Reduced**
+   - Default (first-boot) step lowered from ±6000.00k to **±1000.00k**.
+   - Hard runtime cap lowered from 6000.00k to **±2500.00k**.
+   - EEPROM restore clamp updated to match (>250000 → fallback to 100000).
+   - Prevents a single keypress from jumping most of the visible scan span.
+
+3. **Decay Tuning**
+   - `PEAK_HOLD_DECAY_STEP = 9` → approximately 5-second fade after signal goes inactive.
+
+### Documentation Updates
+
+- Updated `Documentation/COMMIT_MESSAGE.txt` (this file)
+- Updated `Documentation/RELEASE_NOTES.md` — April 2026 section revised
+- Updated `Documentation/v7.6.5_UPDATE_SUMMARY.md` — second addendum appended
+- Updated `Documentation/SPECTRUM_ANALYZER_GUIDE.md` — peak hold is live again, KEY_MENU documented, freq step values corrected
+- Updated `Documentation/Owner's Manual - ApeX Edition.md` — Appendix A and Removed Features section corrected
+
+**BUILD STATUS:** ✅ ApeX 84+ targets, RAM 88.87%, FLASH 71.14%
+
+---
 ## Spectrum UX/Persistence Professionalization (April 3, 2026)
 
 **SCOPE:** Spectrum analyzer display cleanliness, control consistency, and robust last-state persistence.

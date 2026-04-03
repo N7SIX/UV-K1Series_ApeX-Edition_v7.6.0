@@ -99,6 +99,7 @@ static void UpdateWaterfallQuick(void);
 static uint16_t GetDisplayWidth(void);
 static void MarkSpectrumSettingsDirty(void);
 static void ServiceSpectrumSettingsAutosave(void);
+static void ResetPeakHold(void);
  
  // =============================================================================
  // CONSTANTS AND CONFIGURATION
@@ -207,6 +208,10 @@ static const CalibrationPoint calTable[] = {
  static uint16_t smoothedRssi[SPECTRUM_MAX_STEPS];
 static bool frequencyRetuned = false;
 
+// Peak Hold: per-column maximum RSSI since last reset
+static uint16_t peakHoldRssi[SPECTRUM_MAX_STEPS];
+static bool peakHoldEnabled = false;
+
 // Spectrum meter background pattern (precomputed once)
 static uint8_t spectrumMeterBackground[121];
 static bool spectrumMeterBackgroundInit = false;
@@ -251,7 +256,7 @@ const uint8_t modTypeReg47Values[] = {1, 7, 5};
  SpectrumSettings settings = {
      .stepsCount = STEPS_64,
      .scanStepIndex = S_STEP_25_0kHz,
-     .frequencyChangeStep = 600000,  // Default to ±600.00K (600kHz)
+     .frequencyChangeStep = 100000,  // First-boot fallback: ±1000.00k (1 MHz); autosave restores user value thereafter
      .scanDelay = 3200,
      .rssiTriggerLevel = 150,
      .backlightState = true,
@@ -748,6 +753,7 @@ static void RelaunchScan() {
     // reset display->best measurement mapping
     for (uint8_t i = 0; i < SPECTRUM_MAX_STEPS; ++i) displayBestIndex[i] = 0xFF;
     memset(smoothedRssi, 0, sizeof(smoothedRssi));
+    ResetPeakHold();
 }
 
 static void UpdateScanInfo() {
@@ -900,9 +906,9 @@ static void UpdateScanInfo() {
                                     ((uint32_t)buffer[3] << 8) |
                                     ((uint32_t)buffer[4] << 16) |
                                     ((uint32_t)buffer[5] << 24);
-    if (settings.frequencyChangeStep < 10000 || settings.frequencyChangeStep > 600000) {
-         settings.frequencyChangeStep = 600000;  // Restore default
-     }
+    if (settings.frequencyChangeStep < 10000 || settings.frequencyChangeStep > 250000) {
+        settings.frequencyChangeStep = 100000;  // Out-of-range: revert to first-boot fallback
+    }
      
      settings.rssiTriggerLevel = (uint16_t)buffer[6] | ((uint16_t)buffer[7] << 8);
      
@@ -1177,6 +1183,58 @@ static void Measure()
     // No need to restore modulation here as we only read 
     // the state to ensure the measurement was valid.
 }
+// =============================================================================
+// PEAK HOLD
+// =============================================================================
+
+static void ResetPeakHold(void)
+{
+    memset(peakHoldRssi, 0, sizeof(peakHoldRssi));
+}
+
+/**
+ * @brief Update peak hold buffer from the current smoothed trace.
+ *
+ * Called once per complete scan sweep.
+ * - Bins where the live signal meets or exceeds the stored max are refreshed.
+ * - All other bins lose PEAK_HOLD_DECAY_STEP RSSI units, so the dotted line
+ *   visibly fades toward zero once a signal is no longer active.
+ */
+#define PEAK_HOLD_DECAY_STEP  9U   /* RSSI units subtracted per sweep (~5 s full fade) */
+static void UpdatePeakHold(void)
+{
+    if (!peakHoldEnabled) return;
+    uint16_t bars = GetDisplayWidth();
+    for (uint8_t i = 0; i < bars; i++) {
+        if (smoothedRssi[i] >= peakHoldRssi[i]) {
+            /* Active signal — refresh the held maximum */
+            peakHoldRssi[i] = smoothedRssi[i];
+        } else if (peakHoldRssi[i] > PEAK_HOLD_DECAY_STEP) {
+            /* No active signal — decay toward zero */
+            peakHoldRssi[i] -= PEAK_HOLD_DECAY_STEP;
+        } else {
+            peakHoldRssi[i] = 0;
+        }
+    }
+}
+
+/**
+ * @brief Toggle peak hold on/off.
+ *
+ * Enabling resets all stored peak data so stale history is never shown.
+ * Mapped to KEY_MENU in scan mode (previously a no-op).
+ */
+static void TogglePeakHold(void)
+{
+    peakHoldEnabled = !peakHoldEnabled;
+    if (peakHoldEnabled) {
+        ResetPeakHold();
+    }
+    redrawStatus = true;
+    redrawScreen = true;
+}
+
+// =============================================================================
 // Update things by keypress
 
 static uint16_t dbm2rssi(int dBm)
@@ -1318,10 +1376,10 @@ static void UpdateFreqChangeStep(bool inc)
         }
 
         // --- HARD CLAMP ---
-        // Ensure we never exceed 6000.00k (600,000 units @ 10Hz steps)
-        if (settings.frequencyChangeStep > 600000)
+        // Cap at ±2500.00k (2.5 MHz) — covers the widest 128-step scan in two hops.
+        if (settings.frequencyChangeStep > 250000)
         {
-            settings.frequencyChangeStep = 600000;
+            settings.frequencyChangeStep = 250000;
         }
 
         MarkSpectrumSettingsDirty();
@@ -1603,6 +1661,28 @@ uint8_t Rssi2Y(uint16_t rssi)
     // Adding 5 pixels here pushes the entire graph down to the ruler
     return (DrawingEndY + 4) - Rssi2PX(rssi, 0, DrawingEndY) + 1;
 }
+
+/**
+ * @brief Draw peak-hold trace as a dotted line above the live spectrum.
+ *
+ * Peak-hold pixels are drawn at every even display column so they are
+ * visually distinct from the solid live trace.
+ */
+static void DrawPeakHold(void)
+{
+    if (!peakHoldEnabled) return;
+    uint16_t bars = GetDisplayWidth();
+    extern uint8_t gFrameBuffer[7][128];
+    for (uint8_t i = 0; i < bars; i++) {
+        if (peakHoldRssi[i] == 0) continue;
+        uint8_t x = SpecIdxToX(i);
+        if (x & 1) continue;   // skip odd columns → dotted appearance
+        uint8_t y = Rssi2Y(peakHoldRssi[i]);
+        if (y < 64) {
+            gFrameBuffer[y >> 3][x] |= (uint8_t)(1u << (y & 7));
+        }
+    }
+}
 #ifdef ENABLE_FEAT_N7SIX
     // Deprecated: Use DrawSpectrumEnhanced() instead
     // This function is preserved for reference only
@@ -1620,6 +1700,11 @@ static void DrawStatus()
     sprintf(String, "%d/%ddBm", settings.dbMin, settings.dbMax);
 #endif
     GUI_DisplaySmallest(String, 0, 1, true, true);
+
+    // Show peak-hold active indicator
+    if (peakHoldEnabled) {
+        GUI_DisplaySmallest("PH", 0, 8, false, true);
+    }
 
     BOARD_ADC_GetBatteryInfo(&gBatteryVoltages[gBatteryCheckCounter++ % 4],
                              &gBatteryCurrent);
@@ -2081,6 +2166,7 @@ static void OnKeyDown(uint8_t key, bool longPress)
         TuneToPeak();
         break;
     case KEY_MENU:
+        TogglePeakHold();
         break;
         case KEY_EXIT:
         // if the user hits EXIT while a scan range is active, clear it and
@@ -2433,7 +2519,10 @@ static void RenderSpectrum(void)
     DrawArrow(SpecIdxToX(displayIdx));
     
     // This draws the "live" grass using smoothedRssi[]
-    DrawSpectrumEnhanced(); 
+    DrawSpectrumEnhanced();
+
+    // 3. DRAW PEAK-HOLD TRACE (dotted overlay, enabled with KEY_MENU)
+    DrawPeakHold();
     
     DrawRssiTriggerLevel();
     DrawF(GetCentroidFrequency());
@@ -2682,6 +2771,7 @@ static void UpdateScan()
     uint16_t bars = (scanInfo.measurementsCount > SPECTRUM_MAX_STEPS) ? SPECTRUM_MAX_STEPS : scanInfo.measurementsCount;
     RecomputeSmoothedTrace(bars);
 
+    UpdatePeakHold();        // Update peak-hold buffer from this sweep
     redrawScreen = true; // Now redraw using the pre-calculated smoothedRssi
     preventKeypress = false;
 
