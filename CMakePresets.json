@@ -69,6 +69,7 @@
                 "ENABLE_UART_RW_BK_REGS": false,
                 "ENABLE_NAVIG_LEFT_RIGHT": true,
                 "ENABLE_SWD": false,
+                "ENABLE_AUDIO_SPECTRUM": false,
                 "VERSION_STRING_1": "v0.22",
                 "VERSION_STRING_2": "v7.6.5br2"
             }
@@ -95,6 +96,7 @@
                 "ENABLE_FEAT_N7SIX_GMRS_FRS_MURS": true,
                 "ENABLE_FEAT_N7SIX_RESCUE_OPS": true,
                 "ENABLE_SWD": true,
+                "ENABLE_AUDIO_SPECTRUM": true,
                 "EDITION_STRING": "ApeX",
                 "TARGET": "n7six.ApeX-k1.v7.6.5br2"
             }

@@ -64,6 +64,10 @@
  #include "ui/main.h"
  #include "ui/ui.h"
  #include "app/main.h"
+
+#ifdef ENABLE_AUDIO_SPECTRUM
+#  include "app/audio_spectrum.h"
+#endif
  
  /**
  * @brief Local microsecond delay for Cortex-M0+ (approx 48MHz)
@@ -182,7 +186,18 @@ static const CalibrationPoint calTable[] = {
  bool preventKeypress = true;
  bool audioState = true;
  bool lockAGC = false;
- 
+
+#ifdef ENABLE_AUDIO_SPECTRUM
+/** True while audio FFT spectrum mode is active (F+MENU toggle). */
+static bool audioSpectrumActive = false;
+/**
+ * Countdown after KEY_F release: while > 0, the next KEY_MENU press will
+ * toggle audio spectrum mode instead of peak-hold.  Each Tick() decrements
+ * this by 1 (approx. 20 ms/tick → window ≈ 200 ms).
+ */
+static uint8_t fKeyRecentlyHeld = 0;
+#endif /* ENABLE_AUDIO_SPECTRUM */
+
  // State management
  State currentState = SPECTRUM;
  State previousState = SPECTRUM;
@@ -967,6 +982,15 @@ static void ServiceSpectrumSettingsAutosave(void)
 #endif
     spectrumSettingsDirty = false;
     spectrumSettingsAutosaveTicks = 0;
+
+#ifdef ENABLE_AUDIO_SPECTRUM
+    /* Ensure ADC is restored to battery mode when leaving spectrum */
+    if (audioSpectrumActive) {
+        audioSpectrumActive = false;
+        AUDIO_Spectrum_Stop();
+    }
+    fKeyRecentlyHeld = 0;
+#endif /* ENABLE_AUDIO_SPECTRUM */
      
      isInitialized = false;
      isListening = false;
@@ -1706,6 +1730,13 @@ static void DrawStatus()
         GUI_DisplaySmallest("PH", 0, 8, false, true);
     }
 
+#ifdef ENABLE_AUDIO_SPECTRUM
+    // Show audio FFT mode indicator when active
+    if (audioSpectrumActive) {
+        GUI_DisplaySmallest("AF", 18, 8, false, true);
+    }
+#endif /* ENABLE_AUDIO_SPECTRUM */
+
     BOARD_ADC_GetBatteryInfo(&gBatteryVoltages[gBatteryCheckCounter++ % 4],
                              &gBatteryCurrent);
 
@@ -2135,6 +2166,11 @@ static void OnKeyDown(uint8_t key, bool longPress)
         break;
     case KEY_F:
         UpdateRssiTriggerLevel(false);
+#ifdef ENABLE_AUDIO_SPECTRUM
+        /* Start the F+MENU combo window: pressing MENU within ~10 ticks
+         * (~200 ms) after KEY_F will toggle audio spectrum mode. */
+        fKeyRecentlyHeld = 10;
+#endif /* ENABLE_AUDIO_SPECTRUM */
         break;
         case KEY_5:
     // Use 'currentState' which is the standard variable for this firmware
@@ -2166,6 +2202,26 @@ static void OnKeyDown(uint8_t key, bool longPress)
         TuneToPeak();
         break;
     case KEY_MENU:
+#ifdef ENABLE_AUDIO_SPECTRUM
+        /* F+MENU combo: toggle audio spectrum mode when KEY_F was just released. */
+        if (fKeyRecentlyHeld > 0) {
+            fKeyRecentlyHeld = 0;
+            if (!audioSpectrumActive) {
+                /* Activate: hold current frequency, start ADC audio sampling */
+                audioSpectrumActive = true;
+                ToggleRX(true);    /* ensure RX audio path is enabled */
+                AUDIO_Spectrum_Start();
+            } else {
+                /* Deactivate: stop ADC, resume scanning */
+                audioSpectrumActive = false;
+                AUDIO_Spectrum_Stop();
+                RelaunchScan();
+            }
+            redrawStatus = true;
+            redrawScreen = true;
+            break;
+        }
+#endif /* ENABLE_AUDIO_SPECTRUM */
         TogglePeakHold();
         break;
         case KEY_EXIT:
@@ -2967,11 +3023,36 @@ static void Tick()
     {
         HandleUserInput();
     }
+
+#ifdef ENABLE_AUDIO_SPECTRUM
+    /* Decrement the F+MENU detection window counter on every tick. */
+    if (fKeyRecentlyHeld > 0) {
+        fKeyRecentlyHeld--;
+    }
+#endif /* ENABLE_AUDIO_SPECTRUM */
+
     if (newScanStart)
     {
         InitScan();
         newScanStart = false;
     }
+
+#ifdef ENABLE_AUDIO_SPECTRUM
+    if (audioSpectrumActive) {
+        /*
+         * Audio FFT mode: capture 128 ADC samples, run FFT, and write
+         * magnitudes into rssiHistory[].  Then update the smoothed trace
+         * and waterfall using the standard rendering pipeline.
+         * Normal RF scan / listen paths are bypassed while active.
+         */
+        uint16_t displayWidth = GetDisplayWidth();
+        if (AUDIO_Spectrum_ProcessPending(rssiHistory, displayWidth)) {
+            RecomputeSmoothedTrace(displayWidth);
+            UpdateWaterfall();
+            redrawScreen = true;
+        }
+    } else
+#endif /* ENABLE_AUDIO_SPECTRUM */
     if (isListening && currentState != FREQ_INPUT)
     {
         UpdateListening();
@@ -3128,6 +3209,12 @@ void APP_RunSpectrum(void)
 
     // Initialize cache-based meter background once
     InitSpectrumMeterBackground();
+
+#ifdef ENABLE_AUDIO_SPECTRUM
+    audioSpectrumActive = false;
+    fKeyRecentlyHeld    = 0;
+    AUDIO_Spectrum_Init();
+#endif /* ENABLE_AUDIO_SPECTRUM */
 
     isInitialized = true;
     while (isInitialized) { Tick(); }

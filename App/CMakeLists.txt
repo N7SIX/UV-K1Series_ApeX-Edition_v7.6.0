@@ -192,6 +192,9 @@ enable_feature(ENABLE_FEAT_N7SIX_SCREENSHOT
     screenshot.c
 )
 enable_feature(ENABLE_FEAT_N7SIX_SPECTRUM)
+enable_feature(ENABLE_AUDIO_SPECTRUM
+    app/audio_spectrum.c
+)
 enable_feature(ENABLE_FEAT_N7SIX_RX_TX_TIMER)
 enable_feature(ENABLE_FEAT_N7SIX_CHARGING_C)
 enable_feature(ENABLE_FEAT_N7SIX_SLEEP)
