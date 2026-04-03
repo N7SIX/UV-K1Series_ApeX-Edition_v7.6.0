@@ -57,7 +57,9 @@
 /** Number of output magnitude bins (FFT_SIZE / 2). */
 #define AUDIO_SPECTRUM_BIN_COUNT    (AUDIO_SPECTRUM_FFT_SIZE / 2U)
 
-/** Nominal target audio sample rate in Hz (used for documentation / Fs label). */
+/** Nominal target audio sample rate in Hz (documentation only; actual rate is
+ *  determined by ADC clock and sampling cycles ≈ 289 kHz with the default
+ *  41.5-cycle sample time at 12 MHz ADC clock). */
 #define AUDIO_SPECTRUM_SAMPLE_RATE  8000U
 
 /**

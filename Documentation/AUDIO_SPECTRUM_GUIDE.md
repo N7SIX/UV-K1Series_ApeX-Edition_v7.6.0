@@ -20,7 +20,7 @@ locked on one channel.
 | Fixed-point type | Q15 (16-bit signed integer)        |
 | Algorithm        | Radix-2 DIT Cooley-Tukey           |
 | ADC channel      | Default: ADC_IN9 (PB1) — see note  |
-| Nominal Fs       | ~8 kHz (ADC-clock limited)         |
+| Actual Fs        | ~289 kHz (ADC-clock limited; see §Frequency Axis) |
 
 ---
 

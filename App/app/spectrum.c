@@ -2168,7 +2168,8 @@ static void OnKeyDown(uint8_t key, bool longPress)
         UpdateRssiTriggerLevel(false);
 #ifdef ENABLE_AUDIO_SPECTRUM
         /* Start the F+MENU combo window: pressing MENU within ~10 ticks
-         * (~200 ms) after KEY_F will toggle audio spectrum mode. */
+         * (each Tick() ≈ 20 ms → ~200 ms window) after KEY_F will toggle
+         * audio spectrum mode. */
         fKeyRecentlyHeld = 10;
 #endif /* ENABLE_AUDIO_SPECTRUM */
         break;

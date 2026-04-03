@@ -303,7 +303,12 @@ static void adc_collect_samples(void)
         LL_ADC_ClearFlag_EOS(ADC1);
 
         uint16_t raw = LL_ADC_REG_ReadConversionData12(ADC1);
-        /* Centre around zero and scale to Q15 range */
+        /*
+         * Centre 12-bit ADC value (0…4095) around zero:
+         *   (4095 - 2048) * 8 =  15976  ≤ INT16_MAX (32767) ✓
+         *   (0    - 2048) * 8 = -16384  ≥ INT16_MIN (-32768) ✓
+         * No overflow possible for any valid 12-bit ADC output.
+         */
         fft_re[n] = (int16_t)(((int32_t)raw - 2048) * 8);
         fft_im[n] = 0;
     }
@@ -376,8 +381,13 @@ bool AUDIO_Spectrum_ProcessPending(uint16_t *rssiHistory_out, uint16_t numBins)
      */
     for (uint16_t col = 0; col < numBins; col++) {
         /*
-         * Select the FFT bin that best represents this display column.
-         * Skip bin 0 (DC) — use bins 1…63.
+         * Select the FFT bin for this display column.
+         * Bins are numbered 0…63; bin 0 is DC and is skipped.
+         * Mapping: col ∈ [0, numBins-1] → bin ∈ [1, 63].
+         *
+         * For the worst case (col = numBins-1, numBins = 64):
+         *   bin = 1 + (63 × 63) / 64 = 1 + 62 = 63  (integer division)
+         * → maximum bin index is always 63, never 64.  No out-of-bounds.
          */
         uint8_t bin = (uint8_t)(1u + (col * (AUDIO_SPECTRUM_BIN_COUNT - 1u))
                                       / numBins);
