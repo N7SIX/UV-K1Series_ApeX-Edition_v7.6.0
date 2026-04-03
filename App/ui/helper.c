@@ -311,6 +311,54 @@ static void sort(int16_t *a, int16_t *b)
         x += 4;
       }
     }
+
+    static const uint8_t gFont5x5[16][5] = {
+        {0x04, 0x0A, 0x11, 0x1F, 0x11}, // A
+        {0x1E, 0x11, 0x1E, 0x11, 0x1E}, // B
+        {0x11, 0x1B, 0x15, 0x11, 0x11}, // M
+        {0x11, 0x11, 0x0A, 0x0A, 0x04}, // V
+        {0x1F, 0x10, 0x1E, 0x10, 0x10}, // F
+        {0x0E, 0x11, 0x11, 0x11, 0x0E}, // O
+        {0x0E, 0x11, 0x11, 0x11, 0x0E}, // 0
+        {0x04, 0x0C, 0x04, 0x04, 0x0E}, // 1 (Flipped Hook to Left) {0x04, 0x06, 0x04, 0x04, 0x0E}, // 1
+        {0x0E, 0x11, 0x02, 0x04, 0x1F}, // 2
+        {0x0E, 0x11, 0x06, 0x11, 0x0E}, // 3
+        {0x02, 0x06, 0x0A, 0x1F, 0x02}, // 4
+        {0x1F, 0x10, 0x1E, 0x01, 0x1E}, // 5
+        {0x0E, 0x10, 0x1E, 0x11, 0x0E}, // 6
+        {0x1F, 0x01, 0x02, 0x04, 0x04}, // 7
+        {0x0E, 0x11, 0x0E, 0x11, 0x0E}, // 8
+        {0x0E, 0x11, 0x0F, 0x01, 0x0E}  // 9
+    };
+
+    void UI_Draw5x5Char(char c, uint8_t x, uint8_t y, bool fill) {
+        const uint8_t *glyph = NULL;
+        if (c == 'A') glyph = gFont5x5[0];
+        else if (c == 'B') glyph = gFont5x5[1];
+        else if (c == 'M') glyph = gFont5x5[2];
+        else if (c == 'V') glyph = gFont5x5[3];
+        else if (c == 'F') glyph = gFont5x5[4];
+        else if (c == 'O') glyph = gFont5x5[5];
+        else if (c >= '0' && c <= '9') glyph = gFont5x5[6 + (c - '0')];
+        if (!glyph) return;
+
+        for (int row = 0; row < 5; ++row) {
+            for (int col = 0; col < 5; ++col) {
+                bool pixelOn = (glyph[row] >> (4 - col)) & 1;
+                if (pixelOn) {
+                    PutPixel(x + col, y + row, fill);
+                }
+            }
+        }
+    }
+
+    void UI_Draw5x5String(const char *pString, uint8_t x, uint8_t y, bool fill) {
+        while (*pString) {
+            UI_Draw5x5Char(*pString, x, y, fill);
+            x += 6; // 5 pixel char + 1 pixel spacing
+            pString++;
+        }
+    }
 #endif
     
 void UI_DrawLineBuffer(uint8_t (*buffer)[128], int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool black)
@@ -339,6 +387,18 @@ void UI_DrawRectangleBuffer(uint8_t (*buffer)[128], int16_t x1, int16_t y1, int1
     UI_DrawLineBuffer(buffer, x1,y1, x2,y1, black);
     UI_DrawLineBuffer(buffer, x2,y1, x2,y2, black);
     UI_DrawLineBuffer(buffer, x1,y2, x2,y2, black);
+}
+
+void UI_FillRectangleBuffer(uint8_t (*buffer)[128], int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool black)
+{
+    if (x1 > x2) { int16_t temp = x1; x1 = x2; x2 = temp; }
+    if (y1 > y2) { int16_t temp = y1; y1 = y2; y2 = temp; }
+
+    for (int16_t y = y1; y <= y2; y++) {
+        for (int16_t x = x1; x <= x2; x++) {
+            UI_DrawPixelBuffer(buffer, (uint8_t)x, (uint8_t)y, black);
+        }
+    }
 }
 
 

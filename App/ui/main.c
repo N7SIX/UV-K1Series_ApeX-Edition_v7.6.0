@@ -20,8 +20,23 @@
  * @project   ApeX Edition Enhancement
  * @author    Sean (N7SIX)
  * @version   v7.6.5
- * @brief     Main UI rendering logic and VFO state management.
- * @note      Modified to support custom VFO labels and enhanced frequency display for the ApeX Edition firmware.
+ * @brief     Main UI rendering logic for the radio display.
+ * 
+ * This module implements the core display rendering pipeline for the ApeX Edition firmware.
+ * It handles VFO state display, frequency rendering, modulation indicators, power levels,
+ * RSSI/audio bars, DTMF information, and various status indicators. The display is rendered
+ * to a 128x64 pixel LCD with support for both dual-VFO and main-only UI modes.
+ * 
+ * Key Features:
+ * - Dual VFO display with frequency, offset, bandwidth, and mode indicators
+ * - RSSI and audio level bars with configurable display modes
+ * - DTMF call state visualization and live decoder output
+ * - Battery level and charging status display
+ * - Scan range visualization and channel selection modes
+ * - AM fix data display (optional)
+ * - N7SIX exclusive features (single VFO mode, game mode indicators, etc.)
+ * 
+ * @note Modified to improve code organization and stability for the ApeX Edition.
  */
 
 #include <string.h>
@@ -45,8 +60,7 @@
 #include "ui/ui.h"
 #include "audio.h"
 
-const char * s = "";
-const char * t = ""; // Initialize it globally within the function
+#include "audio.h"
 
 #ifdef ENABLE_AM_FIX
     #include "am_fix.h"
@@ -56,60 +70,120 @@ const char * t = ""; // Initialize it globally within the function
     #include "driver/system.h"
 #endif
 
+// ============================================================================
+// SECTION: Display Configuration Constants
+// ============================================================================
+
+/** @brief Display coordinate and dimension constants for layout positioning */
+#define CENTER_LINE_Y                   3        /**< Y-coordinate for center line content */
+#define MAIN_ONLY_Y_LINE                2        /**< Y-coordinate for main-only mode display */
+#define MAIN_ONLY_SHIFT                 3        /**< Vertical shift for main-only mode */
+#define DISPLAY_FREQ_X_START            0        /**< X-coordinate for frequency display */
+#define BANDWIDTH_LINE_OFFSET           1        /**< Offset for bandwidth indicator */
+#define SMALL_FREQ_LINE_OFFSET          1        /**< Offset for small frequency display */
+#define SCANRNG_FREQ_LINE_OFFSET        1        /**< Offset for scan range frequency */
+
+// ============================================================================
+// SECTION: Global State and Variables
+// ============================================================================
+
+/** @brief Center line display type (RSSI bar, audio bar, DTMF info, etc.) */
 center_line_t center_line = CENTER_LINE_NONE;
 
+/** @brief dBm correction table for RSSI display per band */
+const int8_t dBmCorrTable[7] = {
+    -15,  // band 1
+    -25,  // band 2
+    -20,  // band 3
+    -4,   // band 4
+    -7,   // band 5
+    -6,   // band 6
+    -1    // band 7
+};
+
+/** @brief VFO state descriptions for display (BUSY, BAT LOW, TIMEOUT, etc.) */
+const char *VfoStateStr[] = {
+    [VFO_STATE_NORMAL]         = "",
+    [VFO_STATE_BUSY]           = "BUSY",
+    [VFO_STATE_BAT_LOW]        = "BAT LOW",
+    [VFO_STATE_TX_DISABLE]     = "TX DISABLE",
+    [VFO_STATE_TIMEOUT]        = "TIMEOUT",
+    [VFO_STATE_ALARM]          = "ALARM",
+    [VFO_STATE_VOLTAGE_HIGH]   = "VOLT HIGH"
+};
+
+// N7SIX Feature: Single VFO Mode Support
 #ifdef ENABLE_FEAT_N7SIX
+    /** @brief RX blink status flag for visual RX indication */
     static int8_t RxBlink;
+    
+    /** @brief RX blink LED state (0=off, 1=starting, 2=active) */
     static int8_t RxBlinkLed = 0;
+    
+    /** @brief RX blink animation counter */
     static int8_t RxBlinkLedCounter;
+    
+    /** @brief Display line for RX indicator */
     static int8_t RxLine;
+    
+    /** @brief Frequency of active RX VFO */
     static uint32_t RxOnVfofrequency;
 
+    /** @brief Flag: DTMF input active in main-only mode */
     bool isMainOnlyInputDTMF = false;
 
+    /**
+     * @brief Check if radio is in main-only mode (no dual-watch or cross-band RX/TX)
+     * @return true if in main-only mode, false otherwise
+     */
     static bool isMainOnly()
     {
         return (gEeprom.DUAL_WATCH == DUAL_WATCH_OFF) && (gEeprom.CROSS_BAND_RX_TX == CROSS_BAND_OFF);
     }
 #endif
 
-const int8_t dBmCorrTable[7] = {
-            -15, // band 1
-            -25, // band 2
-            -20, // band 3
-            -4, // band 4
-            -7, // band 5
-            -6, // band 6
-            -1  // band 7
-        };
+// ============================================================================
+// SECTION: Display Helper Functions - Bar Rendering
+// ============================================================================
 
-const char *VfoStateStr[] = {
-       [VFO_STATE_NORMAL]="",
-       [VFO_STATE_BUSY]="BUSY",
-       [VFO_STATE_BAT_LOW]="BAT LOW",
-       [VFO_STATE_TX_DISABLE]="TX DISABLE",
-       [VFO_STATE_TIMEOUT]="TIMEOUT",
-       [VFO_STATE_ALARM]="ALARM",
-       [VFO_STATE_VOLTAGE_HIGH]="VOLT HIGH"
-};
-
-// ***************************************************************************
-
+/**
+ * @brief Draw antenna icon with signal strength bars
+ * 
+ * Renders a small antenna symbol with 1-6 vertical bars indicating signal
+ * strength level. Used for RSSI display in compact form.
+ * 
+ * @param p     Pointer to single-byte display buffer for antenna icon
+ * @param level Signal level (0-6), clamped to safe range
+ */
 static void DrawSmallAntennaAndBars(uint8_t *p, unsigned int level)
 {
     if (level > 6)
         level = 6;
 
-    // Draw the original antenna icon (5 columns wide)
+    // Draw the original antenna icon (5 columns wide: pixels 0-4)
     memcpy(p, BITMAP_Antenna, ARRAY_SIZE(BITMAP_Antenna));
 
-    // Draw a level bar graph to the right of the icon
+    // Draw a level bar graph closer to the icon
+    // Original was: p[5 + i * 2]
+    // New: p[3 + i * 2] (Shifts everything 2 pixels left)
     for (uint8_t i = 1; i <= level; i++) {
         uint8_t bar = (0xff << (6 - i)) & 0x7F;
-        p[5 + i * 2] = bar;
+        
+        // Ensure we don't draw over the antenna pixels (0-4)
+        // i=1 results in index 4, i=2 results in index 6, etc.
+        p[3 + i * 2] = bar;
     }
 }
 
+/**
+ * @brief Invert a single pixel in the frame buffer
+ * 
+ * Toggles the state of a pixel at the given coordinates for highlight/
+ * selection effects.
+ * 
+ * @param x X-coordinate (0-127)
+ * @param y Y-coordinate (0-63)
+ */
 static void UI_InvertPixelBuffer(uint16_t x, uint16_t y)
 {
     if (x >= LCD_WIDTH || y >= LCD_HEIGHT)
@@ -119,6 +193,17 @@ static void UI_InvertPixelBuffer(uint16_t x, uint16_t y)
     gFrameBuffer[y / 8][x] ^= bit;
 }
 
+/**
+ * @brief Draw a highlighted box outline (selection rectangle)
+ * 
+ * Inverts pixels around a rectangular region to create a selection box
+ * effect, commonly used for highlighting active VFO or UI elements.
+ * 
+ * @param x      X-coordinate of box origin
+ * @param y      Y-coordinate of box origin
+ * @param width  Box width in pixels
+ * @param height Box height in pixels
+ */
 static void UI_HighlightRoundedBox(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
 {
     if (width == 0 || height == 0)
@@ -266,7 +351,7 @@ void UI_DisplayAudioBar(void)
         static uint8_t barsOld = 0;
         const uint8_t thresold = 18; // arbitrary thresold
         //const uint8_t barsList[] = {0, 0, 0, 1, 2, 3, 4, 5, 6, 8, 10, 13, 16, 20, 25, 25};
-        const uint8_t barsList[] = {0, 0, 0, 1, 2, 3, 5, 7, 9, 12, 15, 18, 21, 25, 25, 25};
+        const uint8_t barsList[] = {0, 0, 0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 22};
         uint8_t logLevel;
         uint8_t bars;
 
@@ -280,7 +365,7 @@ void UI_DisplayAudioBar(void)
         uint8_t *p_line = gFrameBuffer[line];
         memset(p_line, 0, LCD_WIDTH);
 
-        DrawLevelBar(2, line, barsOld, 25);
+        DrawLevelBar(17, line, barsOld, 22);
 
         // Draw antenna icon at the start of the TX bar meter
         int8_t txLevel = -1;
@@ -584,7 +669,38 @@ void UI_MAIN_TimeSlice500ms(void)
 }
 
 // ***************************************************************************
+// SECTION: Main Display Function
+// ============================================================================
 
+/**
+ * @brief Render the main radio display (VFO, frequency, status, center line content)
+ * 
+ * This is the primary display rendering function called periodically to update
+ * the LCD with current radio state. It handles:
+ * 
+ * 1. **Initialization**: Clear screen, check low battery
+ * 2. **VFO Display**: Render both VFOs (or single VFO in main-only mode) with:
+ *    - Frequency (large or small text depending on configuration)
+ *    - Channel name or number
+ *    - Modulation (FM/AM/SSB)
+ *    - TX offset (if applicable)
+ *    - Power level indicator
+ *    - Bandwidth indicator
+ *    - VFO A/B marker
+ *    - RX/TX mode indicator
+ *    - State (BUSY, TIMEOUT, ALARM, etc.)
+ * 3. **Center Line**: Display one of:
+ *    - RSSI bar (signal strength)
+ *    - Audio bar (microphone level during TX)
+ *    - DTMF decoder (live DTMF display)
+ *    - AM fix data (optional)
+ *    - Battery charging info (optional)
+ * 4. **Status Indicators**: Lock status, RX LED blink (N7SIX), etc.
+ * 5. **Screen Update**: Blit frame buffer to LCD
+ * 
+ * @note This function is called periodically (typically every 500ms or less)
+ *       to keep the display synchronized with radio state changes.
+ */
 void UI_DisplayMain(void)
 {
     char               String[22];
@@ -638,6 +754,10 @@ void UI_DisplayMain(void)
 #endif
 
     unsigned int activeTxVFO = gRxVfoIsActive ? gEeprom.RX_VFO : gEeprom.TX_VFO;
+
+    // ========================================================================
+    // RENDER VFO INFORMATION (Frequency, Modulation, Power, Offset, etc.)
+    // ========================================================================
 
     for (unsigned int vfo_num = 0; vfo_num < 2; vfo_num++)
     {
@@ -849,32 +969,33 @@ void UI_DisplayMain(void)
 #endif
         }
 
+        // draw A/B indicator with vertical rectangle background
+        const char abLabel = vfo_num ? 'B' : 'A';
+        const uint16_t ab_x = 1;
+        const uint16_t ab_y = (line + 1) * 8;
+        UI_FillRectangleBuffer(gFrameBuffer, ab_x - 1, ab_y, ab_x + 5, ab_y + 6, true);
+        UI_Draw5x5Char(abLabel, ab_x, ab_y + 1, false);
+
         if (IS_MR_CHANNEL(gEeprom.ScreenChannel[vfo_num]))
         {   // channel mode
-            const unsigned int x = 2;
+            const unsigned int x = 9;
             const bool inputting = gInputBoxIndex != 0 && gEeprom.TX_VFO == vfo_num;
+            char miniString[5] = "";
+
             if (!inputting)
-                sprintf(String, "CH%u", gEeprom.ScreenChannel[vfo_num] + 1);
+                sprintf(miniString, "M%u", gEeprom.ScreenChannel[vfo_num] + 1);
             else
-                sprintf(String, "CH%.3s", INPUTBOX_GetAscii());  // show the input text
-            UI_PrintStringSmallNormal(String, x, 0, line + 1);
+                sprintf(miniString, "M%.3s", INPUTBOX_GetAscii());  // show the input text
+
+            uint16_t icon_y = (line + 1) * 8 + 1;
+            UI_Draw5x5String(miniString, x, icon_y, true);
         }
         else if (IS_FREQ_CHANNEL(gEeprom.ScreenChannel[vfo_num]))
         {   // frequency mode
-            // show the VFO label
-            const unsigned int x = 2;
-            char * buf = gEeprom.VfoInfo[vfo_num].pRX->Frequency < _1GHz_in_KHz ? "" : "+";
-            sprintf(String, "%s%s", vfo_num ? "B" : "A", buf);
-
-            // Highlight selected VFO by inverting a larger rounded box
-            if (gEeprom.TX_VFO == vfo_num) {
-                const uint16_t width = (uint16_t)strlen(String) * 6;
-                const uint16_t y = (uint16_t)(line + 1) * 8;
-                UI_PrintStringSmallNormal(String, x, 0, line + 1);
-                UI_HighlightRoundedBox((uint16_t)x, y, width, 8);
-            } else {
-                UI_PrintStringSmallNormal(String, x, 0, line + 1);
-            }
+            // Draw a 5x5 VFO label in VFO mode (right of A/B label)
+            uint16_t icon_x = 9;
+            uint16_t icon_y = (line + 1) * 8 + 1;
+            UI_Draw5x5String("VFO", icon_x, icon_y, true);
         }
 #ifdef ENABLE_NOAA
         else
@@ -1146,9 +1267,7 @@ void UI_DisplayMain(void)
 
         // show the modulation symbol
         const char * s = "";
-#ifdef ENABLE_FEAT_N7SIX
         const char * t = "";
-#endif
         const ModulationMode_t mod = vfoInfo->Modulation;
         switch (mod){
             case MODULATION_FM: {
@@ -1430,6 +1549,10 @@ void UI_DisplayMain(void)
     UI_MAIN_PrintAGC(false);
 #endif
 
+    // ========================================================================
+    // RENDER CENTER LINE CONTENT (RSSI/Audio Bar, DTMF, AM Fix, Battery, etc.)
+    // ========================================================================
+
     if (center_line == CENTER_LINE_NONE)
     {   // we're free to use the middle line
 
@@ -1558,5 +1681,9 @@ void UI_DisplayMain(void)
     //#endif
 #endif
 
+    // ========================================================================
+    // FINALIZE: Update LCD with rendered frame buffer
+    // ========================================================================
+    
     ST7565_BlitFullScreen();
 }
