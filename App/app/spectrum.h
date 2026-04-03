@@ -158,7 +158,7 @@ typedef struct SpectrumSettings
     int dbMax;
     ModulationMode_t modulationType;
     bool backlightState;
-    bool useTicksGrid;                          /**< Grid display mode: false=DrawGridBackground, true=DrawTicks */
+    bool useTicksGrid;                          /**< Grid display mode: false=DrawTicks, true=DrawGridBackground */
 
     /* tuning parameters for RX throttling when a signal is detected */
     uint8_t listenTScan;   /**< ticks to wait after a scan peak before processing */

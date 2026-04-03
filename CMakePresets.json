@@ -70,7 +70,7 @@
                 "ENABLE_NAVIG_LEFT_RIGHT": true,
                 "ENABLE_SWD": false,
                 "VERSION_STRING_1": "v0.22",
-                "VERSION_STRING_2": "v7.6.5br1"
+                "VERSION_STRING_2": "v7.6.5br2"
             }
         },
         {
@@ -96,7 +96,7 @@
                 "ENABLE_FEAT_N7SIX_RESCUE_OPS": true,
                 "ENABLE_SWD": true,
                 "EDITION_STRING": "ApeX",
-                "TARGET": "n7six.ApeX-k1.v7.6.5br1"
+                "TARGET": "n7six.ApeX-k1.v7.6.5br2"
             }
         }
     ],

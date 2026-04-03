@@ -19,6 +19,19 @@ License: Apache License, Version 2.0
 **Build Variant:** ApeX Edition (all-in-one; all features included)  
 **MCU Platform:** PY32F071 (ARM Cortex-M0+)
 
+### April 2026 — Spectrum Runtime Reliability & UX Consistency Update
+
+This maintenance update refines Spectrum behavior for real-world operation and persistent user experience consistency.
+
+- Removed legacy peak-hold overlay rendering from spectrum view for a cleaner live trace presentation.
+- Enforced non-zero frequency movement step floor (minimum `100.00k`) to avoid unusable `±0.00k` state.
+- Applied listening bandwidth changes immediately on key action (no deferred effect).
+- Preserved user-selected modulation at Spectrum startup while still sanitizing through safe-mode validation.
+- Added delayed dirty-write autosave service for spectrum settings during runtime.
+- Exit/deinit save path now commits both EEPROM spectrum settings and legacy spectrum block consistently.
+
+Result: cleaner display, predictable controls, and stronger last-state persistence across power cycles.
+
 ### 🎯 **HEADLINE: Professional-Grade Event-Driven Architecture System**
 
 **This release introduces a paradigm shift in firmware architecture:** A production-ready, callback-based event system that eliminates problematic global variable coupling patterns throughout the application.

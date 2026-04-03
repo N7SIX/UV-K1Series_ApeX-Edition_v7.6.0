@@ -1,613 +1,485 @@
-
 <!--
 =====================================================================================
 UV-K1/K5 Series ApeX Edition - Owner's Manual
-Author: N7SIX, Sean
-Version: v7.6.0 (ApeX Edition)
+Author: N7SIX, Sean and contributors
+Version: v7.6.x (ApeX Edition)
 License: Apache License, Version 2.0
 =====================================================================================
 -->
 
 # UV-K1 SERIES / UV-K5 V3 TRANSCEIVER
-## ApeX Edition Professional Owner's Manual
+## ApeX Edition Owner's Manual (Professional Edition)
 
-**Edition:** ApeX Edition  
-**Authors:** Sean, N7SIX | Armel, F4HWN | Egzumer | DualTachyon  
-**Firmware Version:** 7.6.0  
-**Document Date:** February 28, 2026  
-
----
-
-### TABLE OF CONTENTS
-
-1. [Safety & Regulatory Information](#safety--regulatory-information)
-2. [Getting Started](#getting-started)
-   - [Initial Setup](#initial-setup)
-   - [Battery Management](#battery-management)
-   - [Display Modes](#display-modes)
-3. [Front Panel Controls](#front-panel-controls)
-4. [Icon Legend](#icon-legend)
-5. [Operating Modes](#operating-modes)
-   - [VFO Mode](#vfo-variable-frequency-oscillator-mode)
-   - [Memory Channel Mode](#memory-channel-mode)
-   - [Scan Mode](#scan-mode)
-6. [Menu System Reference](#menu-system-reference)
-   - [Core Settings](#core-settings-alphabetical-quick-reference)
-   - [Advanced Settings](#advanced-settings)
-7. [Advanced Features](#advanced-features)
-   - [Spectrum Analyzer](#professional-spectrum-analyzer)
-   - [Air Copy](#air-copy-over-the-air-channel-programming)
-   - [Custom Key Programming](#custom-key-programming)
-8. [Troubleshooting](#troubleshooting)
-9. [Technical Specifications](#technical-specifications)
-10. [Warranty & Liability](#warranty--liability)
-11. [Support & Resources](#support--resources)
-12. [Revision History](#revision-history)
+Edition: ApeX (all-in-one build)
+Firmware family: v7.6.x
+Manual revision: April 3, 2026
 
 ---
 
-## SAFETY & REGULATORY INFORMATION
+## Table Of Contents
 
-### ⚠️ CRITICAL SAFETY WARNING
-
-**THIS FIRMWARE HAS NO WARRANTY.** Use entirely at your own risk. This custom firmware may:
-- Brick your radio if any error occurs during flashing
-- Void the manufacturer's warranty
-- Cause unexpected behavior
-
-**You are solely responsible for:**
-- Ensuring proper frequency usage in your jurisdiction
-- Compliance with local RF regulations
-- Backing up your original calibration data before flashing
-
-### Before First Use
-
-1. **Back up your calibration data** using uvtools2 immediately after flashing
-2. **Verify correct frequency bands** for your region
-3. **Test transmission power limits** before extended use
-4. **Know your local frequency regulations**
-
----
-
-## GETTING STARTED
-
-### Initial Setup
-
-1. **Power On**: Press [PWR] to toggle radio on/off
-2. **Adjust Volume**: Use UP/DOWN keys on keypad
-3. **Select Frequency**: Use UP/DOWN arrow keys to tune
-4. **Monitor Signal**: Watch S-meter on status bar for signal strength
-5. **Transmit Safety**: Press [PTT] (Push-To-Talk) to transmit
-   - **Release immediately** to stop transmission
-   - Obey all frequency regulations in your area
-
-### Battery Management
-
-- **Battery Status** visible in status bar (top right)
-- **Low Battery Alert**: Buzzer sounds at ~3.0V
-- **Recommended Action**: Replace battery immediately at <2.8V
-- **Calibration**: Available in Menu → SysInf → Battery settings
-
-### Display Modes
-
-Press **[F] + [UP]** or **[F] + [DOWN]** to cycle through display layouts:
-- **DUAL MODE**: Main VFO + secondary channel (split screen)
-- **CROSS MODE**: Dual VFO monitoring side-by-side
-- **MAIN ONLY**: Single large frequency display (recommended for spectrum analysis)
+1. Safety And Regulatory Information
+2. Product Scope And Build Identity
+3. Quick Start
+4. Front Panel Controls
+5. Display And Status Icons
+6. Core Operating Modes
+7. Professional Spectrum Analyzer
+8. FM Broadcast Receiver
+9. Air Copy
+10. Games And Utility Features
+11. Menu And Advanced Settings
+12. Persistence Model (What Is Saved)
+13. Removed Or Deprecated Features
+14. Troubleshooting
+15. Build, Flashing, And Recovery
+16. Technical Notes
+17. Revision History
 
 ---
 
+## Safety And Regulatory Information
 
-## FRONT PANEL CONTROLS
+This firmware is distributed without warranty. Use at your own risk.
 
-| Button | Function | Long Press |
-|--------|----------|------------|
-| [PWR] | Power on/off | (none) |
-| [UP]/[DOWN] | Frequency tuning | Fast scroll |
-| [F] | Function modifier | (depends on context) |
-| [PTT] | Transmit (activated) | (transmit lock) |
-| [MENU] | Open settings menu | Scan list assignment |
-| [SIDE1] | Custom function | Blacklist frequency |
-| [SIDE2] | Custom function | Screen invert toggle |
-| [*] SCAN | Start frequency scan | Resume scan list |
-| [#] | Enter memory mode | (context dependent) |
-| [0-9] | DTMF digits / freq input | (long press varies) |
-| [EXIT] | Exit menu / cancel | (context dependent) |
+Important:
+- Back up calibration data immediately after flashing.
+- Verify legal TX/RX frequencies for your region.
+- Confirm power limits and emission rules before transmitting.
+- Understand that incorrect flashing or unsupported settings can brick a device.
+
+Recommended tools:
+- UVTools2 for calibration backup and restore.
+- Dedicated CHIRP driver from the project ecosystem.
 
 ---
 
-## ICON LEGEND
+## Product Scope And Build Identity
 
-Below are the actual icons as they appear on the radio's display, represented in ASCII art to match the firmware's monochrome bitmaps. Each icon is shown with its function for easy reference.
+ApeX Edition is the all-in-one build target for UV-K1 / UV-K5 V3 (PY32F071), with spectrum, FM, Air Copy, game features, and advanced N7SIX options enabled.
 
-| Icon | Function | Description |
-|------|----------|-------------|
-| ![Battery](../icons_from_c/BITMAP_BatteryLevel1.png) | Battery | Battery level/status |
-| ![Scan0](../icons_from_c/BITMAP_ScanList0.png) | Scan List 0 | Channel scan list 0 |
-| ![Scan1](../icons_from_c/BITMAP_ScanList1.png) | Scan List 1 | Channel scan list 1 |
-| ![Scan2](../icons_from_c/BITMAP_ScanList2.png) | Scan List 2 | Channel scan list 2 |
-| ![Scan3](../icons_from_c/BITMAP_ScanList3.png) | Scan List 3 | Channel scan list 3 |
-| ![ScanAll](../icons_from_c/BITMAP_ScanListAll.png) | Scan All | All scan lists |
-| ![VFO](../icons_from_c/BITMAP_VFO_Default.png) | VFO | Variable Frequency Oscillator |
-| ![Lock](../icons_from_c/BITMAP_VFO_Lock.png) | Key Lock | Keypad lock active |
-| ![Mute](../icons_from_c/gFontMute.png) | Mute | Audio muted |
-| ![Light](../icons_from_c/gFontLight.png) | Backlight | Backlight on |
-| ![USB-C](../icons_from_c/BITMAP_USB_C.png) | USB-C | Charging via USB-C |
-| ![Compand](../icons_from_c/BITMAP_compand.png) | Compand | Audio companding |
-| ![PowerSave](../icons_from_c/gFontPowerSave.png) | Power Save | Power save mode |
-| ![NOAA](../icons_from_c/BITMAP_NOAA.png) | NOAA | NOAA weather mode |
-| ![Current](../icons_from_c/BITMAP_CurrentIndicator.png) | Menu Cursor | Current menu selection |
+ApeX preset includes (as configured in repository build presets):
+- Spectrum analyzer
+- FM broadcast receiver
+- Air Copy
+- VOX
+- Screenshot support
+- Game support
+- PMR and GMRS/FRS/MURS locks
+- RescueOps feature set
+- Extended scan ranges
+- Resume-state and sleep features
 
-*Note: Icons are shown as they appear on the radio's monochrome LCD. Actual appearance may vary slightly.*
+Design intent:
+- One production build with broad feature coverage.
+- Deterministic embedded behavior (no dynamic allocation in critical display/control paths).
+- Field-oriented controls with low-latency UI feedback.
 
 ---
 
+## Quick Start
+
+Power and basic operation:
+1. Power on radio.
+2. Select VFO or channel mode as needed.
+3. Tune with UP/DOWN.
+4. Use PTT to transmit where legal.
+
+Open spectrum analyzer:
+1. Press F + 5.
+2. Adjust scan step, zoom, threshold, and bandwidth from spectrum controls.
+3. Press EXIT to leave spectrum and return to foreground operation.
 
 ---
 
-## OPERATING MODES
+## Front Panel Controls
 
-### VFO (Variable Frequency Oscillator) Mode
+Core keypad behavior depends on current mode.
 
-### Accessing the Spectrum Analyzer
+Global/common:
+- UP/DOWN: tune or move selection
+- MENU: enter or confirm (context dependent)
+- EXIT: back/cancel/close mode
+- F: function modifier
+- PTT: transmit (context dependent)
+- SIDE1/SIDE2: configurable utility actions depending on mode
 
-**Press [F] + [5]** to activate the professional bandscope mode.
-
-### Main Display Elements
-
-```
-┌─────────────────────────────────────┐
-│  F: 145.500  USB  12.5k             │  ← Frequency, Modulation, BW
-├─────────────────────────────────────┤
-│        ╱╲                           │
-│       ╱  ╲     Real-time spectrum   │
-│      ╱    ╲    trace (blue line)    │
-│ ────╱──────╲──────────────────       │  ← S-meter scale (0-S9)
-├─────────────────────────────────────┤
-│        Waterfall history (16 rows)  │  ← Temporal signal data
-│  ││││││││││││││││││││││││││││││││   │
-│  ││    ●●●●● Signal appears here   │
-│  ││││││││││││││││││││││││││││││││   │
-├─────────────────────────────────────┤
-│ Step: 25kHz  Rssi Trig: -95dBm      │  ← Configuration
-└─────────────────────────────────────┘
-```
-
-### Technical Note (March 2026)
-
-Internal codebase refactoring: Helper functions for spectrum display logic are now file-scoped for improved maintainability and standards compliance. RAM usage further optimized by marking lookup tables as const. No user-facing changes; all features and controls remain the same.
-
-### Display Components Explained
-
-#### **Spectrum Trace (Top)**
-- **Blue solid line**: Real-time RF amplitude at each frequency
-- **Dashed line above**: Peak hold (maximum signal memory)
-- **Noise floor**: Bottom of display shows ambient RF noise
-- **Smooth curves**: Professional 3-point interpolation for visual clarity
-
-#### **Waterfall Display (Center)**
-- **16 rows** of frequency history
-- **Top row**: Newest measurements
-- **Bottom row**: Oldest measurements
-- **Grayscale shading**: Signal strength (black=none, white=strong)
-- **Bayer dithering**: Professional 4×4 pattern for monochrome displays
-- **Auto-scrolling**: New data appears every frame during scanning
-
-#### **Peak Hold Feature**
-- **Dashed horizontal line** traces the maximum signal at each frequency
-- **Exponential decay** makes peaks gradually fade (natural "ghost" effect)
-- **Purpose**: Identify intermittent or brief signal bursts
-- **Reset**: Automatically clears when starting a new scan
-
-### Scanning Modes
-
-#### **Active Scan (Continuous)**
-1. Press **[* SCAN]** to start
-2. Radio tunes through frequency range automatically
-3. **Scan Parameters** (set via Menu):
-   - **Scan Step**: 25kHz, 50kHz, 100kHz (configurable)
-   - **Rssi Trigger Level**: Detection threshold for signal (-130 to -30 dBm)
-   - **Scan Range**: Define start/stop frequencies
-4. **During Scan**:
-   - Spectrum updates smoothly
-   - Waterfall scrolls continuously
-   - Peak hold traces signal maxima
-5. **Stop Scan**: Press **[EXIT]** or **[MENU]**
-
-#### **Listen Mode (Signal Detected)**
-When the radio detects a signal above the Rssi Trigger Level:
-1. **Automatic Frequency Lock** on detected signal
-2. **Spectrum freezes** at current acquisition time
-3. **Waterfall continues scrolling** showing signal dynamics
-4. **Peak hold remains active** for continuity
-5. **Press []** to return to scanning
-
-### Frequency Resolution
-
-| Step Size | Use Case | Notes |
-|-----------|----------|-------|
-| 25 kHz | Broadcast (VHF/UHF) | Standard commercial bands |
-| 50 kHz | Medium detail | Balanced resolution |
-| 100 kHz | Wide surveys | Quick band overview |
-| Custom | Professional analysis | User-defined precision |
-
-### S-Meter (Signal Strength Indicator)
-
-The S-meter follows **IARU Region 1 Technical Recommendation R.1**:
-
-```
-S0  S1  S2  S3  S4  S5  S6  S7  S8  S9  +10  +20
-│───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼────┼─── [dBm]
--130                                        -50
-```
-
-- **S0-S3**: Noise/weak signals
-- **S4-S6**: Good signal strength
-- **S7-S9**: Very strong signals
-- **+10 to +20**: Signal overload (reduce RF gain if applicable)
-
-### Professional Analysis Features
-
-#### **STLA (Scan-based Trigger Level Auto-adjustment)**
-- Automatically adjusts squelch threshold based on band noise floor
-- Prevents false triggers from background noise
-- Prevents missed signals during congested bands
-
-#### **Dynamic Range**
-- **16-bit RSSI processing**: Professional-grade signal acquisition
-- **Logarithmic scaling**: dBm conversion for accuracy
-- **Exponential Moving Average**: Smooth trace without aliasing
-
-#### **Noise Floor Measurement**
-- Displayed as **baseline of spectrum** (typically -120 to -100 dBm at rest)
-- Actual ADC thermal noise visible as slight variation at low signal levels
-- More active on VHF (higher noise floors) than UHF
+Spectrum-mode dedicated bindings are documented in the Spectrum section below.
 
 ---
 
+## Display And Status Icons
 
-## PROFESSIONAL SPECTRUM ANALYZER
+Representative icons are located in repository icon assets under icons_from_c.
 
-**Enter by pressing [F] repeatedly or directly via frequency input**
+Common indicators:
+- Battery level
+- Scan list state
+- VFO/lock state
+- Backlight state
+- USB-C charge state
+- NOAA and power-save indicators (when enabled)
 
-1. **Frequency Tuning**:
-   - **[UP]/[DOWN]**: Change frequency by step size
-   - **Long [UP]/[DOWN]**: Rapid tuning (hold down)
-   - **Enter digits**: Direct frequency input (0-9 keys)
-
-2. **Step Size Control** ([F] + [F1]):
-   - 2.5 kHz (narrow)
-   - 5 kHz
-   - 6.25 kHz
-   - **12.5 kHz** (default)
-   - 25 kHz (coarse)
-   - Custom value (menu)
-
-3. **Modulation Selection** (Press [0]):
-   - **FM** (narrow/wide)
-   - **AM**
-   - **USB**
-   - **LSB**
-   - **CW**
-
-4. **Bandwidth Control** (Press [6]):
-   - **12.5 kHz** (narrow), ≈-50dB BW: 10 kHz
-   - **25 kHz** (wide), ≈-50dB BW: 20 kHz
-   - **Auto**: System selects based on modulation
-
-### Memory Channel Mode
-
-**Press [#] or [F] + [*] to enter**
-
-1. **Channel List Navigation**:
-   - **[UP]/[DOWN]**: Scroll through channels
-   - **Enter number**: Jump to specific channel
-
-2. **Channel Information Display**:
-   - **Name**: Up to 6 character alphanumeric
-   - **Frequency**: Display precision matches VFO
-   - **Modulation/BW**: Stored per-channel
-   - **CTCSS/DCS**: Tone encode/decode settings
-
-3. **Channel Management** (Menu):
-   - **Create channel**: Frequency input + name entry
-   - **Delete channel**: Select channel, press [EXIT] (confirm)
-   - **Edit name**: Select channel, press [MENU]
-
-### Scan Mode
-
-**Activate via [* SCAN]**
-
-1. **Scan Lists Available**:
-   - **List 0**: All channels without list assignment
-   - **List 1, 2, 3**: Specific channel groups
-   - **Lists [1,2,3] combined**: Multiple lists simultaneously
-   - **Scan all**: Every stored channel
-
-2. **Scan Controls**:
-   - **[UP]/[DOWN]**: Manual frequency advance/retreat within scan
-   - **[SIDE1]**: **Blacklist** current frequency (skip in future scans)
-   - **Long [MENU]**: Temporarily exclude channel
-   - **Short [0-5]**: Change active scan list dynamically
-
-3. **Squelch-Based Resumption**:
-   - When signal detected → **Radio holds frequency** (Listen mode)
-   - **Hang timer**: Configurable delay (0-10s) after signal ends
-   - Auto-resume scanning when silence threshold met
+Note:
+- Exact icon composition varies by active mode and build feature flags.
 
 ---
 
+## Core Operating Modes
+
+Primary modes in ApeX firmware family:
+- VFO operation
+- Memory/channel operation
+- Scanner operation
+- Spectrum analyzer mode
+- FM broadcast mode (build enabled)
+- Air Copy mode (build enabled)
+- Optional feature modes (game, rescue workflows)
+
+Mode transitions are key-driven and routed through the main application dispatcher.
 
 ---
 
-## MENU SYSTEM REFERENCE
+## Professional Spectrum Analyzer
 
-### Accessing the Main Menu
+This implementation is a real-time frequency-domain display with waterfall history and adaptive signal detection logic.
 
-**Press [MENU]** to open settings. Use **[UP]/[DOWN]** to navigate, **[F]** to edit, **[EXIT]** to return.
+### Spectrum Display Model
 
+Display layers:
+- Frequency reference and ruler layer
+- Live spectrum trace layer
+- Trigger/reference overlays
+- Information text layer (frequency, modulation, bandwidth, scan metrics)
+- Waterfall history layer
 
-### Core Settings (Alphabetical Quick Reference)
+Current behavior highlights:
+- Live smoothed trace rendering
+- 16-level waterfall intensity mapping with dithering
+- Adaptive threshold behavior with trigger control
+- Channel name support during listening contexts (when available)
 
-| Menu # | Icon | Setting | Options | Purpose |
-|--------|------|---------|---------|---------|
-| 01 | ![Lock](../icons_from_c/BITMAP_VFO_Lock.png) | **FLck** | OFF / ON | Lock modulation to selected band |
-| 02 | ![Power](../icons_from_c/gFontPowerSave.png) | **TxPow** | 5W / 2W / 1W / 500mW / 250mW / 125mW / <20mW | Set transmission power |
-| 03 | ![PowerSave](../icons_from_c/gFontPowerSave.png) | **RxExp** | OFF / ON | RX extension (disable to reduce battery drain) |
-| 04 | ![VFO](../icons_from_c/BITMAP_VFO_Default.png) | **Modulation** | FM / AM / USB / LSB / CW | RX demodulation mode |
-| 05 | ![Bandwidth](../icons_from_c/BITMAP_ScanListAll.png) | **BandWdth** | 12.5kHz / 25kHz / Auto | Receiver bandwidth |
-| 06 | ![Squelch](../icons_from_c/BITMAP_ScanList0.png) | **Squelch** | 0-9 | Detection threshold (0=off) |
-| 07 | ![ChName](../icons_from_c/BITMAP_ScanList1.png) | **ChName** | Input field | Channel name (6 chars) |
-| 08 | ![CTCSS](../icons_from_c/BITMAP_ScanList2.png) | **CTCSS** | (1-50 available) | Encode/decode tone |
-| 09 | ![DCS](../icons_from_c/BITMAP_ScanList3.png) | **DCS** | (23-777 available) | Digital code squelch |
-| 10 | ![Offset](../icons_from_c/BITMAP_ScanListAll.png) | **OffSet** | ±10.00 MHz (VFO offset) | Repeater shift magnitude |
-| 11 | ![Step](../icons_from_c/BITMAP_ScanListAll.png) | **Step** | 2.5kHz - Custom | Frequency step size |
-| 12 | ![Battery](../icons_from_c/BITMAP_BatteryLevel1.png) | **BatTxt** | Voltage / Percentage | Battery display format |
-| 13 | ![Battery](../icons_from_c/BITMAP_BatteryLevel1.png) | **BatSave** | 1600mAh / 2200mAh / 3500mAh | Battery model selection |
-| 14 | ![Light](../icons_from_c/gFontLight.png) | **BLTime** | 10s - 2m | Backlight auto-off delay |
-| 15 | ![Light](../icons_from_c/gFontLight.png) | **BLTxRx** | OFF / TX / RX / Both | TX/RX backlight activation |
-| 16 | ![Light](../icons_from_c/gFontLight.png) | **BLMin** | 0-15 | Minimum backlight level |
-| 17 | ![Light](../icons_from_c/gFontLight.png) | **BLMax** | 0-15 | Maximum backlight level |
-| 18 | ![Light](../icons_from_c/gFontLight.png) | **BLMod** | Always / Auto | Backlight mode |
-| 19 | ![Mic](../icons_from_c/BITMAP_ScanListAll.png) | **Mic** | 0-15 | Microphone gain level |
-| 20 | ![Compand](../icons_from_c/BITMAP_compand.png) | **Compand** | OFF / ON | Audio companding (improves clarity) |
-| 21 | ![Scrambler](../icons_from_c/BITMAP_ScanListAll.png) | **Scrambler** | OFF / ON | Voice scrambling |
-| 22 | ![DBMax](../icons_from_c/BITMAP_ScanListAll.png) | **DBMax** | -50 to -80 dBm | Spectrum display top (max amplitude) |
-| 23 | ![DBMin](../icons_from_c/BITMAP_ScanListAll.png) | **DBMin** | -130 to -100 dBm | Spectrum display bottom (noise floor) |
-| 24 | ![BusyLed](../icons_from_c/BITMAP_ScanListAll.png) | **BusyLed** | OFF / RED / Blue / Purple | LED busy indicator |
-| 25 | ![VOX](../icons_from_c/BITMAP_ScanListAll.png) | **VOX** | OFF / 1-10 | Voice-activated transmit sensitivity |
-| 26 | ![VOXDly](../icons_from_c/BITMAP_ScanListAll.png) | **VOXDly** | 100ms - 5s | VOX hang time before release |
-| 27 | ![AirCopy](../icons_from_c/BITMAP_ScanListAll.png) | **AirCopySetting** | (varies) | Over-the-air programming options |
-| 28 | ![SysInf](../icons_from_c/BITMAP_ScanListAll.png) | **SysInf** | (read-only) | Firmware version & battery status |
+Important current-state note:
+- Peak-hold overlay visualization has been removed for cleaner real-time trace readability.
 
-### Advanced Settings
+### Spectrum Controls (Current Implementation)
 
-#### **Spectrum Analyzer Parameters**
-- **DBMax** [-50 to -80]: Adjust top of spectrum display scale
-  - Higher = "zoomed in" on weaker signals
-  - Lower = "zoomed out" (shows wider dynamic range)
-- **DBMin** [-130 to -100]: Adjust noise floor reference
-  - Lower = more sensitive display
-  - Higher = less sensitive but cleaner appearance
+In Spectrum state:
+- 1 / 7: increase/decrease scan step index
+- 2 / 8: center-shift or frequency-step adjustment (mode dependent)
+- 3 / 9: adjust display dB max
+- UP / DOWN: move current frequency window
+- STAR / F: raise/lower RSSI trigger threshold
+- 4: change horizontal resolution (128x/64x/32x/16x behavior)
+- 6: cycle listening bandwidth (applies immediately to hardware)
+- 0: toggle modulation type
+- 5: open frequency input
+- SIDE1: blacklist function
+- SIDE2: backlight toggle
+- EXIT: leave spectrum (saves settings)
 
-#### **Squelch Control** ([F] + [UP]/[DOWN] in VFO)
-- **Dynamic squelch adjustment** without entering menu
-- **Prevents false triggers** from band noise
-- **Quick response** for operational efficiency
+In Still state:
+- Similar dB/threshold/modulation/bandwidth controls
+- MENU cycles register-tuning pages
+- EXIT returns to spectrum state (or closes page context)
 
-#### **TX/RX Timers**
-- **TOT (Time Out Timer)**: Max transmission duration before auto-cutoff
-- **Monitor Duration**: Automatic listen timeout
-- Enable/disable via Menu → SetTmr
+### Step, Span, And Resolution Semantics
 
-#### **Power Management**
-- **SetOff** [1min - 2hr]: Deep sleep delay
-- **Auto-powerdown** after selected idle period
-- **Wakeup**: Press any key to resume
+Three distinct spectrum controls:
+1. Scan step (for example 25.00k / 50.00k / 100.00k)
+2. Frequency movement offset (displayed as plus/minus k value)
+3. Horizontal resolution multiplier (16x to 128x display density behavior)
 
----
+What they affect:
+- Scan step directly controls sweep frequency increment.
+- Movement offset controls how far center/window shifts per movement action.
+- Resolution multiplier affects both spectrum trace density and waterfall bin mapping.
 
+### Bandwidth And Modulation Behavior
 
----
+Bandwidth:
+- Displayed listen bandwidth and hardware filter are synchronized.
+- Bandwidth changes now apply immediately on key action.
 
-## ADVANCED FEATURES
+Modulation:
+- Modulation toggle applies immediately.
+- Startup preserves user-selected modulation when valid.
+- Safety sanitization still prevents invalid mode combinations.
 
-### Professional Spectrum Analysis Techniques
+### Persistence And Reliability
 
-#### **Signal Detection Methodology**
-1. **Identify noise floor** (baseline at bottom of spectrum)
-2. **Look for peaks** above noise floor
-3. **Use peak hold** (dashed line) to trace signal envelope
-4. **Watch waterfall** for signal modulation patterns
-5. **Note frequency stability** via peak consistency
+Spectrum settings persistence includes:
+- scan step index
+- steps count / resolution
+- frequency movement step
+- trigger level
+- dB min/max context
+- scan delay
+- backlight state
+- listen bandwidth
+- modulation type
+- spectrum grid/ticks and listen timing fields
 
-#### **Finding Weak Signals**
-1. Increase **DBMax** range (set closer to -80 dBm)
-2. Reduce **DBMin** to increase sensitivity display
-3. Watch for **tiny peaks** above noise
-4. Monitor **waterfall patterns** for intermittent signals
-5. Reduce **step size** for finer detail
+Save behavior:
+- Explicit save on spectrum exit/deinit
+- Dirty-flag delayed autosave while spectrum runs
 
-#### **Identifying Interference**
-1. **Wide bandwidth increases**: Look for broad spectral spread
-2. **Frequency hopping**: Watch waterfall for jumping patterns
-3. **Modulation analysis**: Compare trace shape vs known signals
-4. **Power measurement**: Peak height indicates relative signal strength
-
-### Air Copy (Over-The-Air Channel Programming)
-
-**Prerequisite**: Radio configured with Air Copy enabled in menu
-
-1. **Receive**: Transmitter sends channel data (proprietary format)
-2. **Capture**: Your radio stores frequency/settings locally
-3. **Verify**: Confirm reception in Air Copy menu
-4. **Apply**: Settings merged into current programming
-
-### Custom Key Programming
-
-Assign functions to [SIDE1] / [SIDE2] / long[MENU]:
-- **RX MODE**: Force receiver-only (disable TX)
-- **MUTE**: Audio off/on toggle
-- **WIDE/NARROW**: BW switching shortcut
-- **POWER HIGH**: Maximize TX power (RescueOps edition)
-- **1750Hz TONE**: Repeater access tone
+Benefit:
+- Better recovery of last-used spectrum settings across power cycles.
 
 ---
 
+## FM Broadcast Receiver
+
+ApeX preset enables FM radio support.
+
+Capabilities include:
+- FM broadcast receive mode
+- Integrated UI interaction with standard key processing path
+- Shared status and display infrastructure with main firmware
+
+Operational note:
+- FM mode availability depends on build flags and mode routing in the active firmware image.
 
 ---
 
-## TROUBLESHOOTING
+## Air Copy
 
-### Common Issues & Solutions
+ApeX includes Air Copy support with improved user feedback in project feature set.
 
-| Problem | Cause | Solution |
-|---------|-------|----------|
-| **No signal detected** | Wrong frequency / wrong band | Verify frequency is in user's band (See Menu→FLck) |
-| **Spectrum analyzer frozen** | Listen mode active | Press [EXIT] to resume scanning; check signal |
-| **Waterfall not scrolling** | Scan paused | Press [* SCAN] to resume active scanning |
-| **S-meter not moving** | Squelch too high | Reduce squelch value (Menu→Squelch) |
-| **Battery depletes quickly** | High TX power / backlight always on | Set lower power (Menu→TxPow); disable BLTxRx |
-| **Audio distorted** | Mic gain too high | Reduce mic level (Menu→Mic, reduce 0-15 value) |
-| **Cannot transmit** | PTT locked or TX disabled | Check Menu→KeyLck; verify FLck band | 
-| **Spectrum display too dark** | DBMax/DBMin poorly set | Reset: DBMax=-50, DBMin=-130 |
-| **Peak hold not appearing** | Weak signal below threshold | Look for stronger signals or reduce DBMin |
-
-### Factory Reset
-
-**If radio becomes unresponsive:**
-
-1. Power off [PWR]
-2. Hold [MENU] + [EXIT] while powering on
-3. Release buttons when menu appears
-4. Confirm reset (lose all custom channels)
-
-### Calibration Data Recovery
-
-If calibration was lost after flashing:
-1. Use **uvtools2** with previously backed-up calibration file
-2. Or perform calibration in Menu → Calibration section
-3. Verify power levels match radio specifications
+Functional role:
+- Over-the-air channel/program data exchange workflows
+- Progress-aware UI handling in the application layer
 
 ---
 
+## Games And Utility Features
+
+ApeX enables game feature support and screenshot support in the preset.
+
+Included:
+- Breakout feature path (when enabled in build)
+- Screenshot pipeline integration (when enabled)
 
 ---
 
-## TECHNICAL SPECIFICATIONS
+## Menu And Advanced Settings
 
-### Radio Performance (UV-K1/UV-K5 V3)
+The firmware exposes both standard radio settings and extended ApeX options.
 
-**Frequency Coverage**:
-- **VHF**: 136-174 MHz
-- **UHF**: 400-480 MHz
-- **Other bands**: Depends on firmware F-Lock settings
+Commonly relevant advanced controls:
+- power profile/user power settings
+- timeout and end-of-transmission alerts
+- display contrast and invert behavior
+- lock behavior (keys, keys plus PTT)
+- GUI style and status line options
+- scan and scan-list controls
+- battery display and calibration helpers
 
-**TX Power Output**:
-- **<20mW**: Minimum power mode
-- **125mW**: Low-power setting
-- **250mW**: Medium-low
-- **500mW**: Medium
-- **1W**: Medium-high
-- **2W**: High
-- **5W**: Maximum (rated)
-
-**RX Sensitivity**:
-- **VHF**: <0.5µV (-130 dBm) @ 12.5kHz BW
-- **UHF**: <0.5µV (-130 dBm) @ 12.5kHz BW
-
-**Spectrum Analyzer (Bandscope)**:
-- **Frequency range**: Full radio band coverage
-- **Dynamic range**: -130 to -50 dBm (80 dB)
-- **Resolution**: 10 Hz internal, < 50 kHz display
-- **Update rate**: 60 Hz (≈16ms per frame)
-- **S-meter compliance**: IARU R.1 standard
-
-**Waterfall Display**:
-- **Rows**: 16 history lines
-- **Columns**: 128 frequency bins
-- **Color depth**: 16-level grayscale (Bayer dithering)
-- **Refresh**: Continuous per-frame scrolling
-
-### Battery Specifications
-
-| Model | Capacity | Runtime | Note |
-|-------|----------|---------|------|
-| Stock | 1600 mAh | ~8-10 hrs | Original OEM |
-| Extended | 2200 mAh | ~12-14 hrs | Drop-in replacement |
-| High-cap | 3500 mAh | ~20-24 hrs | Larger form factor |
-
-**Voltage**: 7.4V DC (Li-ion 2-cell nominal)
-**Low Voltage**: <3.0V triggers replacement alert
-
-### Display
-
-- **Type**: Monochrome LCD (ST7565 compatible)
-- **Resolution**: 128 × 64 pixels
-- **Refresh Rate**: 60 Hz (NTSC) / 50 Hz (PAL)
-- **Backlight**: LED with 16-level adjustable brightness
-
-### Audio Features
-
-- **Audio codec**: PY32F071 internal DSP
-- **Noise reduction**: SSB demodulation, companding
-- **Output power**: <500mW @ 8Ω speaker
-- **Modulation modes**: FM, AM, USB, LSB, CW
+Notes:
+- Exact menu numbering and labels can vary between revisions.
+- Build-time feature flags influence visible menu entries.
 
 ---
 
+## Persistence Model (What Is Saved)
+
+General system settings:
+- Saved through the firmware settings subsystem.
+
+Spectrum-specific settings:
+- Saved through spectrum persistence blocks (EEPROM and compatibility save path where enabled).
+- Exit path guarantees save.
+- Runtime autosave reduces loss risk for power-off without explicit exit.
+
+Practical guidance:
+- After changing multiple spectrum parameters, allow a short idle period for delayed autosave to commit if you are not exiting explicitly.
 
 ---
 
-## WARRANTY & LIABILITY
+## Removed Or Deprecated Features
 
-This firmware is provided **AS-IS** without warranty. The authors make no claims regarding:
-- Fitness for any particular purpose
-- Compatibility with future hardware revisions
-- Compliance with local frequency regulations
-- Data integrity or frequency preset preservation
+Removed from current spectrum implementation:
+- Contest marker overlays
+- DX marker overlays
+- Digital mode marker overlays
+- Legacy peak-hold dashed overlay visualization
 
-**Users assume full responsibility** for lawful operation, radio safety, and backup of critical data.
+Why removed:
+- Cleaner visual interpretation
+- Reduced UI clutter
+- Better consistency with current trace rendering model
 
----
-
-
----
-
-## SUPPORT & RESOURCES
-
-### Community Support
-- **GitHub**: [https://github.com/QS-UV-K1Series](https://github.com/QS-UV-K1Series)
-- **Discussion Pages**: Check the project wiki for FAQs
-- **Issue Reporting**: Report bugs with detailed reproduction steps
-
-### Related Tools
-- **uvtools2**: Backup/restore calibration
-- **CHIRP Driver**: UV-K5 custom driver for programming
-- **Firmware Builds**: Docker-based compilation available
-
-### Recommended References
-- IARU Region 1 Recommendation R.1 (S-meter standardization)
-- Your local radio frequency regulation authority
-- Amateur radio licensing requirements for your country
+If older screenshots/manual fragments reference these overlays, treat them as historical behavior.
 
 ---
 
+## Troubleshooting
+
+### Spectrum appears unchanged after changing movement offset
+
+Cause:
+- Offset changes influence sweep window position, not trace style.
+- In center mode, some keys shift center directly rather than editing stored offset.
+
+Check:
+- Tune near known active signal and re-test.
+- Verify mode (center/span behavior).
+
+### Bandwidth value changes but effect seems delayed
+
+Current behavior:
+- Immediate hardware apply is implemented.
+
+If effect is still unclear:
+- Verify listening context and signal type.
+- Confirm modulation and filter assumptions for target signal.
+
+### Modulation seems to reset on entering spectrum
+
+Current behavior:
+- User modulation is preserved when valid, with safety sanitization.
+
+If fallback occurs:
+- The selected modulation may be invalid for the active VFO/band context.
+
+### Settings lost after abrupt power cut
+
+Current behavior:
+- Exit saves immediately.
+- Runtime autosave is delayed to reduce write wear.
+
+Best practice:
+- Use EXIT when possible after major spectrum changes.
 
 ---
 
-## REVISION HISTORY
+## Build, Flashing, And Recovery
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 7.6.0 | 2026-02-28 | Initial professional manual release (ApeX Edition) |
+Build (Docker helper):
+- ./compile-with-docker.sh ApeX
+
+Artifacts:
+- build/ApeX/ with elf, bin, hex outputs
+
+Flashing:
+- Use UVTools2 flash mode
+- Ensure device is in proper DFU/flash state per tool guidance
+
+Recovery best practice:
+- Always keep calibration backup before testing firmware changes.
 
 ---
 
-**Manual prepared for the UV-K1 Series / UV-K5 V3 ApeX Edition**  
-**Firmware Version 7.6.0**  
-**Document Date: February 28, 2026**
+## Technical Notes
 
-**© Sean, N7SIX | Armel, F4HWN | Egzumer | DualTachyon - Licensed under Apache 2.0**
+Platform:
+- PY32F071 (ARM Cortex-M0+)
+
+Display:
+- ST7565 class monochrome LCD
+
+Radio IC:
+- BK4819 control path with firmware-managed filtering, modulation, and scan behavior
+
+Software architecture:
+- Application, driver, UI, and settings modules with compile-time feature gating via CMake presets
 
 ---
+
+---
+
+## Appendix A — Spectrum Analyzer Key Reference
+
+### Scan Mode Keys
+
+| Key | Action |
+|-----|--------|
+| `1` | Scan step size — increase |
+| `7` | Scan step size — decrease |
+| `2` | Frequency shift step — increase |
+| `8` | Frequency shift step — decrease |
+| `3` | dB ceiling — raise |
+| `9` | dB ceiling — lower |
+| `UP` | Shift center frequency up by current step |
+| `DOWN` | Shift center frequency down by current step |
+| `PTT` | Lock onto peak signal → enter Still mode |
+| `SIDE1` | Blacklist (skip) current peak frequency |
+| `SIDE2` | Toggle backlight |
+| `0` | Cycle modulation (FM → AM → USB) |
+| `4` | Cycle resolution (16× / 32× / 64× / 128× steps) |
+| `5` | Open frequency input (type center frequency directly) |
+| `6` | Cycle listen bandwidth (25k → 12.5k → 6.25k) |
+| `★` | RSSI trigger level — raise |
+| `F` | RSSI trigger level — lower |
+| `MENU` | (no action in scan mode) |
+| `EXIT` | Exit spectrum analyzer → return to main VFO |
+
+### Still Mode Keys
+
+| Key | Action |
+|-----|--------|
+| `3` | dB ceiling — raise |
+| `9` | dB ceiling — lower |
+| `UP` | Tune up (or increase register value if register menu open) |
+| `DOWN` | Tune down (or decrease register value if register menu open) |
+| `SIDE1` | Toggle monitor mode (force audio open) |
+| `SIDE2` | Toggle backlight |
+| `0` | Cycle modulation |
+| `5` | Open frequency input |
+| `6` | Cycle listen bandwidth |
+| `★` | RSSI trigger level — raise |
+| `F` | RSSI trigger level — lower |
+| `MENU` | Cycle register inspector (LNAs → LNA → VGA → BPF → wrap) |
+| `EXIT` | Return to scan mode (or close register menu if open) |
+
+### Frequency Input Mode Keys
+
+| Key | Action |
+|-----|--------|
+| `0`–`9` | Type digit |
+| `★` | Type decimal point |
+| `MENU` | Confirm and tune to entered frequency |
+| `EXIT` | Delete last digit; if empty, cancel and return |
+
+---
+
+## Appendix B — Spectrum Settings Storage Map
+
+All spectrum settings are stored at EEPROM address `0x1E80` (20 bytes, last byte is checksum).
+
+| Byte(s) | Bits | Setting | Notes |
+|---------|------|---------|-------|
+| 0 | [3:0] | `scanStepIndex` | 0=25k, 1=50k, 2=100k, … (see ScanStep enum) |
+| 0 | [5:4] | `stepsCount` | 0=16×, 1=32×, 2=64×, 3=128× |
+| 1 | [1:0] | `listenBw` | 0=25k (wide), 1=12.5k, 2=6.25k (narrower) |
+| 1 | [2] | `modulationType` | 0=FM, 1=AM (extended modes via BK4819) |
+| 1 | [5:3] | `bw` | Scan passband filter (same enum as listenBw) |
+| 2–5 | [31:0] | `frequencyChangeStep` | uint32, little-endian, Hz×10 units |
+| 6–7 | [15:0] | `rssiTriggerLevel` | uint16, little-endian, raw RSSI units |
+| 8–9 | [15:0] | `dbMin` | int16, little-endian, dBm floor for display |
+| 10–11 | [15:0] | `dbMax` | int16, little-endian, dBm ceiling for display |
+| 12–13 | [15:0] | `scanDelay` | uint16, little-endian, µs dwell per step |
+| 14 | [0] | `backlightState` | 1=on, 0=off |
+| 15 | [0] | `useTicksGrid` | 1=grid background, 0=tick marks |
+| 16 | [7:0] | `listenTScan` | uint8, RX dwell ticks after scan peak |
+| 17 | [7:0] | `listenTStill` | uint8, RX dwell ticks in still/quiet mode |
+| 18 | — | reserved | always 0x00 |
+| 19 | — | checksum | simple byte sum of bytes 0–18 |
+
+**Autosave behavior:** Any setting change arms an 80-tick countdown (≈800 ms). On expiry the block is written. Exiting spectrum via `EXIT` triggers an immediate write regardless of the countdown state.
+
+---
+
+## Revision History
+
+- April 3, 2026
+  - Manual rewritten for repository-accurate ApeX behavior.
+  - Added complete current spectrum behavior model and persistence description.
+  - Removed outdated peak-hold-overlay and contest-marker guidance.
+  - Aligned modulation, bandwidth, and autosave behavior documentation with current implementation.
+  - Added Appendix A (key reference) and Appendix B (EEPROM storage map) derived from source.
+
+- March 2026 and earlier
+  - Prior drafts included legacy visualization and transitional feature notes.
+

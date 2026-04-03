@@ -97,20 +97,28 @@ static void UpdateWaterfallQuick(void);
  static void ToggleRX(bool enable);
  static inline uint8_t MapMeasurementToDisplay(uint32_t idx);
 static uint16_t GetDisplayWidth(void);
+static void MarkSpectrumSettingsDirty(void);
+static void ServiceSpectrumSettingsAutosave(void);
  
  // =============================================================================
  // CONSTANTS AND CONFIGURATION
  // =============================================================================
- #define PEAK_HOLD_DECAY             2
- #define RSSI_MAX_VALUE              65535U
- #define DISPLAY_STRING_BUFFER_SIZE  32U
- #define SPECTRUM_MAX_STEPS          128U
+// Waterfall: minimum display level for any sample above noise (0 = off)
+// Level 2 = 2/16-pixel Bayer density — legible but dim; was 4 (flooded noise)
+#define WF_FLOOR_MIN_LEVEL           2
+// Listen-mode animation noise budget (FastRandom modulus)
+#define GRASS_SPIKE_MAX              8   // spike height on background bins
+#define PEAK_JITTER_MAX              8   // jitter on the peak signal bin
+#define RSSI_MAX_VALUE              65535U
+#define DISPLAY_STRING_BUFFER_SIZE  32U
+#define SPECTRUM_MAX_STEPS          128U
  #define WATERFALL_HISTORY_DEPTH     16U
  #define FREQ_INPUT_MAX_LENGTH       10U
  #define FREQ_INPUT_STRING_SIZE      11U
  #define BLACKLIST_MAX_ENTRIES       15U
  #define WATERFALL_UPDATE_INTERVAL   2U
  #define WATERFALL_COLOR_LEVELS      16U
+#define SETTINGS_AUTOSAVE_DELAY_TICKS  80U
 
  #define DISPLAY_DBM_MIN            -130
  #define DISPLAY_DBM_MAX            -50
@@ -122,6 +130,7 @@ static uint16_t GetDisplayWidth(void);
  // Using addresses 0x1E80-0x1E8F for spectrum state (16 bytes)
  #define SPECTRUM_EEPROM_ADDR        0x1E80
 #define SPECTRUM_EEPROM_SIZE        20  // Increased for ham features
+#define SPECTRUM_EEPROM_CHECKSUM_INDEX (SPECTRUM_EEPROM_SIZE - 1)
  // =============================================================================
  struct FrequencyBandInfo
  {
@@ -196,19 +205,13 @@ static const CalibrationPoint calTable[] = {
  uint8_t waterfallIndex = 0;
  uint16_t waterfallUpdateCounter = 0;
  static uint16_t smoothedRssi[SPECTRUM_MAX_STEPS];
- 
- // --- 1. PROTOTYPES (Add this near other static prototypes) ---
- static void ProcessSpectrumEnhancements(void);
-
-// --- 2. CONSOLIDATED VARIABLES (Replace the conflicting lines 196-203) ---
- static uint8_t peakHold[SPECTRUM_MAX_STEPS];
- static uint8_t  peakAge[SPECTRUM_MAX_STEPS];
- // (smoothedRssi is declared above)
-
+static bool frequencyRetuned = false;
 
 // Spectrum meter background pattern (precomputed once)
 static uint8_t spectrumMeterBackground[121];
 static bool spectrumMeterBackgroundInit = false;
+static bool spectrumSettingsDirty = false;
+static uint8_t spectrumSettingsAutosaveTicks = 0;
 
 // Mapping from display column -> best raw measurement index (used for accurate tuning)
 static uint8_t displayBestIndex[SPECTRUM_MAX_STEPS];
@@ -256,7 +259,10 @@ const uint8_t modTypeReg47Values[] = {1, 7, 5};
      .listenBw = BK4819_FILTER_BW_WIDE,
      .modulationType = false,
      .dbMin = DISPLAY_DBM_MIN,
-     .dbMax = DISPLAY_DBM_MAX
+    .dbMax = DISPLAY_DBM_MAX,
+    .useTicksGrid = false,
+    .listenTScan = 8,
+    .listenTStill = 4
  };
  
  #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
@@ -479,6 +485,7 @@ void DrawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, bool color) {
      uint16_t reg = BK4819_ReadRegister(BK4819_REG_30);
      BK4819_WriteRegister(BK4819_REG_30, 0);
      BK4819_WriteRegister(BK4819_REG_30, reg);
+    frequencyRetuned = true;
  }
  
  bool IsPeakOverLevel() { return peak.rssi >= settings.rssiTriggerLevel; }
@@ -586,6 +593,8 @@ uint32_t GetFEnd() {
 
 static uint32_t GetCentroidFrequency() 
 {
+    uint32_t sweepStart = GetFStart();
+
     // 1. LISTEN LOCK: If we are already receiving a signal, 
     // do NOT recalculate. This is the #1 cause of the jitter.
     if (isListening && peak.f != 0) {
@@ -594,13 +603,13 @@ static uint32_t GetCentroidFrequency()
 
     // Map the raw peak measurement index into the display grid so that
     // centroid interpolation uses values present in rssiHistory[].
-    if (scanInfo.measurementsCount == 0) return initialFreq + (peak.i * scanInfo.scanStep);
+    if (scanInfo.measurementsCount == 0) return sweepStart + (peak.i * scanInfo.scanStep);
 
     uint8_t dIdx = MapMeasurementToDisplay(peak.i);
 
     // Safety check: ensure we have valid neighbours in the display grid
     if (dIdx == 0 || dIdx >= (SPECTRUM_MAX_STEPS - 1)) {
-        return initialFreq + (peak.i * scanInfo.scanStep);
+        return sweepStart + (peak.i * scanInfo.scanStep);
     }
 
     int32_t R_center = (int32_t)rssiHistory[dIdx];
@@ -609,15 +618,15 @@ static uint32_t GetCentroidFrequency()
 
     int32_t diff = R_right - R_left;
     if (my_abs(diff) < 2) {
-        return initialFreq + (peak.i * scanInfo.scanStep);
+        return sweepStart + (peak.i * scanInfo.scanStep);
     }
 
     int32_t numerator = diff;
     int32_t denominator = R_left + R_center + R_right;
-    if (denominator == 0) return initialFreq + (peak.i * scanInfo.scanStep);
+    if (denominator == 0) return sweepStart + (peak.i * scanInfo.scanStep);
 
     if (R_center < (scanInfo.rssiMin + 20)) {
-        return initialFreq + (peak.i * scanInfo.scanStep);
+        return sweepStart + (peak.i * scanInfo.scanStep);
     }
 
     // Convert correction units to raw measurement steps. When multiple
@@ -629,7 +638,7 @@ static uint32_t GetCentroidFrequency()
 
     int32_t correction = (numerator * (int32_t)scanInfo.scanStep * (int32_t)perBin) / denominator;
 
-    return initialFreq + (peak.i * scanInfo.scanStep) + correction;
+    return sweepStart + (peak.i * scanInfo.scanStep) + correction;
 }
 
  static void TuneToPeak() 
@@ -738,6 +747,7 @@ static void RelaunchScan() {
     scanInfo.rssiMin = scanInfo.rssi;
     // reset display->best measurement mapping
     for (uint8_t i = 0; i < SPECTRUM_MAX_STEPS; ++i) displayBestIndex[i] = 0xFF;
+    memset(smoothedRssi, 0, sizeof(smoothedRssi));
 }
 
 static void UpdateScanInfo() {
@@ -820,13 +830,23 @@ static void UpdateScanInfo() {
      
      // Byte 14: backlightState
      buffer[14] = settings.backlightState ? 0x01 : 0x00;
+
+    // Byte 15: useTicksGrid
+    buffer[15] = settings.useTicksGrid ? 0x01 : 0x00;
+
+    // Byte 16-17: listening timers
+    buffer[16] = settings.listenTScan;
+    buffer[17] = settings.listenTStill;
+
+    // Byte 18: reserved for future use
+    buffer[18] = 0;
      
-     // Byte 15: CRC/checksum (simple sum for validation)
+    // Last byte: CRC/checksum (simple sum for validation)
      uint8_t checksum = 0;
-     for (int i = 0; i < 15; i++) {
+    for (uint8_t i = 0; i < SPECTRUM_EEPROM_CHECKSUM_INDEX; i++) {
          checksum += buffer[i];
      }
-     buffer[15] = checksum;
+    buffer[SPECTRUM_EEPROM_CHECKSUM_INDEX] = checksum;
      
      // Write to EEPROM
      EEPROM_WriteBuffer(SPECTRUM_EEPROM_ADDR, buffer);
@@ -846,11 +866,10 @@ static void UpdateScanInfo() {
      
      // Verify checksum
      uint8_t checksum = 0;
-     uint8_t checksumSize = 15;
-     for (int i = 0; i < checksumSize; i++) {
+    for (uint8_t i = 0; i < SPECTRUM_EEPROM_CHECKSUM_INDEX; i++) {
          checksum += buffer[i];
      }
-     if (checksum != buffer[SPECTRUM_EEPROM_SIZE - 1]) {
+    if (checksum != buffer[SPECTRUM_EEPROM_CHECKSUM_INDEX]) {
          // Checksum mismatch: EEPROM data is invalid, keep defaults
          return;
      }
@@ -881,7 +900,7 @@ static void UpdateScanInfo() {
                                     ((uint32_t)buffer[3] << 8) |
                                     ((uint32_t)buffer[4] << 16) |
                                     ((uint32_t)buffer[5] << 24);
-     if (settings.frequencyChangeStep < 10000 || settings.frequencyChangeStep > 200000) {
+    if (settings.frequencyChangeStep < 10000 || settings.frequencyChangeStep > 600000) {
          settings.frequencyChangeStep = 600000;  // Restore default
      }
      
@@ -903,11 +922,45 @@ static void UpdateScanInfo() {
      }
      
      settings.backlightState = (buffer[14] != 0);
+    settings.useTicksGrid = (buffer[15] != 0);
+    settings.listenTScan = (buffer[16] != 0) ? buffer[16] : 8;
+    settings.listenTStill = (buffer[17] != 0) ? buffer[17] : 4;
  }
+
+static void MarkSpectrumSettingsDirty(void)
+{
+    spectrumSettingsDirty = true;
+    spectrumSettingsAutosaveTicks = SETTINGS_AUTOSAVE_DELAY_TICKS;
+}
+
+static void ServiceSpectrumSettingsAutosave(void)
+{
+    if (!spectrumSettingsDirty)
+    {
+        return;
+    }
+
+    if (spectrumSettingsAutosaveTicks > 0)
+    {
+        spectrumSettingsAutosaveTicks--;
+        return;
+    }
+
+    SPECTRUM_SaveSettings();
+#ifdef ENABLE_FEAT_N7SIX_SPECTRUM
+    SaveSettings();
+#endif
+    spectrumSettingsDirty = false;
+}
  
  static void DeInitSpectrum() {
      // Save spectrum settings before exiting
      SPECTRUM_SaveSettings();
+#ifdef ENABLE_FEAT_N7SIX_SPECTRUM
+    SaveSettings();
+#endif
+    spectrumSettingsDirty = false;
+    spectrumSettingsAutosaveTicks = 0;
      
      isInitialized = false;
      isListening = false;
@@ -1066,11 +1119,35 @@ static void SetRssiHistory(uint16_t idx, uint16_t rssi)
        raw measurements map to the same bin, prefer the maximum RSSI so
        that peaks remain visible after decimation. Record the raw index
        that produced this best value to allow accurate tuning later. */
-    if (rssiHistory[dIdx] < rssi || isListening)
+    if (rssiHistory[dIdx] < rssi)
     {
         rssiHistory[dIdx] = rssi;
         displayBestIndex[dIdx] = idx;
     }
+}
+
+static void RecomputeSmoothedTrace(uint16_t bars)
+{
+    if (bars == 0) {
+        return;
+    }
+
+    if (bars == 1) {
+        smoothedRssi[0] = rssiHistory[0];
+        return;
+    }
+
+    uint32_t sum = ((uint32_t)rssiHistory[0] << 1) + rssiHistory[0] + rssiHistory[1];
+    smoothedRssi[0] = (uint16_t)(sum >> 2);
+
+    for (uint16_t i = 1; i < (bars - 1); i++) {
+        sum = ((uint32_t)rssiHistory[i] << 1) + rssiHistory[i - 1] + rssiHistory[i + 1];
+        smoothedRssi[i] = (uint16_t)(sum >> 2);
+    }
+
+    uint16_t last = bars - 1;
+    sum = ((uint32_t)rssiHistory[last] << 1) + rssiHistory[last - 1] + rssiHistory[last];
+    smoothedRssi[last] = (uint16_t)(sum >> 2);
 }
 
 /**
@@ -1087,8 +1164,11 @@ static void Measure()
     //uint8_t originalModulation = settings.modulationType;
 
     // --- PLL SETTLING DELAY ---
-    // 400us for frequency stabilization
-    SYSTEM_DelayUs(400);
+    // Delay only when frequency was retuned to preserve scan speed.
+    if (frequencyRetuned) {
+        SYSTEM_DelayUs(400);
+        frequencyRetuned = false;
+    }
 
     // --- HARDWARE READ ---
     uint16_t rssi = scanInfo.rssi = GetRssi();
@@ -1128,6 +1208,7 @@ static void UpdateDBMax(bool inc)
     }
 
     ClampRssiTriggerLevel();
+    MarkSpectrumSettingsDirty();
     redrawStatus = true;
     redrawScreen = true;
     SYSTEM_DelayMs(20);
@@ -1146,6 +1227,7 @@ static void UpdateScanStep(bool inc)
 
     // FIX: Do NOT modify frequencyChangeStep here. It's the user's frequency offset
     // setting and should remain independent of step size adjustments.
+    MarkSpectrumSettingsDirty();
     RelaunchScan();
     ResetBlacklist();
     redrawScreen = true;
@@ -1228,19 +1310,21 @@ static void UpdateFreqChangeStep(bool inc)
         }
         else
         {
-            // Allow decrementing down to 0
-            if (settings.frequencyChangeStep > diff)
+            // Keep runtime behavior consistent with EEPROM validation: min 100.00k
+            if (settings.frequencyChangeStep > (diff + 10000))
                 settings.frequencyChangeStep -= diff;
             else
-                settings.frequencyChangeStep = 0;
+                settings.frequencyChangeStep = 10000;
         }
 
         // --- HARD CLAMP ---
-        // Ensure we never exceed 2000.00k (200,000 units @ 10Hz steps)
-        if (settings.frequencyChangeStep > 200000)
+        // Ensure we never exceed 6000.00k (600,000 units @ 10Hz steps)
+        if (settings.frequencyChangeStep > 600000)
         {
-            settings.frequencyChangeStep = 200000;
+            settings.frequencyChangeStep = 600000;
         }
+
+        MarkSpectrumSettingsDirty();
     }
     
     SYSTEM_DelayMs(100);
@@ -1258,6 +1342,7 @@ static void ToggleModulation()
         settings.modulationType = MODULATION_FM;
     }
     RADIO_SetModulation(settings.modulationType);
+    MarkSpectrumSettingsDirty();
 
     RelaunchScan();
     redrawScreen = true;
@@ -1273,6 +1358,19 @@ static void ToggleListeningBW()
     {
         settings.listenBw++;
     }
+
+    // Apply immediately so KEY_6 changes are audible/visible without waiting
+    // for a mode transition or RX restart.
+    BK4819_SetFilterBandwidth(settings.listenBw, false);
+#ifdef ENABLE_FEAT_N7SIX_SPECTRUM
+    if (isListening)
+    {
+        BK4819_WriteRegister(0x43, listenBWRegValues[settings.listenBw]);
+    }
+#endif
+
+    MarkSpectrumSettingsDirty();
+
     redrawScreen = true;
 }
 
@@ -1287,6 +1385,7 @@ static void ToggleBacklight()
     {
         BACKLIGHT_TurnOff();
     }
+    MarkSpectrumSettingsDirty();
 }
 
 static void ToggleStepsCount()
@@ -1301,6 +1400,7 @@ static void ToggleStepsCount()
     }
     // FIX: Do NOT modify frequencyChangeStep here. It's the user's frequency offset
     // setting and should remain independent of zoom/step count adjustments.
+    MarkSpectrumSettingsDirty();
     RelaunchScan();
     ResetBlacklist();
     redrawScreen = true;
@@ -1599,8 +1699,8 @@ static void UpdateWaterfall(void)
             level = (uint8_t)(((uint32_t)(rssi - minRssi) * 15) / range);
 
             // KEPT: ACTIVE UI ENHANCEMENTS
-            if (level == 0 && (rssi & 0x01)) level = 1; 
-            if (level > 0 && level < 4) level = 4; 
+            if (level == 0 && (rssi & 0x01)) level = 1; // LSB dither for sub-pixel signal hint
+            if (level == 1) level = WF_FLOOR_MIN_LEVEL;  // lift barely-invisible level 1 to legible
         }
         SetWaterfallLevel(x, waterfallIndex, level);
     }
@@ -1674,14 +1774,7 @@ static void DrawSpectrumEnhanced(void)
         // 1. THE MAIN TRACE (Smooth Wire)
         DrawLine(prevX, prevY, currX, currY, 1);
 
-        // 2. THE PEAK HOLD DOT
-        // Draw a single bright pixel at the highest peak ever reached
-        uint8_t peakY = Rssi2Y((uint16_t)peakHold[i]) + 1;
-        if (peakY < 127) {
-            gFrameBuffer[peakY >> 3][currX] |= (1 << (peakY & 7));
-        }
-
-        // 3. THE REFINED VERTICAL SHADE (Fast-Column)
+        // 2. THE REFINED VERTICAL SHADE (Fast-Column)
         if (currX >= prevX) {
             for (uint8_t x = prevX; x <= currX; x++) {
                 uint8_t dx = currX - prevX + 1;
@@ -1812,6 +1905,7 @@ void UpdateRssiTriggerLevel(bool up)
             settings.rssiTriggerLevel -= step;
         }
     }
+    MarkSpectrumSettingsDirty();
     redrawScreen = true;
 }
 
@@ -2295,44 +2389,6 @@ static void RenderStatus()
     }
 }
 
-static void DrawPeakHoldDots(void)
-{
-    uint16_t bars = GetDisplayWidth();
-    for (uint16_t i = 0; i < bars; i++) {
-        // Only draw the peak if it's actually above the noise floor
-        if (peakHold[i] > 0) {
-            uint8_t x = SpecIdxToX(i);
-            uint8_t y = Rssi2Y((uint16_t)peakHold[i]) + 1;
-            // Draw a single dot in the framebuffer
-            if (y < 127) { // Safety check
-                gFrameBuffer[y >> 3][x] |= (1 << (y & 7));
-            }
-        }
-    }
-}
-
-static void ProcessSpectrumEnhancements(void) 
-{
-    for (uint8_t i = 0; i < SPECTRUM_MAX_STEPS; i++) {
-        uint16_t currentRssi = rssiHistory[i];
-
-        // 1. SMOOTHING
-        smoothedRssi[i] = ((smoothedRssi[i] * 3) + currentRssi) >> 2;
-
-        // 2. PEAK HOLD
-        if (currentRssi > peakHold[i]) {
-            peakHold[i] = (currentRssi > 255) ? 255 : currentRssi;
-            peakAge[i] = 20; 
-        } else {
-            if (peakAge[i] > 0) {
-                peakAge[i]--;
-            } else if (peakHold[i] > 0) {
-                peakHold[i]--; // Slow decay
-            }
-        }
-    }
-}
-
 static void InitSpectrumMeterBackground(void)
 {
     if (spectrumMeterBackgroundInit)
@@ -2364,12 +2420,6 @@ static void RenderSpectrum(void)
         memset(gFrameBuffer[r], 0, sizeof(gFrameBuffer[r]));
     }
 
-    // --- ENHANCEMENT: SIGNAL CONDITIONING ---
-    // Process Smoothing and Peak-Hold timers BEFORE drawing.
-    // This ensures all visual components below are in sync.
-    ProcessSpectrumEnhancements(); 
-    // ----------------------------------------
-
     // 1. DRAW BACKGROUND CHOICE
     if (settings.useTicksGrid) {
         DrawGridBackground(); 
@@ -2385,11 +2435,6 @@ static void RenderSpectrum(void)
     // This draws the "live" grass using smoothedRssi[]
     DrawSpectrumEnhanced(); 
     
-    // --- PEAK HOLD VISUALIZATION ---
-    // This draws the lingering dots using peakHold[]
-    DrawPeakHoldDots(); 
-    // ------------------------------------
-
     DrawRssiTriggerLevel();
     DrawF(GetCentroidFrequency());
     DrawNums();
@@ -2619,15 +2664,6 @@ static void UpdateScan()
 
     if (scanInfo.i < scanInfo.measurementsCount)
     {
-        uint8_t dIdx = MapMeasurementToDisplay(scanInfo.i);
-        if (scanInfo.rssi > peakHold[dIdx])
-        {
-            peakHold[dIdx] = (scanInfo.rssi > 255) ? 255 : scanInfo.rssi;
-        }
-    }
-
-    if (scanInfo.i < scanInfo.measurementsCount)
-    {
         NextScanStep();
         return;
     }
@@ -2644,36 +2680,12 @@ static void UpdateScan()
     // --- NEW: PRE-CALCULATE SMOOTHING FILTER ---
     // Moving the math here means DrawSpectrumEnhanced() runs much faster.
     uint16_t bars = (scanInfo.measurementsCount > SPECTRUM_MAX_STEPS) ? SPECTRUM_MAX_STEPS : scanInfo.measurementsCount;
-    if (bars >= 2) {
-        // Handle first bar
-        uint32_t sum = ((uint32_t)rssiHistory[0] << 1) + rssiHistory[0] + rssiHistory[1];
-        smoothedRssi[0] = (uint16_t)(sum >> 2);
-
-        // Handle middle bars
-        for (uint16_t i = 1; i < (bars - 1); i++) {
-            sum = ((uint32_t)rssiHistory[i] << 1) + rssiHistory[i-1] + rssiHistory[i+1];
-            smoothedRssi[i] = (uint16_t)(sum >> 2);
-        }
-
-        // Handle last bar
-        uint16_t last = bars - 1;
-        sum = ((uint32_t)rssiHistory[last] << 1) + rssiHistory[last-1] + rssiHistory[last];
-        smoothedRssi[last] = (uint16_t)(sum >> 2);
-    }
+    RecomputeSmoothedTrace(bars);
 
     redrawScreen = true; // Now redraw using the pre-calculated smoothedRssi
     preventKeypress = false;
 
     UpdatePeakInfo(); 
-
-    // --- PEAK HOLD DECAY (Once per full sweep) ---
-    uint16_t decayLimit = (scanInfo.measurementsCount > SPECTRUM_MAX_STEPS) ? SPECTRUM_MAX_STEPS : scanInfo.measurementsCount;
-    for (uint16_t i = 0; i < decayLimit; i++) {
-        if (peakHold[i] > 0) {
-            peakHold[i] = (peakHold[i] * 7) >> 3; 
-        }
-    }
-
     if (IsPeakOverLevel())
     {
         ToggleRX(true);
@@ -2772,30 +2784,30 @@ static void UpdateListening()
             uint8_t pulse = rxAudioSmooth >> 2;
 
             uint8_t peakDisplay = MapMeasurementToDisplay(peak.i);
-            float pulseFactor = 1.0f + (pulse / 16.0f); // Grows from 1.0 to ~5.0
-            float grassPulseFactor = 1.0f + (pulse / 32.0f); // Grows from 1.0 to ~3.0 (half effect)
+            uint16_t pulseFactorQ8 = 256U + ((uint16_t)pulse << 3);      // 1.0 + pulse/32.0, max 1.47x (was 1.94x)
+            uint16_t grassPulseFactorQ8 = 256U + ((uint16_t)pulse << 2); // 1.0 + pulse/64.0, max 1.23x
             for (int i = 0; i < SPECTRUM_MAX_STEPS; i++)
             {
                 if (i >= (int)peakDisplay - 1 && i <= (int)peakDisplay + 1) {
                     // Amplify the main signal for heartbeat effect
-                    uint16_t base = peak.rssi + (FastRandom() % 12);
-                    uint16_t grown = (uint16_t)(base * pulseFactor);
-                    // Clamp to avoid overflow
-                    rssiHistory[i] = (grown > 65535) ? 65535 : grown;
+                    uint16_t base = peak.rssi + (FastRandom() % PEAK_JITTER_MAX);
+                    uint32_t grown = ((uint32_t)base * pulseFactorQ8) >> 8;
+                    rssiHistory[i] = (grown > RSSI_MAX_VALUE) ? RSSI_MAX_VALUE : (uint16_t)grown;
                 } else {
                     uint16_t baseFloor = scanInfo.rssiMin + 32;
                     int8_t roll = (FastRandom() % 9) - 4;
                     noisePersistence[i] = (noisePersistence[i] * 7 + (baseFloor + roll)) >> 3;
-                    uint8_t spike = (FastRandom() % 14);
+                    uint8_t spike = (FastRandom() % GRASS_SPIKE_MAX);
                     uint16_t grassBase = noisePersistence[i] + spike;
-                    uint16_t grownGrass = (uint16_t)(grassBase * grassPulseFactor);
+                    uint32_t grownGrass = ((uint32_t)grassBase * grassPulseFactorQ8) >> 8;
                     // Clamp to avoid overflow and keep below main signal
                     if (grownGrass > peak.rssi && peak.rssi > 10)
                         rssiHistory[i] = peak.rssi - 5;
                     else
-                        rssiHistory[i] = grownGrass;
+                        rssiHistory[i] = (grownGrass > RSSI_MAX_VALUE) ? RSSI_MAX_VALUE : (uint16_t)grownGrass;
                 }
             }
+            RecomputeSmoothedTrace(GetDisplayWidth());
             UpdateWaterfall(); 
             redrawScreen = true; 
         }
@@ -2929,11 +2941,15 @@ static void Tick()
         #endif
         redrawScreen = false;
     }
+
+    ServiceSpectrumSettingsAutosave();
 }
 
 void APP_RunSpectrum(void)
 {
     vfo = gEeprom.TX_VFO;
+    spectrumSettingsDirty = false;
+    spectrumSettingsAutosaveTicks = 0;
 
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
     LoadSettings();
@@ -2942,8 +2958,7 @@ void APP_RunSpectrum(void)
     // 1. Load settings from EEPROM first
     SPECTRUM_LoadSettings();
 
-    // 2. --- FORCED DEFAULT: 600.00k OFFSET ---
-    settings.frequencyChangeStep = 60000; 
+    // Keep persisted value when valid; fallback is handled by load validation.
 
     // --- APPLY SCAN STEP DEFAULTS ---
     bool scanStepFound = false;
@@ -2997,8 +3012,9 @@ void APP_RunSpectrum(void)
     newScanStart = true;
 
     ToggleRX(true), ToggleRX(false);
-    ModulationMode_t safe_mod = SAFE_VFO_MODULATION(gTxVfo, MODULATION_FM);
-    RADIO_SetModulation(settings.modulationType = safe_mod);
+    ModulationMode_t safe_mod = SAFE_VFO_MODULATION(gTxVfo, settings.modulationType);
+    settings.modulationType = safe_mod;
+    RADIO_SetModulation(settings.modulationType);
 
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
     BK4819_SetFilterBandwidth(settings.listenBw, false);
@@ -3014,9 +3030,11 @@ void APP_RunSpectrum(void)
     RelaunchScan();
 
     memset(rssiHistory, 0, sizeof(rssiHistory));
+    memset(smoothedRssi, 0, sizeof(smoothedRssi));
     memset(waterfallHistory, 0, sizeof(waterfallHistory));
     for (uint8_t i = 0; i < SPECTRUM_MAX_STEPS; ++i) displayBestIndex[i] = 0xFF;
     waterfallIndex = 0;
+    frequencyRetuned = false;
 
     // Initialize cache-based meter background once
     InitSpectrumMeterBackground();

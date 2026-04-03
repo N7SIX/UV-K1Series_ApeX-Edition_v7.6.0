@@ -8,6 +8,44 @@ License: Apache License, Version 2.0
 -->
 
 ---
+## Spectrum UX/Persistence Professionalization (April 3, 2026)
+
+**SCOPE:** Spectrum analyzer display cleanliness, control consistency, and robust last-state persistence.
+
+### Core Firmware Changes
+
+1. **Peak-Hold Visual Removal (Cleaner Trace)**
+   - Removed peak-hold overlay rendering and decay path from spectrum display.
+   - Live trace now reflects active signal movement only.
+
+2. **Frequency Offset Step Consistency**
+   - Enforced non-zero runtime minimum step (`100.00k`) to match EEPROM validation rules.
+   - Eliminates transient `±0.00k` state and reboot mismatch.
+
+3. **Immediate Bandwidth Application**
+   - `KEY_6` bandwidth changes now apply to BK4819 immediately.
+   - No longer waits for mode transitions/RX restart to take effect.
+
+4. **Modulation Startup Behavior Fix**
+   - Spectrum startup now preserves user-selected modulation where valid.
+   - Still protected by safe sanitization against unsupported combinations.
+
+5. **Runtime Autosave for Last Settings**
+   - Added dirty-flag + delayed autosave service for spectrum settings.
+   - Added explicit dual-save on spectrum exit/deinit path.
+   - Improves recovery of last-used settings after power-off scenarios.
+
+### Documentation Updates
+
+- Updated `Documentation/RELEASE_NOTES.md` with April 2026 spectrum reliability/UX section.
+- Updated `Documentation/v7.6.5_UPDATE_SUMMARY.md` with addendum for new behavior.
+- Updated `Documentation/SPECTRUM_ANALYZER_GUIDE.md` to reflect peak-hold visual removal and version bump.
+
+**BUILD STATUS:** ✅ ApeX target compiles and links successfully (84/84)
+
+---
+
+---
 ## REGA AM/FM Documentation, ST7565 Verification, Event System Phase 2 & RAM Optimization v7.6.6 (April 1, 2026)
 
 **CRITICAL IMPROVEMENTS & ARCHITECTURAL ENHANCEMENTS:**

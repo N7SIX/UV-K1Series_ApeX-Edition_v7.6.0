@@ -12,7 +12,9 @@ License: Apache License, Version 2.0
 
 **For:** UV-K1 Series / UV-K5 V3 ApeX Edition  
 **Firmware:** v7.6.4br3+ (v7.6.0+ supported; range alignment fixed in v7.6.4br3)  
-**Document Version:** 1.1 (Updated March 2, 2026)
+**Document Version:** 1.2 (Updated April 3, 2026)
+
+**April 2026 Note:** Peak-hold overlay visualization has been removed in current Spectrum builds for cleaner live-trace readability. Any legacy "peak-hold dashed line" references in older sections should be treated as historical behavior.
 
 ---
 
@@ -66,7 +68,7 @@ Unlike traditional radio "S-meter" which shows one frequency, the spectrum analy
 **Core capabilities for RF signal analysis:**
 
 - **Real-time Signal Display**: Live spectrum visualization with waterfall history
-- **Peak Hold Function**: Track maximum signal levels during scan
+- **Clean Live Trace**: No peak-hold overlay; direct view of active signal movement
 - **RSSI Measurement**: Signal strength indicators in dBm and S-units  
 - **Configurable Scanning**: Adjust step size and frequency range
 - **Modulation Display**: Current operating mode (FM/USB/LSB)
