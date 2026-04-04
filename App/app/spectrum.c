@@ -127,6 +127,11 @@ static void ToggleSpectrumDisplayMode(void);
  #define WATERFALL_UPDATE_INTERVAL   2U
  #define WATERFALL_COLOR_LEVELS      16U
 #define SETTINGS_AUTOSAVE_DELAY_TICKS  80U
+// AF mode: update the waterfall once every this many FFT frames.
+// At ~250 FFT/s this gives ~31 Hz scroll → 16 rows × 32 ms ≈ 0.5 s of history.
+#define AF_WATERFALL_STRIDE          8U
+// Audio display bandwidth (Hz) used for tick and label positions
+#define AF_DISPLAY_BW             4000U
 
  #define DISPLAY_DBM_MIN            -130
  #define DISPLAY_DBM_MAX            -50
@@ -1928,6 +1933,20 @@ static void ShowChannelName(uint32_t f)
 
 static void DrawF(uint32_t f)
 {
+#ifdef ENABLE_AUDIO_SPECTRUM
+    if (AUDIO_SPECTRUM_GetMode() == SPECTRUM_MODE_AUDIO) {
+        // AF mode: replace the RF frequency readout with the audio peak frequency.
+        AudioSpectrumStats_t afStats = AUDIO_SPECTRUM_GetStats();
+        sprintf(String, "AF pk:%4uHz", afStats.peakFrequency);
+        UI_PrintStringSmallNormal(String, 8, 127, 0);
+        sprintf(String, "%3s", gModulationStr[settings.modulationType]);
+        GUI_DisplaySmallest(String, 116, 0, false, true);
+        sprintf(String, "%4sk", bwOptions[settings.listenBw]);
+        GUI_DisplaySmallest(String, 108, 6, false, true);
+        GUI_DisplaySmallest("AF", 116, 12, false, true);
+        return;
+    }
+#endif
     sprintf(String, "%u.%05u", f / 100000, f % 100000);
     UI_PrintStringSmallNormal(String, 8, 127, 0);
 
@@ -1937,8 +1956,7 @@ static void DrawF(uint32_t f)
     GUI_DisplaySmallest(String, 108, 6, false, true);
 
 #ifdef ENABLE_AUDIO_SPECTRUM
-    sprintf(String, "%2s", (AUDIO_SPECTRUM_GetMode() == SPECTRUM_MODE_AUDIO) ? "AF" : "RF");
-    GUI_DisplaySmallest(String, 116, 12, false, true);
+    GUI_DisplaySmallest("RF", 116, 12, false, true);
 #endif
 
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
@@ -1949,6 +1967,17 @@ static void DrawF(uint32_t f)
 static void DrawNums()
 {
     // Frequency numbers moved from Y=38 to Y=34 (4 pixels up)
+#ifdef ENABLE_AUDIO_SPECTRUM
+    if (AUDIO_SPECTRUM_GetMode() == SPECTRUM_MODE_AUDIO) {
+        // AF mode: replace RF frequency labels with audio frequency range labels.
+        // Top-left: no RF scan parameters (step count / scan step are irrelevant).
+        // Bottom row: show 0 Hz, 2 kHz centre, and 4 kHz right edge.
+        GUI_DisplaySmallest("0", 0, 34, false, true);
+        GUI_DisplaySmallest("2kHz", 52, 34, false, true);
+        GUI_DisplaySmallest("4kHz", 101, 34, false, true);
+        return;
+    }
+#endif
     if (currentState == SPECTRUM)
     {
 #ifdef ENABLE_SCAN_RANGES
@@ -2049,6 +2078,21 @@ static void DrawRssiTriggerLevel()
 
 static void DrawTicks()
 {
+#ifdef ENABLE_AUDIO_SPECTRUM
+    if (AUDIO_SPECTRUM_GetMode() == SPECTRUM_MODE_AUDIO) {
+        // AF mode: draw audio-frequency ruler ticks.
+        // Screen is 128 px wide = 0 .. AF_DISPLAY_BW Hz (4 kHz).
+        // Tall tick (0b11111000) at every 1 kHz; short (0b00110000) at 500 Hz steps.
+        for (uint16_t freq_hz = 500; freq_hz < AF_DISPLAY_BW; freq_hz += 500) {
+            uint8_t x = (uint8_t)(((uint32_t)freq_hz * 127U) / AF_DISPLAY_BW);
+            uint8_t tick = (freq_hz % 1000U == 0U) ? 0b11111000 : 0b00110000;
+            gFrameBuffer[3][x] |= tick;
+        }
+        // Place the 4 kHz (Nyquist) tick at the rightmost column explicitly.
+        gFrameBuffer[3][127] |= 0b11111000;
+        return;
+    }
+#endif
     uint32_t f = GetFStart();
     uint32_t span = GetFEnd() - GetFStart();
     uint32_t step = span / 128;
@@ -2852,6 +2896,10 @@ static void UpdateStill()
 static uint16_t noisePersistence[128]; 
 
 #ifdef ENABLE_AUDIO_SPECTRUM
+// Waterfall stride counter for AF mode — file-scope so ToggleSpectrumDisplayMode()
+// can reset it, preventing a mid-count resume after switching modes.
+static uint8_t afWaterfallStride = 0;
+
 static void ToggleSpectrumDisplayMode(void)
 {
     SpectrumMode_t mode = AUDIO_SPECTRUM_GetMode();
@@ -2861,6 +2909,9 @@ static void ToggleSpectrumDisplayMode(void)
         AUDIO_SPECTRUM_SetMode(SPECTRUM_MODE_AUDIO);
         AUDIO_SPECTRUM_ResetPeaks();
     }
+
+    // Reset the AF waterfall stride so the counter starts fresh in the new mode.
+    afWaterfallStride = 0;
 
     memset(rssiHistory, 0, sizeof(rssiHistory));
     memset(smoothedRssi, 0, sizeof(smoothedRssi));
@@ -2934,7 +2985,14 @@ static bool TryUpdateAudioSpectrum(void)
     // continue to use RF-level strength, not AF-bin magnitudes.
     peak.i = peakIndex;
     RecomputeSmoothedTrace(bars);
-    UpdateWaterfall();
+
+    // Throttle waterfall advances to ~31 Hz (every AF_WATERFALL_STRIDE FFT frames)
+    // so the 16-row history covers ~0.5 s and is readable at normal viewing distance.
+    if (++afWaterfallStride >= AF_WATERFALL_STRIDE) {
+        afWaterfallStride = 0;
+        UpdateWaterfall();
+    }
+
     return true;
 }
 #endif

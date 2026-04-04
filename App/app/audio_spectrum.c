@@ -88,11 +88,19 @@ static struct {
 
 static bool moduleInitialized = false;
 
+/* Goertzel resonance coefficients for a 64-point DFT.
+ * 33 entries: index 0 (unused) plus k=1..32.
+ * Each entry is: round( 2 * cos(2*pi*k/64) * 16384 )  (Q14 format).
+ * Using 2*cos (not just cos) places filter poles exactly on the unit circle at
+ * the correct DFT bin frequencies: bin k = k * Fs / N = k * 125 Hz @ 8 kHz.
+ * The recurrence s0 = x + ((coeff * s1) >> 14) - s2 then resonates at k*125 Hz.
+ * Array size: GOERTZEL_BINS + 1 = 33 (k=0 through k=32).
+ */
 static const int16_t kGoertzelCoeffQ14[GOERTZEL_BINS + 1] = {
-    0, 16305, 16169, 15943, 15626, 15221, 14732, 14162, 13515,
-    12795, 12008, 11159, 10252, 9293, 8288, 7241, 6159, 5048,
-    3914, 2765, 1606, 442, -721, -1877, -3021, -4148, -5255,
-    -6334, -7383, -8396, -9368, -10296, -11176
+    0,    32610, 32138, 31357, 30274, 28899, 27246, 25330, 23170,
+    20788, 18205, 15447, 12540,  9512,  6393,  3212,     0,
+    -3212, -6393, -9512,-12540,-15447,-18205,-20788,-23170,
+   -25330,-27246,-28899,-30274,-31357,-32138,-32610,-32768
 };
 
 /* =============================================================================
@@ -171,7 +179,9 @@ static void ComputeFFT(void)
         for (uint16_t n = 0; n < FFT_SIZE; n++) {
             uint16_t w = (n <= (FFT_SIZE / 2U)) ? n : (FFT_SIZE - 1U - n);
             int32_t x = ((int32_t)frame[n] * (int32_t)w) >> 5;
-            int32_t s0 = x + ((coeff * s1) >> 14) - s2;
+            // coeff = 2*cos(2πk/N) in Q14; cast to int64_t before multiply to
+            // prevent overflow (|coeff| can be up to 32768, |s1| up to ~1M).
+            int32_t s0 = x + (int32_t)(((int64_t)coeff * s1) >> 14) - s2;
             s2 = s1;
             s1 = s0;
         }
