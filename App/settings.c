@@ -85,7 +85,20 @@ void SETTINGS_InitEEPROM(void)
     // 0E70..0E77
     PY25Q16_ReadBuffer(0x004000, Data, 8);
     gEeprom.CHAN_1_CALL          = IS_MR_CHANNEL(Data[0]) ? Data[0] : MR_CHANNEL_FIRST;
-    gEeprom.SQUELCH_LEVEL        = (Data[1] < 10) ? Data[1] : 1;
+    {
+        // Guard SQL=0: erased/corrupted flash stores 0x00, which programs all
+        // BK4819 squelch thresholds to fully-open → radio immediately triggers
+        // SQUELCH_LOST on boot and enters RX. Valid range is 1-9; 0 is "squelch off"
+        // but should never come from flash corruption. Default to 5 and self-repair.
+        uint8_t sqRaw = Data[1];
+        gEeprom.SQUELCH_LEVEL = (sqRaw >= 1 && sqRaw < 10) ? sqRaw : 5;
+        if (sqRaw == 0 || sqRaw >= 10) {
+            Data[1] = gEeprom.SQUELCH_LEVEL;
+            // Append=false: writes full sector from SectorCache, preserving the
+            // 0x4008 settings block (BACKLIGHT etc.) that shares this sector.
+            PY25Q16_WriteBuffer(0x004000, Data, 8, false);
+        }
+    }
     gEeprom.TX_TIMEOUT_TIMER     = (Data[2] > 4 && Data[2] < 180) ? Data[2] : 11;
     #ifdef ENABLE_NOAA
         gEeprom.NOAA_AUTO_SCAN   = (Data[3] <  2) ? Data[3] : false;
@@ -443,6 +456,7 @@ void SETTINGS_InitEEPROM(void)
 void SETTINGS_LoadCalibration(void)
 {
 //  uint8_t Mic;
+    bool repairBatteryCalibration = false;
 
     // 0x1EC0
     PY25Q16_ReadBuffer(0x010000 + 0xc0, gEEPROM_RSSI_CALIB[3], 8);
@@ -457,12 +471,35 @@ void SETTINGS_LoadCalibration(void)
 
     // 0x1F40
     PY25Q16_ReadBuffer(0x010000 + 0x140, gBatteryCalibration, 12);
-    if (gBatteryCalibration[0] >= 5000)
+    if (gBatteryCalibration[0] < 1500 || gBatteryCalibration[0] > 3500)
     {
         gBatteryCalibration[0] = 1900;
-        gBatteryCalibration[1] = 2000;
+        repairBatteryCalibration = true;
     }
-    gBatteryCalibration[5] = 2300;
+
+    if (gBatteryCalibration[1] < 1500 || gBatteryCalibration[1] > 3500)
+    {
+        gBatteryCalibration[1] = 2000;
+        repairBatteryCalibration = true;
+    }
+
+    // Guard corrupted calibration storage: index 3 is used as voltage conversion denominator.
+    if (gBatteryCalibration[3] < 1500 || gBatteryCalibration[3] > 3500)
+    {
+        gBatteryCalibration[3] = 2200;
+        repairBatteryCalibration = true;
+    }
+
+    if (gBatteryCalibration[5] != 2300)
+    {
+        gBatteryCalibration[5] = 2300;
+        repairBatteryCalibration = true;
+    }
+
+    if (repairBatteryCalibration)
+    {
+        SETTINGS_SaveBatteryCalibration(gBatteryCalibration);
+    }
 
     #ifdef ENABLE_VOX
         // 0x1F50

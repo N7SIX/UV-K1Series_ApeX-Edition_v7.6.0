@@ -167,8 +167,12 @@ void BATTERY_GetReadings(const bool bDisplayBatteryLevel)
 {
     const uint8_t  PreviousBatteryLevel = gBatteryDisplayLevel;
     const uint16_t Voltage              = (gBatteryVoltages[0] + gBatteryVoltages[1] + gBatteryVoltages[2] + gBatteryVoltages[3]) / 4;
+    uint16_t       calibration          = gBatteryCalibration[3];
 
-    gBatteryVoltageAverage = (Voltage * 760) / gBatteryCalibration[3];
+    if (calibration < 1500 || calibration > 3500)
+        calibration = 2200;
+
+    gBatteryVoltageAverage = (Voltage * 760) / calibration;
 
     if(gBatteryVoltageAverage > BATTERY_OVERVOLT_THRESHOLD_10MV)
         gBatteryDisplayLevel = BATTERY_DISPLAY_LEVEL_OVERVOLT; // battery overvoltage

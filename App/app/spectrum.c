@@ -1816,9 +1816,13 @@ static void DrawStatus()
     BOARD_ADC_GetBatteryInfo(&gBatteryVoltages[gBatteryCheckCounter++ % 4],
                              &gBatteryCurrent);
 
+    uint16_t calibration = gBatteryCalibration[3];
+    if (calibration < 1500 || calibration > 3500)
+        calibration = 2200;
+
     uint16_t voltage = (gBatteryVoltages[0] + gBatteryVoltages[1] +
                         gBatteryVoltages[2] + gBatteryVoltages[3]) /
-                       4 * 760 / gBatteryCalibration[3];
+                       4 * 760 / calibration;
 
     unsigned perc = BATTERY_VoltsToPercent(voltage);
 

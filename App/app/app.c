@@ -1732,9 +1732,13 @@ void APP_TimeSlice500ms(void)
 
     if (gReducedService)
     {
+        uint16_t calibration = gBatteryCalibration[3];
+        if (calibration < 1500 || calibration > 3500)
+            calibration = 2200;
+
         BOARD_ADC_GetBatteryInfo(&gBatteryCurrentVoltage, &gBatteryCurrent);
 
-        if (gBatteryCurrent > 500 || gBatteryCalibration[3] < gBatteryCurrentVoltage)
+        if (gBatteryCurrent > 500 || calibration < gBatteryCurrentVoltage)
         {
             #ifdef ENABLE_OVERLAY
                 overlay_FLASH_RebootToBootloader();
