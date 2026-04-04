@@ -2887,37 +2887,39 @@ static bool TryUpdateAudioSpectrum(void)
     }
 
     if (bars == 1) {
-        rssiHistory[0] = scanInfo.rssiMin;
+        rssiHistory[0] = dbm2rssi(settings.dbMin);
         peak.i = 0;
         RecomputeSmoothedTrace(1);
         UpdateWaterfall();
         return true;
     }
 
-    uint16_t traceFloor = dbm2rssi(settings.dbMin + 6);
-    uint16_t traceCeil = dbm2rssi(settings.dbMax - 6);
-    uint16_t span = (traceCeil > traceFloor) ? (traceCeil - traceFloor) : 1;
+    /* Map the normalised FFT magnitudes (0–255) linearly onto the full
+     * RSSI display range [dbMin .. dbMax].  Using the complete range (no
+     * inner margins) lets the spectrum trace fill the display the same way
+     * the RF RSSI trace does in RF mode.
+     *
+     * A small noise gate (mag < 4) zeroes out bins below the AGC noise
+     * floor so that silence shows a clean baseline rather than random
+     * flicker. Quadratic shaping is intentionally avoided: it adds a
+     * non-linear tilt that makes the displayed spectrum look brighter at
+     * higher frequencies, misrepresenting the actual audio content. */
+    uint16_t traceFloor = dbm2rssi(settings.dbMin);
+    uint16_t traceCeil  = dbm2rssi(settings.dbMax);
+    uint16_t span       = (traceCeil > traceFloor) ? (traceCeil - traceFloor) : 1U;
+
     uint16_t peakLocal = 0;
-    uint8_t peakIndex = 0;
+    uint8_t  peakIndex = 0;
 
     for (uint16_t i = 0; i < bars; i++) {
         uint16_t src = (uint16_t)((i * (binCount - 1U)) / (bars - 1U));
         uint16_t mag = bins[src];
 
-        // Gate low-level hiss and apply quadratic shaping for cleaner peaks.
-        if (mag < 6U) {
-            mag = 0;
-        } else {
-            mag -= 6U;
-        }
-        uint16_t shaped = (uint16_t)(((uint32_t)mag * (uint32_t)mag + 255U) >> 8);
-        uint16_t value = traceFloor + (uint16_t)(((uint32_t)shaped * span) / 255U);
+        /* Noise gate: suppress sub-threshold hiss */
+        if (mag < 4U) mag = 0U;
 
-        // Keep any active AF energy slightly above the floor so the line does
-        // not collapse into the ruler while still preserving dynamics.
-        if (mag != 0U && value < (traceFloor + 4U)) {
-            value = traceFloor + 4U;
-        }
+        /* Linear mapping: silence → traceFloor, full scale → traceCeil */
+        uint16_t value = traceFloor + (uint16_t)(((uint32_t)mag * span) / 255U);
 
         rssiHistory[i] = value;
         if (value > peakLocal) {
@@ -2930,8 +2932,8 @@ static bool TryUpdateAudioSpectrum(void)
         memset(&rssiHistory[bars], 0, (SPECTRUM_MAX_STEPS - bars) * sizeof(rssiHistory[0]));
     }
 
-    // Keep `peak.rssi` sourced from Measure() so RX hold/squelch decisions
-    // continue to use RF-level strength, not AF-bin magnitudes.
+    /* Keep `peak.rssi` sourced from Measure() so RX hold/squelch decisions
+     * continue to use RF-level strength, not AF-bin magnitudes. */
     peak.i = peakIndex;
     RecomputeSmoothedTrace(bars);
     UpdateWaterfall();

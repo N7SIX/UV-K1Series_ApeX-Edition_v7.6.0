@@ -5,6 +5,26 @@
  * @author      N7SIX (2026)
  * @version     v7.6.0 (ApeX Edition)
  * @license     Apache License, Version 2.0
+ *
+ * IMPLEMENTATION NOTES (AF mode):
+ * --------------------------------
+ * The audio source is BK4819 REG_0x64 (Voice Amplitude Out), which outputs the
+ * demodulated audio envelope at up to 15-bit resolution. In AM mode this IS the
+ * audio signal. A single-pole IIR high-pass removes the DC bias; the AC residual
+ * is fed into a Goertzel DFT bank.
+ *
+ * GOERTZEL COEFFICIENT FORMULA:
+ *   coeff[k] = 2 * cos(2π*k / FFT_SIZE) expressed in Q14 (× 16384)
+ * This must be 2×cos, NOT 1×cos. Using 1×cos places the filter poles at the wrong
+ * angles, mapping every "bin k" to a frequency roughly 8× higher than intended
+ * and collapsing the displayed range into a narrow 1.3–2.4 kHz band.
+ *
+ * DC REMOVAL NOTE:
+ * The derivative-based preprocessing (diff × 6 + centered) acts as a first-order
+ * high-pass differentiator that adds +20 dB/decade tilt across the audio band.
+ * At 100 Hz the gain is ~0.5× while at 4 kHz it is ~19×, making the spectrum
+ * look like white noise rather than real audio content. Replaced with a simple
+ * EMA DC-removal followed by a flat gain.
  * =====================================================================================
  */
 
@@ -33,7 +53,8 @@
 #define SAMPLE_INTERVAL_US     125U     ///< ~8 kHz read cadence
 
 #define DEFAULT_SMOOTHING        8U
-#define DEFAULT_GAIN_SHIFT      10U
+#define DEFAULT_GAIN_SHIFT      12U    ///< Starting point for AGC; auto-adjusts each frame
+#define GAIN_SHIFT_MAX          24U    ///< Upper bound allows large dynamic range headroom
 #define PEAK_DECAY               6U
 
 /* =============================================================================
@@ -88,11 +109,37 @@ static struct {
 
 static bool moduleInitialized = false;
 
+/**
+ * @brief Corrected Goertzel coefficients: 2*cos(2π*k/FFT_SIZE) in Q14 format.
+ *
+ * For k=1..GOERTZEL_BINS with FFT_SIZE=64 and 8 kHz sample rate:
+ *   bin k=1  → 125 Hz,  bin k=8  → 1000 Hz,
+ *   bin k=16 → 2000 Hz, bin k=32 → 4000 Hz
+ *
+ * The recurrence requires 2*cos, NOT cos. Using cos halves the effective
+ * coefficient, shifts the poles away from the desired DFT frequencies, and
+ * gives the wrong power estimate — all fixed by the values below.
+ */
 static const int16_t kGoertzelCoeffQ14[GOERTZEL_BINS + 1] = {
-    0, 16305, 16169, 15943, 15626, 15221, 14732, 14162, 13515,
-    12795, 12008, 11159, 10252, 9293, 8288, 7241, 6159, 5048,
-    3914, 2765, 1606, 442, -721, -1877, -3021, -4148, -5255,
-    -6334, -7383, -8396, -9368, -10296, -11176
+    /*k=0 (DC, unused)*/ 0,
+    32610, 32138, 31357, 30274, 28899, 27246, 25330, 23170,
+    20788, 18205, 15447, 12540,  9512,  6393,  3212,     0,
+    -3212, -6393, -9512,-12540,-15447,-18205,-20788,-23170,
+   -25330,-27246,-28899,-30274,-31357,-32138,-32610,-32768
+};
+
+/**
+ * @brief Hann window lookup table in Q6 format (max=64 ≙ 1.0).
+ *
+ * w[n] = round(0.5 * (1 − cos(2π·n / (FFT_SIZE−1))) * 64), n = 0..63
+ * Tapers to zero at both ends, suppressing spectral leakage from sharp
+ * frame edges. Sidelobe attenuation ≈ −31 dB vs. −26 dB for triangular.
+ */
+static const uint8_t kHannWindowQ6[FFT_SIZE] = {
+     0,  0,  1,  1,  3,  4,  6,  7, 10, 12, 15, 17, 20, 23, 26, 30,
+    33, 36, 39, 42, 45, 48, 51, 53, 55, 58, 59, 61, 62, 63, 64, 64,
+    64, 64, 63, 62, 61, 59, 58, 55, 53, 51, 48, 45, 42, 39, 36, 33,
+    30, 26, 23, 20, 17, 15, 12, 10,  7,  6,  4,  3,  1,  1,  0,  0
 };
 
 /* =============================================================================
@@ -103,22 +150,28 @@ static int16_t ReadAudioSample(void)
 {
     uint16_t raw = BK4819_GetVoiceAmplitudeOut();
 
+    /* Initialise DC estimate from the very first sample so the ring buffer
+     * starts in a settled state without a large transient. */
     if (audioSpec.frameCount == 0 && audioSpec.sampleCount == 0) {
         audioSpec.dcEstimate = raw;
-        audioSpec.prevRaw = raw;
+        audioSpec.prevRaw    = raw;
     } else {
+        /* Single-pole IIR high-pass: α = 1/256 ≈ 0.004  (corner ≈ 5 Hz @8kHz).
+         * This removes the DC bias present in REG_0x64 while keeping the full
+         * voice band (>20 Hz) intact.
+         * The previous derivative-based approach (diff×6 + slow-AC) acted as
+         * a first-order differentiator (+20 dB/decade tilt) that suppressed bass
+         * and made the spectrum look like spectrally flat noise. */
         int32_t err = (int32_t)raw - (int32_t)audioSpec.dcEstimate;
         audioSpec.dcEstimate = (uint16_t)((int32_t)audioSpec.dcEstimate + (err >> 8));
     }
 
-    // Reg 0x64 behaves as an envelope on BK4819. Derivative + slow high-pass
-    // restores motion so sustained speech does not collapse into DC.
-    int32_t diff = (int32_t)raw - (int32_t)audioSpec.prevRaw;
     audioSpec.prevRaw = raw;
 
-    int32_t centered = ((int32_t)raw - (int32_t)audioSpec.dcEstimate) >> 1;
-    int32_t sample = (diff * 6) + centered;
-    if (sample > 32767) sample = 32767;
+    /* AC-coupled sample with moderate gain so the Goertzel accumulator stays
+     * well below int32_t saturation for typical radio audio levels. */
+    int32_t sample = ((int32_t)raw - (int32_t)audioSpec.dcEstimate) << 2;  /* ×4 gain */
+    if (sample >  32767) sample =  32767;
     if (sample < -32768) sample = -32768;
     return (int16_t)sample;
 }
@@ -169,13 +222,27 @@ static void ComputeFFT(void)
         int32_t s2 = 0;
 
         for (uint16_t n = 0; n < FFT_SIZE; n++) {
-            uint16_t w = (n <= (FFT_SIZE / 2U)) ? n : (FFT_SIZE - 1U - n);
-            int32_t x = ((int32_t)frame[n] * (int32_t)w) >> 5;
-            int32_t s0 = x + ((coeff * s1) >> 14) - s2;
+            /* Apply Hann window (Q6, max=64): reduces spectral leakage.
+             * The >>6 normalises so the effective input amplitude equals
+             * the unwindowed sample at the window peak. */
+            int32_t x = ((int32_t)frame[n] * (int32_t)kHannWindowQ6[n]) >> 6;
+
+            /* Goertzel recurrence: s[n] = x[n] + 2cos(ω₀)·s[n-1] - s[n-2]
+             * The coefficient is stored as 2cos(ω₀)·16384 (Q14), so a >>14
+             * after the multiply gives the exact 2cos(ω₀)·s1 product.
+             *
+             * CRITICAL: use int64_t for coeff×s1 before the shift to prevent
+             * int32_t overflow at typical audio levels (coeff can reach ±32610
+             * and s1 can reach ~10^6, giving a product of ~3×10^10 which
+             * exceeds INT32_MAX ≈ 2.1×10^9). */
+            int32_t s0 = x + (int32_t)(((int64_t)coeff * (int64_t)s1) >> 14) - s2;
             s2 = s1;
             s1 = s0;
         }
 
+        /* Goertzel power: |X(k)|² ∝ s1² + s2² - 2cos(ω₀)·s1·s2
+         * With coeff = 2cos(ω₀)·16384 stored in the table, the p3 term
+         * (coeff·s1·s2 >> 14) gives exactly 2cos(ω₀)·s1·s2. */
         int64_t p1 = (int64_t)s1 * (int64_t)s1;
         int64_t p2 = (int64_t)s2 * (int64_t)s2;
         int64_t p3 = ((int64_t)coeff * (int64_t)s1 * (int64_t)s2) >> 14;
@@ -197,7 +264,10 @@ static void ComputeFFT(void)
         if (binMag[k] > peakMag) peakMag = binMag[k];
     }
 
-    if (peakMag > 220 && audioSpec.gainShift < 18) {
+    /* Adaptive gain: keep the spectral peak in the range 60–220.
+     * GAIN_SHIFT_MAX (24) gives headroom for the corrected 2cos coefficients
+     * which produce ~4× more power than the previous (erroneous) cos table. */
+    if (peakMag > 220 && audioSpec.gainShift < GAIN_SHIFT_MAX) {
         audioSpec.gainShift++;
     } else if (peakMag < 60 && audioSpec.gainShift > 6) {
         audioSpec.gainShift--;
