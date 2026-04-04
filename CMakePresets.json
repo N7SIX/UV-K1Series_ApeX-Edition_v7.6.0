@@ -22,7 +22,6 @@
                 "ENABLE_DTMF_CALLING": false,
                 "ENABLE_FLASHLIGHT": true,
                 "ENABLE_SPECTRUM": false,
-                "ENABLE_AUDIO_SPECTRUM": false,
                 "ENABLE_BIG_FREQ": true,
                 "ENABLE_SMALL_BOLD": true,
                 "ENABLE_CUSTOM_MENU_LAYOUT": true,
@@ -87,7 +86,6 @@
             "inherits": "default",
             "cacheVariables": {
                 "ENABLE_SPECTRUM": true,
-                "ENABLE_AUDIO_SPECTRUM": true,
                 "ENABLE_FMRADIO": true,
                 "ENABLE_VOX": true,
                 "ENABLE_AIRCOPY": true,
