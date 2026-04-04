@@ -107,9 +107,6 @@ static void ResetPeakHold(void);
 // Waterfall: minimum display level for any sample above noise (0 = off)
 // Level 2 = 2/16-pixel Bayer density — legible but dim; was 4 (flooded noise)
 #define WF_FLOOR_MIN_LEVEL           2
-// Listen-mode animation noise budget (FastRandom modulus)
-#define GRASS_SPIKE_MAX              8   // spike height on background bins
-#define PEAK_JITTER_MAX              8   // jitter on the peak signal bin
 #define RSSI_MAX_VALUE              65535U
 #define DISPLAY_STRING_BUFFER_SIZE  32U
 #define SPECTRUM_MAX_STEPS          128U
@@ -206,6 +203,7 @@ static const CalibrationPoint calTable[] = {
  uint8_t waterfallIndex = 0;
  uint16_t waterfallUpdateCounter = 0;
  static uint16_t smoothedRssi[SPECTRUM_MAX_STEPS];
+static uint16_t displayTrace[SPECTRUM_MAX_STEPS];
 static bool frequencyRetuned = false;
 
 // Peak Hold: per-column maximum RSSI since last reset
@@ -277,17 +275,9 @@ const uint8_t modTypeReg47Values[] = {1, 7, 5};
  const char *BPFOptions[]   = {"8.46", "7.25", "6.35", "5.64", "5.08", "4.62", "4.23"};
  #endif
  
- // =============================================================================
- // UTILITY FUNCTIONS (RANDOM, MATH, BANDS)
- // =============================================================================
- 
- static uint16_t FastRandom(void) {
-     static uint16_t lfsr = 0xACE1u;
-     uint16_t bit;
-     bit = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5)) & 1u;
-     lfsr = (lfsr >> 1) | (bit << 15);
-     return lfsr;
- }
+// =============================================================================
+// UTILITY FUNCTIONS (RANDOM, MATH, BANDS)
+// =============================================================================
  
  static int clamp(int v, int min, int max) {
      return v <= min ? min : (v >= max ? max : v);
@@ -753,6 +743,7 @@ static void RelaunchScan() {
     // reset display->best measurement mapping
     for (uint8_t i = 0; i < SPECTRUM_MAX_STEPS; ++i) displayBestIndex[i] = 0xFF;
     memset(smoothedRssi, 0, sizeof(smoothedRssi));
+    memset(displayTrace, 0, sizeof(displayTrace));
     ResetPeakHold();
 }
 
@@ -1156,6 +1147,31 @@ static void RecomputeSmoothedTrace(uint16_t bars)
     smoothedRssi[last] = (uint16_t)(sum >> 2);
 }
 
+static void UpdateDisplayTrace(uint16_t bars)
+{
+    if (bars == 0) {
+        return;
+    }
+
+    for (uint16_t i = 0; i < bars; i++) {
+        uint16_t curr = smoothedRssi[i];
+        uint16_t prev = displayTrace[i];
+
+        if (prev == 0) {
+            displayTrace[i] = curr;
+            continue;
+        }
+
+        // Professional dynamics: fast attack and faster release for
+        // snappier post-signal decay.
+        if (curr >= prev) {
+            displayTrace[i] = (uint16_t)(((uint32_t)prev * 3 + (uint32_t)curr * 5) >> 3);
+        } else {
+            displayTrace[i] = (uint16_t)(((uint32_t)prev * 2 + (uint32_t)curr * 6) >> 3);
+        }
+    }
+}
+
 /**
  * @brief Perform real-time RSSI measurement
  * [Fix: PLL Delay + Universal AM-Modulation Guard]
@@ -1206,9 +1222,9 @@ static void UpdatePeakHold(void)
     if (!peakHoldEnabled) return;
     uint16_t bars = GetDisplayWidth();
     for (uint8_t i = 0; i < bars; i++) {
-        if (smoothedRssi[i] >= peakHoldRssi[i]) {
+        if (displayTrace[i] >= peakHoldRssi[i]) {
             /* Active signal — refresh the held maximum */
-            peakHoldRssi[i] = smoothedRssi[i];
+            peakHoldRssi[i] = displayTrace[i];
         } else if (peakHoldRssi[i] > PEAK_HOLD_DECAY_STEP) {
             /* No active signal — decay toward zero */
             peakHoldRssi[i] -= PEAK_HOLD_DECAY_STEP;
@@ -1637,16 +1653,7 @@ uint8_t Rssi2PX(uint16_t rssi, uint8_t pxMin, uint8_t pxMax)
     // --- TRUE NOISE SIGNIFICANCE ENGINE ---
     int height = ((dbm - DB_MIN) * PX_RANGE) / (DB_RANGE ? DB_RANGE : 1);
     
-    // If the signal is low (near the noise floor), we amplify the "Variance"
-    // This creates the "Significant Grass" look without faking the data.
-    if (height < (PX_RANGE / 4)) 
-    {
-        // Capture the hardware's jitter (Least Significant Bits)
-        // This makes the noise floor shimmer based on actual ADC thermal noise
-        uint8_t noiseJitter = (rssi & 0x07); 
-        height += noiseJitter; // Add "hair" to the noise floor
-    }
-    else 
+    if (height >= (PX_RANGE / 4)) 
     {
         // For stronger signals, we use a slight non-linear boost to sharpen the peaks
         // This makes the signal look "crisp" rather than "fat"
@@ -1658,8 +1665,15 @@ uint8_t Rssi2PX(uint16_t rssi, uint8_t pxMin, uint8_t pxMax)
 
 uint8_t Rssi2Y(uint16_t rssi)
 {
-    // Adding 5 pixels here pushes the entire graph down to the ruler
-    return (DrawingEndY + 4) - Rssi2PX(rssi, 0, DrawingEndY) + 1;
+    // In ruler mode, align the spectrum floor with the ruler rail at Y=28.
+    // In grid mode, align it with the grid background base floor at Y=32.
+    uint8_t baseY = settings.useTicksGrid ? (DrawingEndY + 5) : (DrawingEndY + 1);
+    return baseY - Rssi2PX(rssi, 0, DrawingEndY);
+}
+
+static uint8_t GetSpectrumBaseY(void)
+{
+    return settings.useTicksGrid ? (DrawingEndY + 5) : (DrawingEndY + 1);
 }
 
 /**
@@ -1678,6 +1692,7 @@ static void DrawPeakHold(void)
         uint8_t x = SpecIdxToX(i);
         if (x & 1) continue;   // skip odd columns → dotted appearance
         uint8_t y = Rssi2Y(peakHoldRssi[i]);
+        if (y > 0) y--;
         if (y < 64) {
             gFrameBuffer[y >> 3][x] |= (uint8_t)(1u << (y & 7));
         }
@@ -1846,15 +1861,15 @@ static void DrawSpectrumEnhanced(void)
 #ifdef ENABLE_FEAT_N7SIX
     const uint16_t bars = GetDisplayWidth();
     extern uint8_t gFrameBuffer[7][128];
-    const uint8_t SHADE_MAX_Y = DrawingEndY; 
+    const uint8_t SHADE_MAX_Y = GetSpectrumBaseY();
 
     uint8_t prevX = SpecIdxToX(0);
-    // Use smoothedRssi for the main trace
-    uint8_t prevY = Rssi2Y(smoothedRssi[0]);
+    // Use stabilized displayTrace for the main trace.
+    uint8_t prevY = Rssi2Y(displayTrace[0]);
 
     for (uint8_t i = 1; i < bars; i++) {
         uint8_t currX = SpecIdxToX(i);
-        uint8_t currY = Rssi2Y(smoothedRssi[i]);
+        uint8_t currY = Rssi2Y(displayTrace[i]);
 
         // 1. THE MAIN TRACE (Smooth Wire)
         DrawLine(prevX, prevY, currX, currY, 1);
@@ -1865,8 +1880,8 @@ static void DrawSpectrumEnhanced(void)
                 uint8_t dx = currX - prevX + 1;
                 uint8_t yStart = prevY + ((currY - prevY) * (x - prevX) / dx);
                 
-                if (yStart < SHADE_MAX_Y) {
-                    for (uint8_t y = yStart; y < SHADE_MAX_Y; y++) {
+                if (yStart <= SHADE_MAX_Y) {
+                    for (uint8_t y = yStart; y <= SHADE_MAX_Y; y++) {
                         if ((x ^ y) & 0x01) {
                             gFrameBuffer[y >> 3][x] |= (1 << (y & 7));
                         }
@@ -1999,6 +2014,7 @@ void UpdateRssiTriggerLevel(bool up)
 static void DrawRssiTriggerLevel()
 {
     uint8_t y = Rssi2Y(settings.rssiTriggerLevel);
+    if (y > 0) y--;
     
     // Clamp visual marker so it never draws below the grid floor
     if (y > 39) y = 39; 
@@ -2039,22 +2055,18 @@ static void DrawTicks()
     {
         f = GetFStart() + (uint64_t)span * i / 128;
 
-        // --- ORIGINAL STANDALONE RULER ---
-        // Rail sits at Y=28 (Bit 4: 0b00010000)
-        // Standard upward growth
-        uint8_t bottomBar = 0b00010000; 
+        // Ruler shifted down by one pixel so it sits directly above the
+        // scan-range frequency display without crowding it.
+        uint8_t bottomBar = 0b00100000;
 
         if ((f % 100000) < step) {
-            // Longest: Y=28 up to Y=24 (0b11111000)
-            bottomBar = 0b11111000; 
+            bottomBar = 0b11110000;
         }
         else if ((f % 50000) < step) {
-            // Medium: Y=28 up to Y=26 (0b01110000)
-            bottomBar = 0b01110000; 
+            bottomBar = 0b11100000;
         }
         else if ((f % 10000) < step) {
-            // Short: Y=28 up to Y=27 (0b00110000)
-            bottomBar = 0b00110000; 
+            bottomBar = 0b01100000;
         }
         
         // Write to Bank 3
@@ -2065,7 +2077,7 @@ static void DrawTicks()
     if (IsCenterMode())
     {
         // Solid vertical line at the center of the bank
-        gFrameBuffer[3][64] |= 0b11111111; 
+        gFrameBuffer[3][64] |= 0b11111110;
     }
 }
 
@@ -2081,9 +2093,9 @@ static void DrawArrow(uint8_t x)
             uint8_t column_pattern = 0;
 
             // Define the shape per column
-            if (my_abs(i) == 0)      column_pattern = 0b11100000; // Center (tallest)
-            else if (my_abs(i) == 1) column_pattern = 0b11000000; // Inner wings
-            else if (my_abs(i) == 2) column_pattern = 0b10000000; // Outer edge
+            if (my_abs(i) == 0)      column_pattern = 0b11000000; // Center (tallest)
+            else if (my_abs(i) == 1) column_pattern = 0b10000000; // Inner wings
+            else if (my_abs(i) == 2) column_pattern = 0b00000000; // Outer edge
 
             // Place in Bank 3 (Ruler Bank) using the bottom pixels
             gFrameBuffer[3][v] |= column_pattern;
@@ -2770,9 +2782,10 @@ static void UpdateScan()
     // Moving the math here means DrawSpectrumEnhanced() runs much faster.
     uint16_t bars = (scanInfo.measurementsCount > SPECTRUM_MAX_STEPS) ? SPECTRUM_MAX_STEPS : scanInfo.measurementsCount;
     RecomputeSmoothedTrace(bars);
+    UpdateDisplayTrace(bars);
 
     UpdatePeakHold();        // Update peak-hold buffer from this sweep
-    redrawScreen = true; // Now redraw using the pre-calculated smoothedRssi
+    redrawScreen = true; // Now redraw using the pre-calculated display trace
     preventKeypress = false;
 
     UpdatePeakInfo(); 
@@ -2811,9 +2824,6 @@ static void UpdateStill()
 
  
 
-
-// Noise persistence array for smoothed grass generation
-static uint16_t noisePersistence[128]; 
 
 static void UpdateListening()
 {
@@ -2861,43 +2871,12 @@ static void UpdateListening()
     {
         quietCounter = 0;
 
-        // --- 4. LIVE WATERFALL & SPECTRUM PULSING (heavy path) ---
+        // --- 4. LIVE WATERFALL & SPECTRUM UPDATE (heavy path) ---
         if (currentState == SPECTRUM) 
         {
-            // --- RX AUDIO ENVELOPE HEARTBEAT ---
-            // Sample RX audio envelope (0..63) from BK4819
-            uint8_t rxAudioLevel = BK4819_GetAfTxRx();
-            // Scale and smooth for visual effect
-            static uint8_t rxAudioSmooth = 0;
-            rxAudioSmooth = (rxAudioSmooth * 3 + rxAudioLevel) >> 2;
-            // Map to a pulse amplitude (0..16)
-            uint8_t pulse = rxAudioSmooth >> 2;
-
-            uint8_t peakDisplay = MapMeasurementToDisplay(peak.i);
-            uint16_t pulseFactorQ8 = 256U + ((uint16_t)pulse << 3);      // 1.0 + pulse/32.0, max 1.47x (was 1.94x)
-            uint16_t grassPulseFactorQ8 = 256U + ((uint16_t)pulse << 2); // 1.0 + pulse/64.0, max 1.23x
-            for (int i = 0; i < SPECTRUM_MAX_STEPS; i++)
-            {
-                if (i >= (int)peakDisplay - 1 && i <= (int)peakDisplay + 1) {
-                    // Amplify the main signal for heartbeat effect
-                    uint16_t base = peak.rssi + (FastRandom() % PEAK_JITTER_MAX);
-                    uint32_t grown = ((uint32_t)base * pulseFactorQ8) >> 8;
-                    rssiHistory[i] = (grown > RSSI_MAX_VALUE) ? RSSI_MAX_VALUE : (uint16_t)grown;
-                } else {
-                    uint16_t baseFloor = scanInfo.rssiMin + 32;
-                    int8_t roll = (FastRandom() % 9) - 4;
-                    noisePersistence[i] = (noisePersistence[i] * 7 + (baseFloor + roll)) >> 3;
-                    uint8_t spike = (FastRandom() % GRASS_SPIKE_MAX);
-                    uint16_t grassBase = noisePersistence[i] + spike;
-                    uint32_t grownGrass = ((uint32_t)grassBase * grassPulseFactorQ8) >> 8;
-                    // Clamp to avoid overflow and keep below main signal
-                    if (grownGrass > peak.rssi && peak.rssi > 10)
-                        rssiHistory[i] = peak.rssi - 5;
-                    else
-                        rssiHistory[i] = (grownGrass > RSSI_MAX_VALUE) ? RSSI_MAX_VALUE : (uint16_t)grownGrass;
-                }
-            }
+            // Keep listening trace faithful to measured bins.
             RecomputeSmoothedTrace(GetDisplayWidth());
+            UpdateDisplayTrace(GetDisplayWidth());
             UpdateWaterfall(); 
             redrawScreen = true; 
         }
@@ -3121,6 +3100,7 @@ void APP_RunSpectrum(void)
 
     memset(rssiHistory, 0, sizeof(rssiHistory));
     memset(smoothedRssi, 0, sizeof(smoothedRssi));
+    memset(displayTrace, 0, sizeof(displayTrace));
     memset(waterfallHistory, 0, sizeof(waterfallHistory));
     for (uint8_t i = 0; i < SPECTRUM_MAX_STEPS; ++i) displayBestIndex[i] = 0xFF;
     waterfallIndex = 0;
