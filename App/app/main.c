@@ -134,6 +134,33 @@ static void toggle_chan_scanlist(void)
     gFlagResetVfos    = true;
 }
 
+#ifdef ENABLE_NOAA
+static void toggle_noaa_channel(void)
+{
+    const uint8_t vfo = gEeprom.TX_VFO;
+    uint8_t target = gEeprom.ScreenChannel[vfo];
+
+    if (IS_NOAA_CHANNEL(target)) {
+        uint8_t fallback = gEeprom.MrChannel[vfo];
+        if (!IS_MR_CHANNEL(fallback)) {
+            fallback = gEeprom.FreqChannel[vfo];
+        }
+        target = fallback;
+    } else {
+        target = gEeprom.NoaaChannel[vfo];
+        if (!IS_NOAA_CHANNEL(target)) {
+            target = NOAA_CHANNEL_FIRST;
+            gEeprom.NoaaChannel[vfo] = target;
+        }
+    }
+
+    gEeprom.ScreenChannel[vfo] = target;
+    gRequestSaveVFO            = true;
+    gVfoConfigureMode          = VFO_CONFIGURE_RELOAD;
+    gRequestDisplayScreen      = DISPLAY_MAIN;
+}
+#endif
+
 static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 {
     uint8_t Vfo = gEeprom.TX_VFO;
@@ -279,8 +306,12 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 #endif
             }
             else {
-                // F+5 held: Scan Range
-                toggle_chan_scanlist();
+                // F+5 held: NOAA quick toggle
+#ifdef ENABLE_NOAA
+                toggle_noaa_channel();
+#else
+                gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+#endif
             }
 
             break;
@@ -290,10 +321,12 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
             break;
 
         case KEY_7:
-            #ifdef ENABLE_FEAT_N7SIX_GAME
-                APP_RunBreakout();
-                gRequestDisplayScreen = DISPLAY_MAIN;
-            #endif
+            if (!beep) {
+                // F+7 held: Scan Range
+                toggle_chan_scanlist();
+            } else {
+                gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+            }
             break;
 
         case KEY_8:

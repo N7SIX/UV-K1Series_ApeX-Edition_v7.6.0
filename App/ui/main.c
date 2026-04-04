@@ -1000,15 +1000,19 @@ void UI_DisplayMain(void)
 #ifdef ENABLE_NOAA
         else
         {
-            if (gInputBoxIndex == 0 || gEeprom.TX_VFO != vfo_num)
-            {   // channel number
-                sprintf(String, "N%u", 1 + gEeprom.ScreenChannel[vfo_num] - NOAA_CHANNEL_FIRST);
+            const unsigned int x = 10;
+            const bool inputting = gInputBoxIndex != 0 && gEeprom.TX_VFO == vfo_num;
+            char miniString[8] = "";
+
+            if (!inputting) {
+                sprintf(miniString, "NOAA%u", 1 + gEeprom.ScreenChannel[vfo_num] - NOAA_CHANNEL_FIRST);
+            } else {
+                sprintf(miniString, "NOAA%.2s", INPUTBOX_GetAscii());
             }
-            else
-            {   // user entering channel number
-                sprintf(String, "N%u%u", '0' + gInputBox[0], '0' + gInputBox[1]);
-            }
-            UI_PrintStringSmallNormal(String, 7, 0, line + 1);
+
+            // Render NOAA in 3x5 so the label remains compact and readable.
+            const uint16_t icon_y = (line + 1) * 8 + 1;
+            GUI_DisplaySmallest(miniString, x, icon_y, false, true);
         }
 #endif
 

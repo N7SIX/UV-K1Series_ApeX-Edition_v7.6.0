@@ -21,6 +21,8 @@ TRANSMIT:        Press [PTT], release to end
 MENU:            Press [MENU]
 EXIT:            Press [EXIT]
 SPECTRUM:        Press [F] + [5]
+NOAA TOGGLE:     Long press [5]
+SCAN RANGE:      Long press [7]
 VOLUME:          [UP]/[DOWN] (when holding no key)
 ```
 
@@ -167,6 +169,15 @@ S8-S9 Strong signal, excellent contact
 | Step Size | Menu → 11 Step | [F] + [RIGHT ARROW] |
 | Backlight On/Off | Menu → 18 BLMod | [F] + [F3] |
 | Battery Info | Menu → 13 BatSave | (display only) |
+
+---
+
+## FEATURE NOTES (CURRENT APEX PRESET)
+
+- NOAA support is enabled.
+- Game mode is disabled.
+- Spectrum launch remains [F] + [5].
+- Scan Range is mapped to long press [7].
 
 ---
 

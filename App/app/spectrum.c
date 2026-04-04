@@ -100,6 +100,12 @@ static uint16_t GetDisplayWidth(void);
 static void MarkSpectrumSettingsDirty(void);
 static void ServiceSpectrumSettingsAutosave(void);
 static void ResetPeakHold(void);
+static uint16_t RssiFromY(uint8_t targetY);
+static uint8_t GetTriggerRangeTopY(void);
+static uint8_t GetTriggerRangeBottomY(void);
+#ifdef ENABLE_FEAT_N7SIX_SPECTRUM
+static void ShowChannelName(uint32_t f, uint8_t leftX, uint8_t rightX);
+#endif
  
  // =============================================================================
  // CONSTANTS AND CONFIGURATION
@@ -120,6 +126,15 @@ static void ResetPeakHold(void);
 
  #define DISPLAY_DBM_MIN            -130
  #define DISPLAY_DBM_MAX            -50
+#define PERSIST_DBM_MAX             10
+
+#define RSSI_BUSY_DELAY_US         100U
+#define RSSI_BUSY_MAX_RETRIES       30U
+
+// Grid background vertical bounds (DrawGridBackground): top line at Y=12, floor at Y=32.
+#define TRIGGER_GRID_TOP_Y          12U
+#define TRIGGER_GRID_BOTTOM_Y       32U
+#define TRIGGER_CLICK_PIXELS         2U
  
  #define F_MIN  frequencyBandTable[0].lower
  #define F_MAX  frequencyBandTable[BAND_N_ELEM - 1].upper
@@ -657,13 +672,20 @@ static uint32_t GetCentroidFrequency()
  uint8_t GetBWRegValueForScan() { return scanStepBWRegValues[settings.scanStepIndex]; }
  
  uint16_t GetRssi() {
-     while ((BK4819_ReadRegister(0x63) & 0b11111111) >= 255) SYSTICK_DelayUs(100);
-     uint16_t rssi = BK4819_GetRSSI();
+     uint8_t retries = 0;
+     while ((BK4819_ReadRegister(0x63) & 0x00FFU) >= 255U &&
+            retries < RSSI_BUSY_MAX_RETRIES) {
+         SYSTICK_DelayUs(RSSI_BUSY_DELAY_US);
+         retries++;
+     }
+
+     int32_t rssi = BK4819_GetRSSI();
  #ifdef ENABLE_AM_FIX
      if (settings.modulationType == MODULATION_AM && gSetting_AM_fix)
-         rssi += AM_fix_get_gain_diff() * 2;
+         rssi += (int32_t)AM_fix_get_gain_diff() * 2;
  #endif
-     return rssi;
+     rssi = clamp(rssi, 0, RSSI_MAX_VALUE);
+     return (uint16_t)rssi;
  }
  
  static void ToggleAudio(bool on) {
@@ -718,6 +740,10 @@ static void InitScan() {
     scanInfo.f = GetFStart();
     scanInfo.scanStep = GetScanStep();
     scanInfo.measurementsCount = GetStepsCount();
+
+    // Start every sweep from fresh RF bins to avoid stale retained peaks.
+    memset(rssiHistory, 0, sizeof(rssiHistory));
+    for (uint8_t i = 0; i < SPECTRUM_MAX_STEPS; ++i) displayBestIndex[i] = 0xFF;
 }
 
 static void ResetBlacklist() {
@@ -904,14 +930,20 @@ static void UpdateScanInfo() {
      settings.rssiTriggerLevel = (uint16_t)buffer[6] | ((uint16_t)buffer[7] << 8);
      
      int16_t tmp_dbMin = (int16_t)(buffer[8] | ((int16_t)buffer[9] << 8));
-     if (tmp_dbMin >= DISPLAY_DBM_MIN && tmp_dbMin <= DISPLAY_DBM_MAX) {
+     if (tmp_dbMin >= DISPLAY_DBM_MIN && tmp_dbMin <= PERSIST_DBM_MAX) {
          settings.dbMin = tmp_dbMin;
      }
      
      int16_t tmp_dbMax = (int16_t)(buffer[10] | ((int16_t)buffer[11] << 8));
-     if (tmp_dbMax >= DISPLAY_DBM_MIN && tmp_dbMax <= DISPLAY_DBM_MAX) {
+     if (tmp_dbMax >= DISPLAY_DBM_MIN && tmp_dbMax <= PERSIST_DBM_MAX) {
          settings.dbMax = tmp_dbMax;
      }
+
+    // Guard against inconsistent persisted ranges.
+    if (settings.dbMin > settings.dbMax) {
+        settings.dbMin = DISPLAY_DBM_MIN;
+        settings.dbMax = DISPLAY_DBM_MAX;
+    }
      
      settings.scanDelay = (uint16_t)buffer[12] | ((uint16_t)buffer[13] << 8);
      if (settings.scanDelay == 0) {
@@ -1676,6 +1708,55 @@ static uint8_t GetSpectrumBaseY(void)
     return settings.useTicksGrid ? (DrawingEndY + 5) : (DrawingEndY + 1);
 }
 
+static uint8_t GetTriggerRangeBottomY(void)
+{
+    // Bottom aligns with current spectrum floor in both grid and non-grid modes.
+    return GetSpectrumBaseY();
+}
+
+static uint8_t GetTriggerRangeTopY(void)
+{
+    // Keep the same visual span as grid mode (20 px), even when grid is disabled.
+    const uint8_t span = (uint8_t)(TRIGGER_GRID_BOTTOM_Y - TRIGGER_GRID_TOP_Y);
+    uint8_t bottom = GetTriggerRangeBottomY();
+    return (bottom > span) ? (uint8_t)(bottom - span) : 0;
+}
+
+static uint16_t RssiFromY(uint8_t targetY)
+{
+    // Monotonic search for RSSI value whose rendered Y is closest to targetY.
+    uint16_t lo = 0;
+    uint16_t hi = RSSI_MAX_VALUE;
+
+    while (lo < hi)
+    {
+        uint16_t mid = (uint16_t)(lo + ((uint32_t)(hi - lo) / 2));
+        uint8_t y = Rssi2Y(mid);
+        if (y > targetY)
+        {
+            lo = (uint16_t)(mid + 1);
+        }
+        else
+        {
+            hi = mid;
+        }
+    }
+
+    if (lo > 0)
+    {
+        uint8_t yLo = Rssi2Y(lo);
+        uint8_t yPrev = Rssi2Y((uint16_t)(lo - 1));
+        uint8_t dLo = (uint8_t)((yLo > targetY) ? (yLo - targetY) : (targetY - yLo));
+        uint8_t dPrev = (uint8_t)((yPrev > targetY) ? (yPrev - targetY) : (targetY - yPrev));
+        if (dPrev < dLo)
+        {
+            return (uint16_t)(lo - 1);
+        }
+    }
+
+    return lo;
+}
+
 /**
  * @brief Draw peak-hold trace as a dotted line above the live spectrum.
  *
@@ -1715,6 +1796,17 @@ static void DrawStatus()
     sprintf(String, "%d/%ddBm", settings.dbMin, settings.dbMax);
 #endif
     GUI_DisplaySmallest(String, 0, 1, true, true);
+
+#ifdef ENABLE_FEAT_N7SIX_SPECTRUM
+    {
+        uint8_t dbmTextEnd = (uint8_t)(strlen(String) * 4U);
+        uint8_t left = (uint8_t)(dbmTextEnd + 2U);
+        uint8_t right = 116U; // Battery indicator starts at x=116.
+        if (left < right) {
+            ShowChannelName(fMeasure, left, right);
+        }
+    }
+#endif
 
     // Show peak-hold active indicator
     if (peakHoldEnabled) {
@@ -1896,7 +1988,7 @@ static void DrawSpectrumEnhanced(void)
 }
 
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
-static void ShowChannelName(uint32_t f)
+static void ShowChannelName(uint32_t f, uint8_t leftX, uint8_t rightX)
 {
     static uint32_t channelF = 0;
     static char channelName[12]; 
@@ -1920,9 +2012,23 @@ static void ShowChannelName(uint32_t f)
             }
         }
         if (channelName[0] != 0) {
-            // Display channel name at top of spectrum in small font
-            // Position: below frequency/modulation info (y=14), left aligned
-            GUI_DisplaySmallest(channelName, 0, 14, false, true);
+            uint8_t available = (rightX > leftX) ? (rightX - leftX) : 0;
+            if (available >= 4) {
+                uint8_t maxChars = available / 4;
+                char shownName[12];
+                memset(shownName, 0, sizeof(shownName));
+                strncpy(shownName, channelName, maxChars);
+                shownName[sizeof(shownName) - 1] = '\0';
+
+                uint8_t textWidth = (uint8_t)(strlen(shownName) * 4U);
+                uint8_t x = leftX;
+                if (available > textWidth) {
+                    x = (uint8_t)(leftX + (available - textWidth) / 2);
+                }
+
+                // Header placement: centered in the space between dBm and battery.
+                GUI_DisplaySmallest(shownName, x, 1, true, true);
+            }
         }
     }
 }
@@ -1939,7 +2045,7 @@ static void DrawF(uint32_t f)
     GUI_DisplaySmallest(String, 108, 6, false, true);
 
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
-    ShowChannelName(f);
+    (void)f;
 #endif
 }
 
@@ -1991,20 +2097,32 @@ static void DrawNums()
 // Handles the math and input clamping
 void UpdateRssiTriggerLevel(bool up)
 {
-    int32_t step = 2; 
+    uint8_t topY = GetTriggerRangeTopY();
+    uint8_t bottomY = GetTriggerRangeBottomY();
+    uint8_t y = Rssi2Y(settings.rssiTriggerLevel);
+    if (y < topY) y = topY;
+    if (y > bottomY) y = bottomY;
 
-    // FIX: Allow threshold to be adjusted freely without visual boundary constraints
-    // The visual boundary (Y=39) should only affect DRAWING, not the actual threshold value
-    if (up) {
-        if (settings.rssiTriggerLevel < RSSI_MAX_VALUE - step) {
-            settings.rssiTriggerLevel += step;
-        }
-    } else {
-        // Allow decreasing threshold freely - no visual boundary check
-        if (settings.rssiTriggerLevel >= step) {
-            settings.rssiTriggerLevel -= step;
+    if (up)
+    {
+        if (y > topY)
+        {
+            y = (y > (topY + TRIGGER_CLICK_PIXELS))
+                    ? (uint8_t)(y - TRIGGER_CLICK_PIXELS)
+                    : topY;
         }
     }
+    else
+    {
+        if (y < bottomY)
+        {
+            y = (y + TRIGGER_CLICK_PIXELS < bottomY)
+                    ? (uint8_t)(y + TRIGGER_CLICK_PIXELS)
+                    : bottomY;
+        }
+    }
+
+    settings.rssiTriggerLevel = RssiFromY(y);
     MarkSpectrumSettingsDirty();
     redrawScreen = true;
 }
@@ -2013,11 +2131,14 @@ void UpdateRssiTriggerLevel(bool up)
 // Matches visual marker to the Grid Floor
 static void DrawRssiTriggerLevel()
 {
+    uint8_t topY = GetTriggerRangeTopY();
+    uint8_t bottomY = GetTriggerRangeBottomY();
     uint8_t y = Rssi2Y(settings.rssiTriggerLevel);
     if (y > 0) y--;
-    
-    // Clamp visual marker so it never draws below the grid floor
-    if (y > 39) y = 39; 
+
+    // Lock marker to the same visual span in both grid and non-grid modes.
+    if (y < topY) y = topY;
+    if (y > bottomY) y = bottomY;
 
     // Removed unused variables 'bank' and 'bit' (no longer needed)
 
@@ -2083,22 +2204,28 @@ static void DrawTicks()
 
 static void DrawArrow(uint8_t x)
 {
-    // Professional 5x3 Solid Triangle Marker
-    // x = center position
+    // 3-row triangle profile (bottom->top): 5, 3, 1 pixels.
+    // Rows are y33, y32, y31 respectively (page 4 bits 1..0, page 3 bit7).
     for (signed i = -2; i <= 2; ++i)
     {
         signed v = x + i;
         if (!(v & 128)) // Boundary check
         {
-            uint8_t column_pattern = 0;
+            uint8_t p3 = 0;
+            uint8_t p4 = 0;
 
-            // Define the shape per column
-            if (my_abs(i) == 0)      column_pattern = 0b11000000; // Center (tallest)
-            else if (my_abs(i) == 1) column_pattern = 0b10000000; // Inner wings
-            else if (my_abs(i) == 2) column_pattern = 0b00000000; // Outer edge
+            // Bottom row (5 px): y33
+            p4 |= 0b00000010;
 
-            // Place in Bank 3 (Ruler Bank) using the bottom pixels
-            gFrameBuffer[3][v] |= column_pattern;
+            // Row above bottom (3 px): y32 on columns -1..+1
+            if (i >= -1 && i <= 1) p4 |= 0b00000001;
+
+            // Top row (1 px): y31 center only
+            if (i == 0) p3 |= 0b10000000;
+
+            // Place in ruler bank and the gap bank (kept below text at y34+).
+            gFrameBuffer[3][v] |= p3;
+            gFrameBuffer[4][v] |= p4;
         }
     }
 }
@@ -2805,7 +2932,13 @@ static void UpdateStill()
     
     // Apply our Calibration Offset
     int8_t offset = GetFrequencyOffset(fMeasure);
-    scanInfo.rssi += (offset * 2); // BK4819 RSSI is usually in 0.5dB steps
+    int16_t adjusted = (int16_t)scanInfo.rssi + ((int16_t)offset * 2); // BK4819 RSSI is usually in 0.5dB steps
+    if (adjusted < 0) {
+        adjusted = 0;
+    } else if (adjusted > (int16_t)RSSI_MAX_VALUE) {
+        adjusted = RSSI_MAX_VALUE;
+    }
+    scanInfo.rssi = (uint16_t)adjusted;
 
     if (displayRssi == 0) {
         displayRssi = scanInfo.rssi;

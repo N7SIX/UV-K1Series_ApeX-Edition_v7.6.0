@@ -8,6 +8,77 @@ License: Apache License, Version 2.0
 -->
 
 ---
+## NOAA Restore, Game Disable & Function-Key Remap (April 4, 2026)
+
+**SCOPE:** ApeX preset feature alignment and conflict-free key behavior for NOAA, Scan Range, and Spectrum launch.
+
+### Core Firmware Changes
+
+1. **ApeX Preset Feature Alignment**
+   - Enabled NOAA in ApeX preset (`ENABLE_NOAA=true`).
+   - Disabled game in ApeX preset (`ENABLE_FEAT_N7SIX_GAME=false`).
+
+2. **Long-Press Shortcut Realignment**
+   - Restored long press [5] to NOAA quick toggle behavior.
+   - Reassigned Scan Range toggle to long press [7].
+   - Preserved Spectrum launch on short [F]+[5].
+
+3. **Conflict Check Outcome**
+   - Verified no conflict between Spectrum launch and Scan Range quick control.
+   - Removed accidental game launch from function-key path in ApeX profile.
+
+### Affected Source
+
+- `CMakePresets.json`
+  - `ApeX` preset cache variables (`ENABLE_NOAA`, `ENABLE_FEAT_N7SIX_GAME`)
+- `App/app/main.c`
+  - `processFKeyFunction()` KEY_5 / KEY_7 mapping
+  - Added NOAA quick-toggle helper for long press [5]
+
+### Documentation Updates
+
+- `Documentation/Owner's Manual - ApeX Edition.md`
+- `Documentation/QUICK_REFERENCE_CARD.md`
+- `Documentation/RELEASE_NOTES.md`
+- `Documentation/v7.6.6_UPDATE_SUMMARY.md`
+- `Documentation/COMMIT_MESSAGE.txt`
+
+**BUILD STATUS:** ✅ ApeX target compile verified successfully.
+
+---
+## Spectrum Data Integrity & RSSI Clamp Safety (April 4, 2026)
+
+**SCOPE:** Spectrum sweep correctness, RSSI acquisition hardening, and still-mode calibration safety.
+
+### Core Firmware Changes
+
+1. **Per-Sweep Measurement Reset (Stale-Bin Prevention)**
+   - Updated spectrum scan initialization to clear per-sweep RSSI measurement bins before a new sweep.
+   - Prevents stale values from prior sweeps from appearing as retained peaks in fresh scans.
+   - Reset best-peak display index to ensure redraw logic starts from clean sweep context.
+
+2. **Still-Mode RSSI Calibration Safety**
+   - Replaced direct unsigned RSSI offset arithmetic with signed intermediate math.
+   - Added explicit clamp to valid RSSI bounds before conversion back to unsigned storage.
+   - Prevents underflow/overflow wrap behavior when negative calibration offsets are used.
+
+3. **RSSI Read Path Hardening + Persisted dBm Range Consistency**
+   - Added bounded retry/timeout guard in `GetRssi()` for BK4819 busy-wait pre-read loop.
+   - AM correction now uses signed intermediate arithmetic in `GetRssi()` with clamp to valid RSSI range.
+   - EEPROM spectrum settings load now validates persisted `dbMin`/`dbMax` against the runtime-supported upper bound and restores safe defaults when `dbMin > dbMax`.
+   - Prevents lockup-like polling behavior, signed wrap artifacts under AM fix, and confusing post-reboot display-scale resets.
+
+### Affected Source
+
+- `App/app/spectrum.c`
+  - `InitScan()`
+   - `GetRssi()`
+   - `SPECTRUM_LoadSettings()`
+  - `UpdateStill()`
+
+**BUILD STATUS:** ✅ ApeX target compile verified successfully.
+
+---
 ## Spectrum Peak Hold, Frequency Step Limits & Decay Tuning (April 3, 2026)
 
 **SCOPE:** New peak hold feature in spectrum scan mode, frequency shift step cap reduction, and dotted-line decay timing.

@@ -290,7 +290,7 @@ ENABLE_FEAT_N7SIX_CTR:BOOL=TRUE
 ENABLE_FEAT_N7SIX_DEBUG:BOOL=FALSE
 
 //No help, variable specified on the command line.
-ENABLE_FEAT_N7SIX_GAME:BOOL=TRUE
+ENABLE_FEAT_N7SIX_GAME:BOOL=FALSE
 
 //No help, variable specified on the command line.
 ENABLE_FEAT_N7SIX_GMRS_FRS_MURS:BOOL=TRUE
@@ -344,7 +344,7 @@ ENABLE_KEEP_MEM_NAME:BOOL=TRUE
 ENABLE_NAVIG_LEFT_RIGHT:BOOL=TRUE
 
 //No help, variable specified on the command line.
-ENABLE_NOAA:BOOL=FALSE
+ENABLE_NOAA:BOOL=TRUE
 
 //No help, variable specified on the command line.
 ENABLE_NO_CODE_SCAN_TIMEOUT:BOOL=TRUE

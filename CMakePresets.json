@@ -87,10 +87,11 @@
             "cacheVariables": {
                 "ENABLE_SPECTRUM": true,
                 "ENABLE_FMRADIO": true,
+                "ENABLE_NOAA": true,
                 "ENABLE_VOX": true,
                 "ENABLE_AIRCOPY": true,
                 "ENABLE_FEAT_N7SIX_SCREENSHOT": true,
-                "ENABLE_FEAT_N7SIX_GAME": true,
+                "ENABLE_FEAT_N7SIX_GAME": false,
                 "ENABLE_FEAT_N7SIX_PMR": true,
                 "ENABLE_FEAT_N7SIX_GMRS_FRS_MURS": true,
                 "ENABLE_FEAT_N7SIX_RESCUE_OPS": true,

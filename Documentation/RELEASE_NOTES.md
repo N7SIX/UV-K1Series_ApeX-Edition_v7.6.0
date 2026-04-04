@@ -40,6 +40,31 @@ This maintenance update refines Spectrum behavior for real-world operation and p
 
 Result: cleaner display, predictable controls, and stronger last-state persistence across power cycles.
 
+### April 2026 — Spectrum Measurement Integrity & Still-Mode Safety Fixes
+
+This maintenance patch improves spectrum data integrity during scanning and prevents invalid RSSI arithmetic in still mode.
+
+- Fixed stale spectrum bins across scan sweeps by clearing per-sweep measurement storage at scan initialization. This prevents old peak values from persisting into a new sweep and producing false hold-like artifacts.
+- Hardened `GetRssi()` pre-read behavior with a bounded retry guard when BK4819 reports a busy RSSI register state, avoiding indefinite wait loops in abnormal conditions.
+- Updated AM-fix correction in `GetRssi()` to signed intermediate math with final clamp to valid RSSI bounds, preventing underflow/overflow-style wrap artifacts.
+- Added safe signed RSSI calibration in still mode using signed intermediate math with explicit clamp to the valid RSSI range before cast-back. This prevents unsigned wrap-around when negative calibration offsets are applied.
+- Aligned persisted `dbMin`/`dbMax` load validation with runtime-supported range and added a safety guard that restores defaults if persisted min/max become inverted.
+- Reset best-peak display index during scan init to keep peak rendering consistent with fresh sweep data.
+
+Result: more trustworthy per-sweep spectrum rendering, stronger RSSI acquisition resiliency, accurate calibrated RSSI values, and consistent post-reboot display scaling behavior.
+
+### April 2026 — NOAA Enablement, Game Disable & Function-Key Remap
+
+This update aligns ApeX operational shortcuts with current field workflow priorities and avoids shortcut overlap confusion.
+
+- Enabled NOAA support in ApeX build preset (`ENABLE_NOAA=true`).
+- Disabled game feature in ApeX build preset (`ENABLE_FEAT_N7SIX_GAME=false`).
+- Restored long press [5] to NOAA quick-toggle behavior (enter/exit NOAA channel context).
+- Moved Scan Range quick-toggle to long press [7].
+- Preserved Spectrum analyzer launch on short [F]+[5].
+
+Result: clearer key behavior, NOAA access restored, no Spectrum/Scan-Range shortcut conflict, and no accidental game launch from function keys.
+
 ### 🎯 **HEADLINE: Professional-Grade Event-Driven Architecture System**
 
 **This release introduces a paradigm shift in firmware architecture:** A production-ready, callback-based event system that eliminates problematic global variable coupling patterns throughout the application.

@@ -56,15 +56,15 @@ Recommended tools:
 
 ## Product Scope And Build Identity
 
-ApeX Edition is the all-in-one build target for UV-K1 / UV-K5 V3 (PY32F071), with spectrum, FM, Air Copy, game features, and advanced N7SIX options enabled.
+ApeX Edition is the all-in-one build target for UV-K1 / UV-K5 V3 (PY32F071), with spectrum, FM, Air Copy, NOAA support, and advanced N7SIX options enabled.
 
 ApeX preset includes (as configured in repository build presets):
 - Spectrum analyzer
 - FM broadcast receiver
 - Air Copy
+- NOAA weather channels
 - VOX
 - Screenshot support
-- Game support
 - PMR and GMRS/FRS/MURS locks
 - RescueOps feature set
 - Extended scan ranges
@@ -89,6 +89,11 @@ Open spectrum analyzer:
 1. Press F + 5.
 2. Adjust scan step, zoom, threshold, and bandwidth from spectrum controls.
 3. Press EXIT to leave spectrum and return to foreground operation.
+
+Quick key behavior updates:
+- Long press 5: NOAA quick toggle (enter/exit NOAA channel context)
+- Long press 7: Scan Range toggle
+- F + 5: Spectrum analyzer (unchanged)
 
 ---
 
@@ -134,7 +139,7 @@ Primary modes in ApeX firmware family:
 - Spectrum analyzer mode
 - FM broadcast mode (build enabled)
 - Air Copy mode (build enabled)
-- Optional feature modes (game, rescue workflows)
+- Optional feature modes (rescue workflows)
 
 Mode transitions are key-driven and routed through the main application dispatcher.
 
@@ -256,10 +261,9 @@ Functional role:
 
 ## Games And Utility Features
 
-ApeX enables game feature support and screenshot support in the preset.
+ApeX currently enables screenshot support in the preset. Game mode is disabled in current ApeX build configuration.
 
 Included:
-- Breakout feature path (when enabled in build)
 - Screenshot pipeline integration (when enabled)
 
 ---

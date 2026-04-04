@@ -312,13 +312,14 @@ static void sort(int16_t *a, int16_t *b)
       }
     }
 
-    static const uint8_t gFont5x5[16][5] = {
+    static const uint8_t gFont5x5[17][5] = {
         {0x04, 0x0A, 0x11, 0x1F, 0x11}, // A
         {0x1E, 0x11, 0x1E, 0x11, 0x1E}, // B
         {0x11, 0x1B, 0x15, 0x11, 0x11}, // M
         {0x11, 0x11, 0x0A, 0x0A, 0x04}, // V
         {0x1F, 0x10, 0x1E, 0x10, 0x10}, // F
         {0x0E, 0x11, 0x11, 0x11, 0x0E}, // O
+        {0x11, 0x19, 0x15, 0x13, 0x11}, // N
         {0x0E, 0x11, 0x11, 0x11, 0x0E}, // 0
         {0x04, 0x0C, 0x04, 0x04, 0x0E}, // 1 (Flipped Hook to Left) {0x04, 0x06, 0x04, 0x04, 0x0E}, // 1
         {0x0E, 0x11, 0x02, 0x04, 0x1F}, // 2
@@ -339,7 +340,8 @@ static void sort(int16_t *a, int16_t *b)
         else if (c == 'V') glyph = gFont5x5[3];
         else if (c == 'F') glyph = gFont5x5[4];
         else if (c == 'O') glyph = gFont5x5[5];
-        else if (c >= '0' && c <= '9') glyph = gFont5x5[6 + (c - '0')];
+        else if (c == 'N') glyph = gFont5x5[6];
+        else if (c >= '0' && c <= '9') glyph = gFont5x5[7 + (c - '0')];
         if (!glyph) return;
 
         for (int row = 0; row < 5; ++row) {
