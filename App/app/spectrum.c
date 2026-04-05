@@ -103,6 +103,7 @@ static void ResetPeakHold(void);
 static uint16_t RssiFromY(uint8_t targetY);
 static uint8_t GetTriggerRangeTopY(void);
 static uint8_t GetTriggerRangeBottomY(void);
+static void EnterStillMode(void);
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
 static void ShowChannelName(uint32_t f, uint8_t leftX, uint8_t rightX);
 #endif
@@ -114,6 +115,7 @@ static void ShowChannelName(uint32_t f, uint8_t leftX, uint8_t rightX);
 // Level 2 = 2/16-pixel Bayer density — legible but dim; was 4 (flooded noise)
 #define WF_FLOOR_MIN_LEVEL           2
 #define RSSI_MAX_VALUE              65535U
+#define RSSI_HW_MAX_VALUE             511U
 #define DISPLAY_STRING_BUFFER_SIZE  32U
 #define SPECTRUM_MAX_STEPS          128U
  #define WATERFALL_HISTORY_DEPTH     16U
@@ -289,7 +291,12 @@ const uint8_t modTypeReg47Values[] = {1, 7, 5};
  const int8_t LNAOptions[]  = {-24, -19, -14, -9, -6, -4, -2, 0};
  const int8_t VGAOptions[]  = {-33, -27, -21, -15, -9, -6, -3, 0};
  const char *BPFOptions[]   = {"8.46", "7.25", "6.35", "5.64", "5.08", "4.62", "4.23"};
+static const uint16_t BPFRegOptions[] = {0x0000, 0x2AAB, 0x5555, 0x7FFF, 0xAAA9, 0xD553, 0xFFFD};
+static uint8_t bpfSavedIdx = 1;  // mirrors REG_3D; default 1 (0x2AAB) matches RADIO_SetupRegisters
  #endif
+
+// Countdown timer for the "no signal" PTT overlay message (main-loop ticks)
+static uint8_t noSignalMsgT = 0;
  
 // =============================================================================
 // UTILITY FUNCTIONS (RANDOM, MATH, BANDS)
@@ -400,6 +407,23 @@ void DrawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, bool color) {
      RegisterSpec s = registerSpecs[st];
      return (BK4819_ReadRegister(s.num) >> s.offset) & s.mask;
  }
+
+#ifdef ENABLE_FEAT_N7SIX_SPECTRUM
+// BK4819 REG_3D does not reliably readback the written value.
+// Use bpfSavedIdx as the authoritative software copy at all times.
+static uint8_t GetBpfOptionIndex(void)
+{
+    return bpfSavedIdx;
+}
+
+static void SetBpfOptionIndex(uint8_t idx)
+{
+    if (idx >= ARRAY_SIZE(BPFRegOptions))
+        return;
+    bpfSavedIdx = idx;
+    BK4819_WriteRegister(BK4819_REG_3D, BPFRegOptions[idx]);
+}
+#endif
  
  void LockAGC(void) {
      RADIO_SetupAGC(settings.modulationType == MODULATION_AM, lockAGC);
@@ -407,12 +431,35 @@ void DrawLine(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, bool color) {
  }
  
  static void SetRegMenuValue(uint8_t st, bool add) {
-     uint16_t v = GetRegMenuValue(st);
+#ifdef ENABLE_FEAT_N7SIX_SPECTRUM
+    if (st == 4)
+    {
+        uint8_t idx = GetBpfOptionIndex();
+        if (add)
+            idx = (idx + 1) % ARRAY_SIZE(BPFRegOptions);  // rotary: wrap max→0
+        else
+            idx = (idx == 0) ? (ARRAY_SIZE(BPFRegOptions) - 1) : (idx - 1);  // rotary: wrap 0→max
+        SetBpfOptionIndex(idx);
+        redrawScreen = true;
+        return;
+    }
+#endif
+
      RegisterSpec s = registerSpecs[st];
+     uint16_t reg = BK4819_ReadRegister(s.num);   // read BEFORE LockAGC to preserve other field values
+     uint16_t v = (reg >> s.offset) & s.mask;
      if (s.num == BK4819_REG_13) LockAGC();
-     uint16_t reg = BK4819_ReadRegister(s.num);
-     if (add && v <= s.mask - s.inc) v += s.inc;
-     else if (!add && v >= s.inc) v -= s.inc;
+     // Rotary (wrap-around) navigation for all register fields
+     if (add)
+     {
+         if (v <= s.mask - s.inc) v += s.inc;
+         else v = 0;  // wrap: max → min
+     }
+     else
+     {
+         if (v >= s.inc) v -= s.inc;
+         else v = s.mask;  // wrap: min → max
+     }
      reg &= ~(s.mask << s.offset);
      BK4819_WriteRegister(s.num, reg | (v << s.offset));
      redrawScreen = true;
@@ -685,7 +732,7 @@ static uint32_t GetCentroidFrequency()
      if (settings.modulationType == MODULATION_AM && gSetting_AM_fix)
          rssi += (int32_t)AM_fix_get_gain_diff() * 2;
  #endif
-     rssi = clamp(rssi, 0, RSSI_MAX_VALUE);
+    rssi = clamp(rssi, 0, RSSI_HW_MAX_VALUE);
      return (uint16_t)rssi;
  }
  
@@ -709,6 +756,10 @@ static uint32_t GetCentroidFrequency()
         }
         RADIO_SetupRegisters(false);
         RADIO_SetupAGC(settings.modulationType == MODULATION_AM, lockAGC);
+#ifdef ENABLE_FEAT_N7SIX_SPECTRUM
+        // RADIO_SetupRegisters resets REG_3D; restore user-selected BPF
+        BK4819_WriteRegister(BK4819_REG_3D, BPFRegOptions[bpfSavedIdx]);
+#endif
         ToggleAudio(true);
         ToggleAFDAC(true);
         ToggleAFBit(true);
@@ -804,8 +855,24 @@ static void UpdateScanInfo() {
      currentState = state;
      redrawScreen = true;
      redrawStatus = true;
-     if (state == STILL) displayRssi = scanInfo.rssi;
+    if (state == STILL) displayRssi = scanInfo.rssi;
  }
+
+static void EnterStillMode(void)
+{
+    if (peak.f == 0 || !IsPeakOverLevel())
+    {
+        noSignalMsgT = 30;   // show overlay for ~300 ms
+        redrawScreen = true;
+        return;
+    }
+
+    listenT = 0;
+    displayRssi = 0;
+    isListening = false;
+    SetState(STILL);
+    TuneToPeak();
+}
 
  // =============================================================================
  // PERSISTENT SETTINGS MANAGEMENT
@@ -1727,7 +1794,7 @@ static uint16_t RssiFromY(uint8_t targetY)
 {
     // Monotonic search for RSSI value whose rendered Y is closest to targetY.
     uint16_t lo = 0;
-    uint16_t hi = RSSI_MAX_VALUE;
+    uint16_t hi = RSSI_HW_MAX_VALUE;
 
     while (lo < hi)
     {
@@ -2306,8 +2373,7 @@ static void OnKeyDown(uint8_t key, bool longPress)
         ToggleBacklight();
         break;
     case KEY_PTT:
-        SetState(STILL);
-        TuneToPeak();
+        EnterStillMode();
         break;
     case KEY_MENU:
         TogglePeakHold();
@@ -2745,7 +2811,7 @@ static void RenderStill()
         }
         else if(idx == 4)
         {
-            sprintf(String, "%skHz", BPFOptions[(GetRegMenuValue(idx) / 0x2aaa)]);
+            sprintf(String, "%skHz", BPFOptions[GetBpfOptionIndex()]);
         }
 #else
         sprintf(String, "%u", GetRegMenuValue(idx));
@@ -2776,6 +2842,17 @@ static void Render()
                 break;
         }
     }
+
+#ifdef ENABLE_FEAT_N7SIX_SPECTRUM
+    if (noSignalMsgT > 0)
+    {
+        extern uint8_t gFrameBuffer[7][128];
+        UI_FillRectangleBuffer(gFrameBuffer, 35, 18, 91, 36, false);
+        UI_DrawRectangleBuffer(gFrameBuffer, 35, 18, 91, 36, true);
+        GUI_DisplaySmallest("NO DETECTED",   42, 21, false, true);
+        GUI_DisplaySmallest("ACTIVE SIGNAL", 38, 29, false, true);
+    }
+#endif
 
     ST7565_BlitFullScreen();
 }
@@ -2940,8 +3017,8 @@ static void UpdateStill()
     int16_t adjusted = (int16_t)scanInfo.rssi + ((int16_t)offset * 2); // BK4819 RSSI is usually in 0.5dB steps
     if (adjusted < 0) {
         adjusted = 0;
-    } else if (adjusted > (int16_t)RSSI_MAX_VALUE) {
-        adjusted = RSSI_MAX_VALUE;
+    } else if (adjusted > (int16_t)RSSI_HW_MAX_VALUE) {
+        adjusted = (int16_t)RSSI_HW_MAX_VALUE;
     }
     scanInfo.rssi = (uint16_t)adjusted;
 
@@ -3139,6 +3216,13 @@ static void Tick()
         }
     }
 
+    // Decrement no-signal overlay timer; keep screen refreshing while visible
+    if (noSignalMsgT > 0)
+    {
+        noSignalMsgT--;
+        redrawScreen = true;
+    }
+
     if (redrawScreen)
     {
         Render();
@@ -3224,6 +3308,8 @@ void APP_RunSpectrum(void)
     RADIO_SetModulation(settings.modulationType);
 
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
+    // RADIO_SetModulation resets REG_3D to 0x2AAB; restore user's saved BPF immediately
+    BK4819_WriteRegister(BK4819_REG_3D, BPFRegOptions[bpfSavedIdx]);
     BK4819_SetFilterBandwidth(settings.listenBw, false);
 #else
     BK4819_SetFilterBandwidth(settings.listenBw = BK4819_FILTER_BW_WIDE, false);

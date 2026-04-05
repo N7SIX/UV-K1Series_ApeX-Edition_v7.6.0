@@ -2,1067 +2,930 @@
 =====================================================================================
 Spectrum Analyzer User Guide
 Author: N7SIX, Sean
-Version: v7.6.0 (ApeX Edition)
+Version: v7.6.5br3 (ApeX Edition)
 License: Apache License, Version 2.0
 =====================================================================================
 -->
 
-# SPECTRUM ANALYZER USER GUIDE
-## Professional Signal Analysis with Bandscope Mode
+# UV-K1 SERIES ApeX EDITION
+# SPECTRUM ANALYZER — PROFESSIONAL USER GUIDE
 
-**For:** UV-K1 Series / UV-K5 V3 ApeX Edition  
-**Firmware:** v7.6.4br3+ (v7.6.0+ supported; range alignment fixed in v7.6.4br3)  
-**Document Version:** 1.2 (Updated April 3, 2026)
+**Hardware:** UV-K1 / UV-K5 V3 (PY32F071 MCU)  
+**Firmware:** ApeX Edition v7.6.5br3  
+**Document Version:** 2.0 (April 5, 2026)
 
-**April 2026 Note:** Peak-hold overlay is **active** in current builds. `KEY_MENU` in scan mode toggles it on/off. The dotted line decays and fully fades approximately 5 seconds after a signal goes inactive. `PH` appears in the status bar when enabled. Maximum frequency shift step is now capped at ±2500.00k (first-boot default ±1000.00k).
+---
+
+> **What's new in v7.6.5br3**  
+> - STILL mode now shows real dBm values (root fix: BK4819 hardware RSSI ceiling 511 separated from sentinel 65535)  
+> - Live RX audio in STILL mode working reliably — helicopter noise eliminated  
+> - PTT with no signal present shows a centered **NO DETECTED ACTIVE SIGNAL** overlay  
+> - STILL mode register inspector: LNAs / LNA / VGA / BPF all selectable and adjustable  
+> - Arrow UP / DOWN navigation is now **rotary** (wraps at both min and max)  
+> - BPF selector fixed: software-state index eliminates unreliable hardware register readback  
+> - BPF selection persists across every RX event (restored after ToggleRX / RADIO_SetModulation)
 
 ---
 
 ## TABLE OF CONTENTS
 
-1. [Introduction](#introduction)
-2. [Quick Start (5 Minutes)](#quick-start-5-minutes)
-3. [Display Elements Explained](#display-elements-explained)
-4. [Operating Modes](#operating-modes)
-5. [Practical Analysis Techniques](#practical-analysis-techniques)
-6. [Visual Signal Interpretation](#visual-signal-interpretation)
-7. [Advanced Configuration](#advanced-configuration)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Reference Tables](#reference-tables)
+1. [Introduction](#1-introduction)
+2. [Quick Start — 5 Minutes](#2-quick-start--5-minutes)
+3. [Display Elements Explained](#3-display-elements-explained)
+4. [Operating Modes](#4-operating-modes)
+    - 4.1 [SPECTRUM — Scanning Mode](#41-spectrum--scanning-mode)
+    - 4.2 [LISTEN — Auto-Lock Mode](#42-listen--auto-lock-mode)
+    - 4.3 [STILL — Single-Frequency Monitor](#43-still--single-frequency-monitor)
+    - 4.4 [Range Scanning (Advanced)](#44-range-scanning-advanced)
+5. [STILL Mode — Register Inspector](#5-still-mode--register-inspector)
+6. [Key Map — Complete Reference](#6-key-map--complete-reference)
+7. [Practical Analysis Techniques](#7-practical-analysis-techniques)
+8. [Signal Shape Gallery](#8-signal-shape-gallery)
+9. [Advanced Configuration](#9-advanced-configuration)
+10. [Troubleshooting Guide](#10-troubleshooting-guide)
+11. [Reference Tables](#11-reference-tables)
 
 ---
 
-## INTRODUCTION
+## 1. INTRODUCTION
 
-### What is a Spectrum Analyzer?
+### What Is a Spectrum Analyzer?
 
 A spectrum analyzer is a professional instrument that displays:
-- **Frequency axis** (horizontal): 136-480 MHz range
-- **Amplitude axis** (vertical): Signal strength from -130 to -50 dBm
-- **Time axis** (waterfall): Historical signal evolution
 
-Unlike traditional radio "S-meter" which shows one frequency, the spectrum analyzer shows **128 frequencies simultaneously**, revealing:
-- Hidden weak signals
-- Interference patterns
-- Modulation characteristics
-- Band occupancy
-- Intermittent transmissions
+| Axis | Meaning |
+|------|---------|
+| **Horizontal (X)** | Frequency — shows many channels simultaneously |
+| **Vertical (Y)** | Amplitude — signal strength at each frequency |
+| **Waterfall rows** | Time — historical signal activity scrolling downward |
 
-### Why Use Spectrum Analyzer Mode?
+Unlike a traditional S-meter that shows only one frequency, the spectrum analyzer shows **128 frequencies simultaneously**, revealing:
 
-| Use Case | Benefit |
-|----------|---------|
-| **Band Scanning** | See all active frequencies at once |
-| **Interference Hunting** | Identify RF pollution sources |
-| **Signal Strength Mapping** | Compare signal levels across band |
-| **Finding Weak TX** | Detect low-power transmitters |
-| **Monitoring Activity** | Watch network repeater traffic |
-| **Learning RF** | Visual understanding of RF propagation |
-| **General Scanning** | Monitor frequency activity and propagation |
-| **Signal Detection** | Identify active signals across bands |
-| **Spectrum Analysis** | Visual RSSI and peak analysis tools |
-| **Band Planning** | Quick navigation between ham bands |
+- Hidden weak signals below audible squelch
+- Interference patterns and their bandwidth
+- Modulation characteristics (FM hump vs. AM sidebands)
+- Band occupancy and crowding
+- Intermittent or bursty transmissions
 
-### Spectrum Analyzer Capabilities
+### Spectrum Analyzer Capabilities (ApeX v7.6.5br3)
 
-**Core capabilities for RF signal analysis:**
-
-- **Real-time Signal Display**: Live spectrum visualization with waterfall history
-- **Decaying Peak Hold**: optional dotted-line overlay (KEY_MENU); fades ~5 s after signal ends
-- **RSSI Measurement**: Signal strength indicators in dBm and S-units  
-- **Configurable Scanning**: Adjust step size and frequency range
-- **Modulation Display**: Current operating mode (FM/USB/LSB)
-- **Signal Threshold**: Adjustable trigger level for activity detection
+| Capability | Details |
+|-----------|---------|
+| Real-time trace | 128-bin live spectrum updated every sweep |
+| Smoothed display | Exponential moving average removes flicker |
+| Waterfall history | 16-row scrolling time history |
+| Peak hold | Decaying dotted-line overlay (toggle with MENU) |
+| STILL monitor | Single-frequency lock with live S-meter and dBm |
+| Register inspector | Live LNAs / LNA / VGA / BPF tuning in STILL mode |
+| PTT to STILL | Locks to strongest detected peak with signal guard |
+| Frequency input | Direct numeric frequency entry via KEY_5 |
+| Monitor mode | Forced RX regardless of squelch (SIDE1 in STILL) |
+| Blacklist | Skip interfering frequencies during scan |
+| Scan ranges | Configurable start/stop frequency bounds |
+| Autosave | Spectrum settings persisted to flash automatically |
 
 ---
 
-## QUICK START (5 MINUTES)
+## 2. QUICK START — 5 MINUTES
 
-### Step 1: Activate Spectrum Analyzer
+### Step 1 — Activate Spectrum Analyzer
 ```
 Press: [F] + [5]
-Result: Spectrum analyzer mode opens
 ```
 
-### Step 2: Start Scanning
+### Step 2 — Begin Scanning
 ```
 Press: [* SCAN]
-Result: Radio begins sweeping through frequency range
+The radio sweeps the frequency range continuously.
 ```
 
-### Step 3: Observe the Display
-```
-┌─────────────────────────────────────┐
-│  F: 145.500  USB  12.5k             │  ← Current frequency & mode
-├─────────────────────────────────────┤
-│        ╱╲                           │
-│       ╱  ╲     Signal trace        │  ← SPECTRUM TRACE (blue line)
-│      ╱    ╲                        │
-│ ────╱──────╲──────────────────      │
-├─────────────────────────────────────┤
-│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     │
-│  ▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     │  ← WATERFALL HISTORY
-│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     │     (16 rows showing time)
-├─────────────────────────────────────┤
-│ Step: 25kHz  Rssi Trig: -95dBm      │  ← Configuration
-└─────────────────────────────────────┘
-```
-
-### Step 4: Interpret What You See
-- **Blue trace peaks** = Strong signals
-- **Flat baseline** = Noise floor
-- **Dashed/dotted line above** = Peak history (peak hold — toggle with MENU, fades ~5 s after signal ends)
-- **Waterfall scrolling** = Real-time activity
-
-### Step 5: Stop Scanning
-```
-Press: [EXIT]
-Result: Spectrum analyzer closes, returns to VFO mode
-```
-
----
-
-## DISPLAY ELEMENTS EXPLAINED
-
-### 🔵 THE SPECTRUM TRACE (Blue Solid Line)
+### Step 3 — Read the Display
 
 ```
-┌─────────────────────────────────────┐
-│        ╱╲  ╱╲                       │
-│       ╱  ╲╱  ╲                      │  ← Amplitude (signal strength)
-│      ╱        ╲                     │
-│────────────────────────────────────┘
-     ↑
-     └─ Frequency axis →
++--------------------------------------------------------------+
+|  145.500  FM  12.5k                        S5  -95dBm        | <- Header row
++--------------------------------------------------------------+
+|  - - - - - - - - - - - -    <- Peak Hold (dotted, fades ~5s) |
+|         /\       /\         <- Spectrum trace (signal peaks)  |
+|        /  \-----/  \        <- Smoothed signal line           |
+| -------/------------\------ <- Trigger level marker           |
++--------------------------------------------------------------+
+| .:.:.:.:X:.:.:.:.:.:.:.:                                     |
+| .:.:.:.:.:XX:.:.:.:.:.:.:    <- Waterfall (16 rows)           |
+| .:.:.:.:.:.:XXXX:.:.:.:.:        top = newest                 |
+| .:.:.:.:.:.:.:.:.:.:.:.:         bottom = oldest              |
++--------------------------------------------------------------+
+|  Step: 25kHz    Trig: -95dBm                                 | <- Footer
++--------------------------------------------------------------+
 ```
 
-**What it shows:**
-- Height = Signal strength at that frequency
-- Wider base = Wider bandwidth (occupation)
-- Multiple peaks = Multiple signals (interference)
-- Smooth = Professional filtration/smoothing
-- Jagged = Noise, weak signals
+### Step 4 — What to Look For
 
-**Reading peaks:**
-| Peak | Meaning |
-|------|---------|
-| **S9 level (top)** | Very strong signal |
-| **S5-S7 height** | Good contact strength |
-| **S1-S3 height** | Weak signal |
-| **At baseline** | Just noise (no signal) |
-
----
-
-### 📊 THE WATERFALL DISPLAY (16 Rows)
-
-Waterfall shows **temporal evolution** of the spectrum:
-
-```
-Row  0: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ ← NEWEST (just measured)
-Row  1: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-Row  2: ░░░░░░ █████ ░░░░░░░░░░░░░░░░░░    Signal appearing
-Row  3: ░░░░ █████████ ░░░░░░░░░░░░░░░░    Signal growing
-Row  4: ░░ █████████████ ░░░░░░░░░░░░░░    Peak intensity
-Row  5: ░░ █████████████ ░░░░░░░░░░░░░░    Holding
-Row  6: ░░░░ █████████ ░░░░░░░░░░░░░░░░    Fading
-Row  7: ░░░░░░ █████ ░░░░░░░░░░░░░░░░░░    Nearly gone
-...
-Row 15: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ ← OLDEST
-        └─────────── Frequency bins →────┘
-        
-Legend: ░░░ = Weak/noise  ▓▓▓ = Medium  ███ = Strong
-```
-
-**Key characteristics:**
-
-| Feature | Meaning |
+| Element | Meaning |
 |---------|---------|
-| **Vertical columns** | Signal at specific frequency |
-| **Horizontal rows** | Signal over time |
-| **Bright spot** | Recent strong signal |
-| **Fading trail** | Signal ending/fading away |
-| **Ghost image** | Residual from minutes ago |
-| **Uniform gray** | Noise floor baseline |
+| Tall peak in trace | Strong signal at that frequency |
+| Flat baseline | Noise floor — no signal |
+| Dotted line above trace | Peak hold — historical maximum (decays ~5 s after signal ends) |
+| Bright column in waterfall | Persistent signal over time |
+| Vertical flash in waterfall | Brief transmission burst |
 
-**Waterfall patterns tell stories:**
-
+### Step 5 — Exit
 ```
-Pattern: Continuous bright line
-Meaning: Persistent transmission (repeater, beacon)
-
-Pattern: Intermittent flashes
-Meaning: Bursty transmissions (DTMF, scanner activity)
-
-Pattern: Bright then fading
-Meaning: Mobile unit transmitting then moving away
-
-Pattern: Multiple vertical lines
-Meaning: Several simultaneous signals (busy band)
+Press: [EXIT]    Returns to VFO mode.
 ```
 
 ---
 
-### ➖ THE PEAK HOLD TRACE (Dashed Line)
+## 3. DISPLAY ELEMENTS EXPLAINED
+
+### 3.1 — Spectrum Trace (Solid Line)
+
+The **solid waveform line** is the real-time signal amplitude at each of the 128 display bins:
 
 ```
-┌─────────────────────────────────────┐
-│        ╱╲  ╱╲                       │
-│ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │ ← PEAK HOLD (dashed)
-│       ╱  ╲╱  ╲                      │ ← CURRENT (solid)
-│      ╱        ╲                     │
-│───────────────────────────────────└
+Peak height  -> Signal strength (higher = stronger)
+Peak width   -> Signal bandwidth (wider = more spectrum occupied)
+Multiple peaks -> Multiple simultaneous signals or harmonics
+Jagged line  -> Noisy environment or very weak signals
+Smooth curve -> Clean, well-filtered signal path
 ```
 
-**What it shows:**
-- Maximum signal level ever observed at each frequency
-- "Ghostly" fading line showing historical peak
-- Helps identify brief signal bursts that current trace might miss
+Signal levels use the BK4819 chip's 0.5 dB/step RSSI scale (hardware range: 0–511 raw counts, hardware register 0x67 bits [8:0]). Calibration offsets per band are applied automatically. dBm is calculated as: `(rssi / 2) − 160 + band_offset`.
 
-**Visual behavior:**
-```
-SIGNAL PRESENT:
-  Peak hold = at current signal level
+### 3.2 — Waterfall (16 Rows)
 
-SIGNAL ENDS:
-  Peak hold fades gradually (exponential decay)
-  Takes ~30 seconds to return to baseline
+The waterfall scrolls **downward** — top row is newest, bottom row is oldest:
 
-SIGNAL RETURNS:
-  Peak hold immediately rises to new maximum
+```
+Row  0: .:.:.:X:X:X:X:.:.:.:.:  <- just measured
+Row  1: .:.:.:.:X:X:X:X:X:.:.:
+Row  2: .:.:.:.:.:X:X:X:X:.:.:
+Row  3: .:.:.:.:.:.:X:X:.:.:.:
+...
+Row 15: .:.:.:.:.:.:.:.:.:.:.:  <- oldest history
+
+Brightness:  . = noise floor   : = weak   o = moderate   X = strong
 ```
 
-**Example scenario:**
+**Pattern recognition:**
+
+| Waterfall pattern | Interpretation |
+|-------------------|----------------|
+| Continuous bright vertical column | Persistent carrier (beacon, repeater) |
+| Intermittent vertical flashes | Bursty digital data or voice bursts |
+| Gradually brightening column | Mobile unit approaching |
+| Bright then fading trail | Mobile unit departing or path failing |
+| Multiple simultaneous columns | Congested band / interference |
+
+### 3.3 — Peak Hold (Dashed Line)
+
+Active when `PH` appears in the status bar (toggle with `MENU` in SCAN mode):
+
 ```
-TX starts   → Peak hold shoots up
-TX ends     → Peak hold slowly fades down (visible "ghost")
-New TX      → Peak hold rises to new peak
+Signal present   -> Peak hold rises to current signal level immediately
+Signal ends      -> Dashed line decays gradually (~5 seconds to baseline)
+New stronger TX  -> Peak hold rises again to new maximum
 ```
+
+Use peak hold to catch **intermittent transmissions** — even if you look away and the signal has ended, the ghost line still shows the maximum height and frequency.
+
+### 3.4 — Noise Floor
+
+The **flat bottom region** before any peaks is the inherent RF background of the environment and receiver:
+
+| Environment | Typical Noise Floor |
+|-------------|---------------------|
+| Rural / shielded | −130 to −125 dBm |
+| Suburban | −120 to −110 dBm |
+| Dense urban | −110 to −100 dBm |
+
+Lower noise floor = better sensitivity = ability to see weaker signals.
+
+### 3.5 — Trigger Level Marker
+
+A vertical or horizontal pixel marker shows the **RSSI threshold**. Signals above this level cause the scanner to lock and enter LISTEN mode. Adjusted with `[*]` and `[F]` in STILL mode.
+
+### 3.6 — Header / Footer Information
+
+- **Header:** Locked/center frequency, modulation mode, listening bandwidth
+- **Footer:** Current scan step size, current RSSI trigger in dBm
 
 ---
 
-### 📏 THE NOISE FLOOR (Baseline)
+## 4. OPERATING MODES
 
-The **bottom of the display** represents the minimum detectable signal:
+### 4.1 SPECTRUM — Scanning Mode
 
-```
-Noise Floor = Inherent RF background
-Range: -130 dBm (rural, quiet) to -100 dBm (urban, active)
+The default mode. The radio continuously sweeps across a frequency range and updates the trace and waterfall.
 
-┌─────────────────────────────────────┐
-│        ╱╲                           │
-│       ╱  ╲                          │
-│      ╱    ╲                         │
-│ ────╱──────╲──────────────────      │
-│═════════════════════════════════════│ ← NOISE FLOOR
-│ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   (baseline ≈ -120 dBm)
-└─────────────────────────────────────┘
-```
+**Entry:** Press `[* SCAN]` from the spectrum screen.
 
-**Noise floor interpretation:**
+**Auto-transition to LISTEN:** When any bin's RSSI exceeds the trigger level, the scanner locks that frequency and enters LISTEN mode automatically.
 
-| Floor Level | RF Environment | Notes |
-|-------------|-----------------|-------|
-| **-130 dBm** | Heavily shielded | Excellent clean signal view |
-| **-120 dBm** | Rural/quiet | Typical amateur band |
-| **-110 dBm** | Suburban | Some ambient RF |
-| **-100 dBm** | Urban/congested | Heavy interference |
+**Key controls in SPECTRUM mode:**
 
----
-
-### 📡 THE S-METER (Right Side)
-
-Displays signal strength in **IARU standard** scale:
-
-```
-S0  S1  S2  S3  S4  S5  S6  S7  S8  S9  +10  +20
-│───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼────┼───│
--130                                         -50  [dBm]
-```
-
-**S-Meter Scale Interpretation:**
-
-| Range | Interpretation | Contact Quality |
-|-------|-----------------|-----------------|
-| **S0-S2** | Very weak | Barely detectable |
-| **S3-S4** | Weak | Readable with difficulty |
-| **S5-S6** | Moderate | Good contact |
-| **S7-S8** | Strong | Excellent contact |
-| **S9** | Very strong | Perfect signal |
-| **+10/+20** | Overload | Signal too strong (clip) |
+| Key | Action |
+|-----|--------|
+| `[* SCAN]` | Start / resume full sweep |
+| `[EXIT]` | Exit spectrum analyzer (return to VFO) |
+| `[UP]` / `[DOWN]` | Step center frequency up or down |
+| `[0]` | Cycle modulation: FM → USB → LSB → AM → FM |
+| `[3]` | Increase dBMax (raise upper ceiling) |
+| `[9]` | Decrease dBMin (lower floor) |
+| `[6]` | Cycle listen bandwidth (25k / 12.5k / 6.25k / narrower) |
+| `[MENU]` | Toggle Peak Hold on/off (`PH` in status bar when on) |
+| `[SIDE1]` | Blacklist current peak — skip in future sweeps |
+| `[SIDE2]` | Toggle backlight |
+| `[PTT]` | Lock strongest peak → STILL mode (signal guard active) |
+| `[5]` (hold) | Toggle grid display on/off |
 
 ---
 
-## SPECTRUM ANALYZER DISPLAY (Updated v7.6.6+)
+### 4.2 LISTEN — Auto-Lock Mode
 
-**Note:** Contest frequency markers feature has been removed. Standard frequency and modulation display provides all essential spectrum analysis functions.
+**Triggered automatically** when the scanner detects a signal above the trigger threshold.
 
-### Core Display Functions
+In LISTEN mode:
+- The radio stays tuned to the detected frequency
+- The spectrum trace and waterfall continue updating
+- A listen timer counts down; radio resumes scanning when it expires and the signal is gone
+- CTCSS/DCS tail-tone detection can end listen immediately
 
-**Frequency and Signal Information:**
+**Key controls in LISTEN mode:**
 
-```
-┌─────────────────────────────────────┐
-│  F: 145.500  USB  12.5k             │  ← Current frequency & mode
-├─────────────────────────────────────┤
-│        ╱╲                           │
-│       ╱  ╲     Signal trace        │  ← Real-time signal visualization
-│      ╱    ╲                        │
-│ ────╱──────╲──────────────────      │
-├─────────────────────────────────────┤
-│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     │
-│  ▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     │  ← Waterfall display
-│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     │
-├─────────────────────────────────────┤
-│ Step: 25kHz  Rssi Trig: -95dBm      │  ← Scan configuration
-└─────────────────────────────────────┘
-```
-
-**Standard Key Controls:**
-
-| Key | Function |
-|-----|----------|
-| **[0]** | Toggle modulation (FM/USB/LSB) |
-| **[3]** | Adjust maximum dB range |
-| **[9]** | Adjust minimum dB range |
-| **[MENU]** | Toggle peak hold on/off (`PH` shown in status bar when active) |
-
-**Frequency Display Examples:**
-
-| Condition | Display Format |
-|-----------|---|
-| Normal scanning | 145.500  FM |
-| Strong signal detected | 146.520  FM |
-| Weak signal | 147.000  USB |
+| Key | Action |
+|-----|--------|
+| `[EXIT]` | Force-resume scanning immediately |
+| `[SIDE1]` | Blacklist this frequency and resume scanning |
+| `[PTT]` | Lock to current frequency → enter STILL mode |
 
 ---
 
-## OPERATING MODES
+### 4.3 STILL — Single-Frequency Monitor
 
-### 🔍 MODE 1: BLIND SCANNING (Default)
+STILL mode locks the radio on **one frequency** for detailed monitoring with a live S-meter, dBm readout, and access to the hardware register inspector.
 
-**Used for:** Finding active frequencies without prior knowledge
+**Entry methods:**
+1. Press `[PTT]` from SPECTRUM or LISTEN mode — only if a valid peak above trigger level is present
+2. If no valid signal: a centered overlay message appears for ~300 ms
+
+**NO DETECTED ACTIVE SIGNAL overlay:**  
+When `[PTT]` is pressed but no peak qualifies (peak.f == 0 or RSSI below trigger), the following message appears centered on screen and clears automatically:
 
 ```
-START:                    DURING:                     WITH SIGNAL:
-Press [* SCAN]           Radio sweeps continuously    Auto-locks frequency
-                         Display updates 60 Hz        (Listen mode activates)
-                         Waterfall scrolls smoothly   Waterfall continues
-                         Peak hold updates            
++========================+
+|   NO DETECTED          |
+|   ACTIVE SIGNAL        |
++========================+
 ```
 
-**Controls during scan:**
+**STILL mode display layout:**
+
 ```
-[* SCAN]        Start/resume scanning
-[EXIT]          Stop scanning, return to VFO
-[UP]/[DOWN]     Manual step (within current view)
-[SIDE1]         Blacklist current frequency (skip future)
-[0]             Toggle modulation (FM/USB/LSB)
-[3]             Adjust max dB level
-[9]             Adjust min dB level
++--------------------------------------------------------------+
+|  146.520  FM  12.5k                                          | <- Locked freq
++--------------------------------------------------------------+
+| XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX............               | <- S-meter bar
+|  S: 7    -94 dBm                                             | <- S-unit + dBm
++--------------------------------------------------------------+
+| +--------+  +--------+  +--------+  +--------+              |
+| | LNAs   |  |  LNA   |  |  VGA   |  |  BPF   |              |
+| | -19dB  |  | -14dB  |  |  -9dB  |  |7.25kHz |              |
+| +--------+  +--------+  +--------+  +--------+              |
++--------------------------------------------------------------+
 ```
 
-**Typical workflow:**
-1. Press [* SCAN] to begin
-2. Watch for activity (peaks rising in trace)
-3. When signal detected → radio auto-locks
-4. Observe signal strength and pattern
-5. Press [EXIT] when done observing
+The **selected register cell is highlighted** (white fill, inverted). Press `MENU` to cycle selection. Press `UP` / `DOWN` to change the value (rotary — wraps around).
+
+**Key controls in STILL mode:**
+
+| Key | Action |
+|-----|--------|
+| `[MENU]` | Cycle register selection: LNAs → LNA → VGA → BPF → LNAs |
+| `[UP]` | Increase selected register value (rotary — wraps at max) |
+| `[DOWN]` | Decrease selected register value (rotary — wraps at min) |
+| `[EXIT]` | Deselect register (if selected) / return to SPECTRUM scan |
+| `[*]` | Increase RSSI trigger level |
+| `[F]` | Decrease RSSI trigger level |
+| `[3]` | Increase dBMax |
+| `[9]` | Decrease dBMin |
+| `[0]` | Cycle modulation |
+| `[6]` | Cycle listen bandwidth |
+| `[SIDE1]` | Toggle monitor mode (force RX regardless of squelch) |
+| `[SIDE2]` | Toggle backlight |
+| `[5]` | Open direct frequency input |
 
 ---
 
-### 📍 MODE 2: LISTEN MODE (Auto-Activated)
+### 4.4 Range Scanning (Advanced)
 
-**Triggered when:** Signal detected above squelch threshold
+Used to survey a precise frequency band segment.
 
-```
-BEFORE DETECTION:    DETECTION EVENT:         AFTER DETECTION:
-Scanning...          Signal >> threshold      Frequency locked
-Waterfall scrolling  └─> Auto-lock            Trace updates at that freq
-Up/down stepping         (Listen mode)        Waterfall shows activity
-                                              Press [EXIT] to resume scan
-```
-
-**Automatic behavior:**
-- Radio **holds frequency** when signal detected
-- Spectrum continues updating in real-time
-- Waterfall shows **temporal pattern** of TX
-- **Han timer** (default 2 sec) allows gap detection
-- Returns to scanning when signal ends + timer expires
-
-**Manual control in Listen:**
-```
-[EXIT]          Resume scanning (exit listen mode)
-[UP]/[DOWN]     Manually step frequency (within scan range)
-[MENU]          Open settings (Still mode only; scan-mode MENU = peak hold toggle)
-```
-
----
-
-### 🎯 MODE 3: FIXED FREQUENCY ANALYSIS
-
-**Used for:** Detailed analysis of single frequency
+**Setup:** Via VFO menu → Scan Range → set Start and Stop frequencies.
 
 ```
-SETUP:
-1. Use [UP]/[DOWN] to tune to target frequency
-2. Press [F] + [5] to open spectrum analyzer
-3. Zoom in on that area (adjust step size)
-
-DISPLAY:
-Shows detailed view around tuned frequency
-Waterfall captures all activity at that freq
-Peak hold shows historical maximum
-```
-
-**Technique:**
-```
-Known repeater frequency?
-→ Tune to it
-→ Activate spectrum analyzer
-→ Watch for keeper signals (repeater input)
-→ Observe input offset (±offset frequency)
-→ Watch activity timeline via waterfall
-```
-
----
-
-### 🔧 MODE 4: RANGE SCANNING (Advanced)
-
-**Used for:** Surveying specific frequency band
-
-```
-SETUP (Menu):
-1. Menu → Scan Range
-2. Set Start Freq: 146.000 MHz
-3. Set Stop Freq: 148.000 MHz
-4. Press [* SCAN]
-
-RESULT:
-Radio sweeps only 146-148 MHz
-Finer frequency resolution
-Detailed view of selected band
+Example: Start = 146.000 MHz, Stop = 148.000 MHz
+-> Spectrum sweeps only that 2 MHz window
+-> Finer resolution within the window
+-> Display graph is centered and aligned (corrected in v7.6.4br3)
 ```
 
 **Use cases:**
-- Scout specific band (local repeaters)
-- Search narrow range for interference
-- Map signal strength across band
-- Characterize RF environment
-
-**📌 NEW IN v7.6.4br3: Scan Range Display Alignment**
-
-Previous versions showed the spectrum graph offset from center when using Scan Range mode. This has been corrected:
-
-```
-BEFORE (v7.6.0):                   AFTER (v7.6.4br3+):
-Range: 434.000–435.000 MHz         Range: 434.000–435.000 MHz
-Center: 434.500 MHz                Center: 434.500 MHz
-
-Display offset 3–5 pixels          Display perfectly centered
-Graph misaligned with marker       Graph aligned with marker
-Not all measurements visible       All measurements visible
-
-(Visual artifact, no data issue)   (Full spectrum visible & centered)
-```
-
-**Affected scenarios:**
-- Narrow scan ranges (< 5 MHz)
-- Lower step counts (STEPS_16, STEPS_32)
-- Frequency ranges without VFO-mode constraints
-
-**Impact:** All display elements (spectrum trace, waterfall, frequency marker, arrow) now perfectly align regardless of range width or step size setting.
+- Audit a specific band plan segment
+- Map all repeater outputs in a local area
+- Narrow interference hunt within a specific allocation
+- Compare signal strengths across a defined range
 
 ---
 
-## PRACTICAL ANALYSIS TECHNIQUES
+## 5. STILL MODE — REGISTER INSPECTOR
 
-### 🎓 TECHNIQUE #1: FINDING HIDDEN SIGNALS
+The register inspector gives **direct hardware control** of the BK4819 radio IC receive gain chain without leaving the spectrum analyzer.
 
-**Scenario:** Looking for weak repeater without knowing exact frequency
+### 5.1 BK4819 Gain Chain Overview
 
 ```
-STEP 1: WIDE OVERVIEW
-  • Set step size: 100 kHz (coarse, fast scan)
-  • Press [* SCAN]
-  • Watch for any peaks (even small ones)
-  • Note region of activity
-
-STEP 2: NARROW TO REGION
-  • Exit scan [EXIT]
-  • Use [UP]/[DOWN] to position over region
-  • Reduce step size: 12.5 kHz (fine)
-  • Resume [* SCAN] with finer resolution
-
-STEP 3: IDENTIFY PEAK
-  • Watch trace peaks
-  • Look at waterfall for activity pattern
-  • Listen for audio (squelch)
-  • Lock frequency when found
-
-RESULT: Found hidden weak signal! 📶
+Antenna
+  |
+  v
+[ BPF — Band-Pass Filter ]
+  |   Controls IF bandwidth — how wide a slice reaches the demodulator
+  v
+[ LNAs — Low Noise Amp Short ]
+  |   First-stage coarse RF preamplification
+  v
+[ LNA — Low Noise Amplifier ]
+  |   Main preamplifier (most impact on sensitivity)
+  v
+[ Mixer + IF stages ]
+  |
+  v
+[ VGA — Variable Gain Amplifier ]
+  |   Post-mixer fine gain adjustment
+  v
+[ Demodulator -> Audio output ]
 ```
 
-**Display indicators of weak signal:**
-```
-┌──────────────────────────────────────┐
-│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔  │ ← Peak Hold shows
-│         ╱╲                           │    historical max
-│        ╱  ╲  ← Even single pixel     │
-│───────╱────╲──────────────────────   │ ← Noise floor
-│ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │
-└──────────────────────────────────────┘
-```
+The AGC (Automatic Gain Control) normally adjusts LNAs, LNA, and VGA automatically. As soon as you modify any REG_13 field (LNAs, LNA, or VGA) via the inspector, **AGC is locked** so your manual value takes permanent effect until you exit STILL mode or change modulation.
+
+### 5.2 Register Definitions and Options
+
+#### LNAs — Low Noise Amplifier Short (Coarse Stage)
+
+Hardware: BK4819 REG_13 bits [9:8]
+
+| Index | dB Display | Gain |
+|-------|-----------|------|
+| 0 | −19 dB | Minimum (heaviest attenuation) |
+| 1 | −16 dB | — |
+| 2 | −11 dB | — |
+| 3 | 0 dB | Maximum (default, no attenuation) |
+
+Navigation: Rotary over 4 steps. 0 dB → −19 dB (wrap at max); −19 dB → 0 dB (wrap at min).
+
+**Use when:** A very strong nearby signal is overloading the front end — causing distortion or false peaks spreading across the spectrum trace. Reduce LNAs first.
 
 ---
 
-### 🎓 TECHNIQUE #2: CHARACTERIZING INTERFERENCE
+#### LNA — Low Noise Amplifier (Main Stage)
 
-**Scenario:** Identifying RF pollution on your frequency
+Hardware: BK4819 REG_13 bits [7:5]
 
-```
-STEP 1: AUDIT YOUR FREQUENCY
-  • Tune to your operating frequency (e.g., 145.500)
-  • Activate spectrum analyzer
-  • Set tight zoom (step size 2.5-6.25 kHz)
-  • Watch interference pattern
+| Index | dB Display | Gain |
+|-------|-----------|------|
+| 0 | −24 dB | Minimum |
+| 1 | −19 dB | — |
+| 2 | −14 dB | — |
+| 3 | −9 dB | — |
+| 4 | −6 dB | — |
+| 5 | −4 dB | — |
+| 6 | −2 dB | — |
+| 7 | 0 dB | Maximum (default) |
 
-STEP 2: MEASURE CHARACTERISTICS
-  • Note peak width (bandwidth occupied)
-  • Watch modulation pattern (steady vs. bursty)
-  • Check waterfall for intermittency
-  • Estimate power (peak height on S-meter)
+Navigation: Rotary over 8 steps.
 
-STEP 3: IDENTIFY SOURCE
-  Pattern: Steady carrier ────────────
-           Type: Beacon or continuous TX
-
-  Pattern: Bursty spikes ▐ ▌ ▐ ▌ ▐ ▌
-           Type: Digital data, DTMF
-
-  Pattern: Frequency hopping █ █ ▓ ░ ▓
-           Type: Spread spectrum (rare, advanced)
-
-RESULT: Know what's interfering and how! 🔍
-```
+**Use when:** Fine-tuning sensitivity. Reduce for strong adjacent signals; increase to pull in weak distant signals. LNA has the most impact on receive noise figure.
 
 ---
 
-### 🎓 TECHNIQUE #3: SIGNAL PROPAGATION ANALYSIS
+#### VGA — Variable Gain Amplifier (Post-Mixer)
 
-**Scenario:** Watching signal strength change as mobile moves
+Hardware: BK4819 REG_13 bits [2:0]
 
-```
-STEP 1: TARGET MOBILE SIGNAL
-  • Identify signal in spectrum trace
-  • Note starting peak height
-  • Observe waterfall pattern
+| Index | dB Display | Gain |
+|-------|-----------|------|
+| 0 | −33 dB | Minimum |
+| 1 | −27 dB | — |
+| 2 | −21 dB | — |
+| 3 | −15 dB | — |
+| 4 | −9 dB | — |
+| 5 | −6 dB | — |
+| 6 | −3 dB | — |
+| 7 | 0 dB | Maximum (default) |
 
-STEP 2: WATCH AS MOBILE MOVES
-  Time:     0 sec      10 sec      20 sec      30 sec
-  Signal:   █████      ███         ██          █
-  meaning:  [Strong]   [FadeOUT]   [Weaker]    [Distant]
+Navigation: Rotary over 8 steps.
 
-STEP 3: INTERPRET PROPAGATION
-  • Steep fade → LOS (line-of-sight) path loses coverage
-  • Slow fade → Multipath environment (urban)
-  • Sudden drop → Obstruction/tunnel entry
-  • Waterfall shows fading echo pattern
-
-RESULT: RF path behavior documented! 📉
-```
+**Use when:** RSSI reading seems inconsistent with actual signal strength, especially in AM mode. VGA is the last manual gain stage before the demodulator.
 
 ---
 
-### 🎓 TECHNIQUE #4: FINDING INTERMITTENT TRANSMISSIONS
+#### BPF — Band-Pass Filter (IF Bandwidth)
 
-**Scenario:** Locating brief/occasional signals
+Hardware: BK4819 REG_3D (full 16-bit register, 7 calibrated presets)
+
+| Index | Display | IF Width | Best Use |
+|-------|---------|----------|----------|
+| 0 | 8.46 kHz | Widest | Very wide FM, broadcasting, high-adjacent-signal environments |
+| 1 | 7.25 kHz | Wide | Wide FM (25 kHz channel) |
+| 2 | 6.35 kHz | Medium-wide | Standard FM (12.5 kHz channel) |
+| 3 | 5.64 kHz | Medium | Default balanced |
+| 4 | 5.08 kHz | Medium-narrow | Moderately congested band |
+| 5 | 4.62 kHz | Narrow | Interference rejection |
+| 6 | 4.23 kHz | Narrowest | Maximum adjacent-channel selectivity |
+
+Navigation: Rotary over 7 presets.
+
+**Implementation note:** BK4819 REG_3D does **not** reliably return the written value on SPI readback. The firmware maintains `bpfSavedIdx` in software as the authoritative state. This index is written to hardware on every change and restored after every `ToggleRX()` call and after `RADIO_SetModulation()` — ensuring the BPF selection survives the chip's internal register resets.
+
+**Use when:**
+- Adjacent channel interference → narrower BPF (index 4–6)
+- Weak signal being cut off → wider BPF (index 0–2)
+- AM or SSB optimum → medium-narrow (index 3–4)
+
+### 5.3 Register Inspector Workflow
 
 ```
-SETUP:
-  • Press [MENU] in scan mode to enable peak hold (PH shown in status bar)
-  • Set DBMin to -130 dBm (maximum sensitivity)
-  • Start scanning and let it run unattended
-
-DETECTION:
-  Current trace:    Only noise visible
-  Peak hold line:   Dotted line shows historical max even after signal ends
-  Waterfall:        Vertical "flash" shows TX burst time
-  Fade behavior:    Dotted line decays to zero ~5 s after signal stops
-  
-Result: Even if you missed the live signal,
-        peak hold shows it was there and where it was!
-
-STEP 2: IDENTIFY EXACT FREQUENCY
-  • Use peak hold dotted line position to identify frequency
-  • May require retuning to narrow down
-  • Note on waterfall when bursts occur (timing pattern)
-  • Verify with audio monitoring
+1. Ensure a signal is present above trigger level
+2. Press [PTT] -> enters STILL mode on detected peak
+3. Press [MENU] -> LNAs cell is highlighted (white/inverted)
+4. Press [UP] or [DOWN] to adjust LNAs
+   -> S-meter responds immediately to new gain
+5. Press [MENU] -> LNA cell highlighted
+6. Press [UP] or [DOWN] to adjust LNA
+7. Press [MENU] -> VGA cell highlighted
+8. Press [UP] or [DOWN] to adjust VGA
+9. Press [MENU] -> BPF cell highlighted
+10. Press [UP] or [DOWN] to cycle BPF presets
+    -> 8.46 -> 7.25 -> 6.35 -> 5.64 -> 5.08 -> 4.62 -> 4.23 kHz
+    -> Wraps around in both directions
+11. Press [EXIT] to deselect and return to SPECTRUM scan
+    -> AGC lock is cleared on return
 ```
+
+**Note on rotary navigation:** All four registers wrap around at both ends.  
+Example for BPF: pressing UP at index 6 (4.23 kHz) wraps to index 0 (8.46 kHz).  
+Pressing DOWN at index 0 (8.46 kHz) wraps to index 6 (4.23 kHz).
 
 ---
 
-## VISUAL SIGNAL INTERPRETATION
+## 6. KEY MAP — COMPLETE REFERENCE
 
-### 📋 SIGNAL SHAPE GALLERY
+### SPECTRUM Mode
 
-#### FM (Frequency Modulation) Signal
-```
-┌─────────────────────────────────────┐
-│            ╱╲                       │
-│           ╱  ╲                      │ Characteristics:
-│          ╱────╲                     │ • Smooth "hump" shape
-│  ───────╱──────╲───────────         │ • Symmetric peak
-│                                     │ • Width ≈ 12.5-25 kHz
-│  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │ • Clean noise floor
-└─────────────────────────────────────┘
-```
+| Key | Function |
+|-----|----------|
+| `[* SCAN]` | Start / resume full sweep |
+| `[EXIT]` | Exit spectrum analyzer → VFO mode |
+| `[UP]` | Step center frequency up |
+| `[DOWN]` | Step center frequency down |
+| `[0]` | Cycle modulation (FM / USB / LSB / AM) |
+| `[3]` | Increase dBMax (raise ceiling) |
+| `[9]` | Decrease dBMin (lower floor) |
+| `[6]` | Cycle listen bandwidth |
+| `[MENU]` | Toggle peak hold on/off (`PH` in status bar) |
+| `[SIDE1]` | Blacklist current peak frequency |
+| `[SIDE2]` | Toggle backlight |
+| `[PTT]` | Lock strongest peak → STILL mode |
+| `[5]` (hold) | Toggle spectrum grid display |
 
-#### AM (Amplitude Modulation) Signal
-```
-┌─────────────────────────────────────┐
-│          ╱╲      ╱╲                 │
-│         ╱  ╲    ╱  ╲                │ Characteristics:
-│        ╱    ╲──╱    ╲               │ • Double peaks (sidebands)
-│  ──────      └────────────          │ • Wider bandwidth
-│                                     │ • Asymmetric shape
-│  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │ • Width ≈ 8-10 kHz
-└─────────────────────────────────────┘
-```
+### STILL Mode
 
-#### SSB (Single Sideband) Signal
-```
-┌─────────────────────────────────────┐
-│                  ╱╲                 │
-│                 ╱  ╲                │ Characteristics:
-│                ╱    ╲               │ • Single sharp peak
-│  ──────────────      ───────        │ • Narrow bandwidth
-│                                     │ • Asymmetric sidebands
-│  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │ • Width ≈ 3-4 kHz
-└─────────────────────────────────────┘
-```
+| Key | Function |
+|-----|----------|
+| `[MENU]` | Cycle register: LNAs → LNA → VGA → BPF → (back) |
+| `[UP]` | Increase selected value (rotary wrap) |
+| `[DOWN]` | Decrease selected value (rotary wrap) |
+| `[EXIT]` | Deselect / return to SPECTRUM scan |
+| `[*]` | Increase RSSI trigger level |
+| `[F]` | Decrease RSSI trigger level |
+| `[3]` | Increase dBMax |
+| `[9]` | Decrease dBMin |
+| `[0]` | Cycle modulation |
+| `[6]` | Cycle listen bandwidth |
+| `[SIDE1]` | Toggle monitor mode (bypass squelch) |
+| `[SIDE2]` | Toggle backlight |
+| `[5]` | Direct frequency entry |
 
-#### CW (Morse/Carrier Wave)
-```
-┌─────────────────────────────────────┐
-│                   ║                 │
-│                   ║                 │ Characteristics:
-│                   ║                 │ • Extremely narrow spike
-│  ─────────────────║────────────     │ • No modulation visible
-│                   ║                 │ • Pure carrier
-│  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │ • Width ≈ 500 Hz
-└─────────────────────────────────────┘
-```
+---
 
-#### INTERFERENCE (Multiple Signals)
+## 7. PRACTICAL ANALYSIS TECHNIQUES
+
+### Technique 1 — Finding Hidden Weak Signals
+
 ```
-┌─────────────────────────────────────┐
-│  ╱╲  ╱╲      ╱╲     ╱╲              │
-│ ╱  ╲╱  ╲    ╱  ╲   ╱  ╲             │ Characteristics:
-│╱    ▐  ▌   ╱    ╲ ╱    ╲            │ • Multiple peaks
-│─────────────────────────────        │ • Complex pattern
-│                                     │ • Crowded band
-│  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │ • Width ≈ 50-100 kHz
-└─────────────────────────────────────┘
+Step 1 — Wide overview
+  Step size: 100 kHz (fast full-band sweep)
+  [* SCAN] -> watch for any peaks above noise floor
+
+Step 2 — Narrow to region of interest
+  [EXIT] -> [UP]/[DOWN] to position over suspect region
+  Step size: 12.5 kHz -> [* SCAN] (finer resolution)
+
+Step 3 — Use peak hold
+  [MENU] -> enable peak hold
+  Even intermittent signals leave a ghost at their frequency
+
+Step 4 — Lock and verify
+  [PTT] -> STILL mode on detected peak
+  Check S-meter reading and audio
 ```
 
 ---
 
-## ADVANCED CONFIGURATION
-
-### ⚙️ DISPLAY SCALING (DBMax / DBMin)
-
-Controls the **vertical axis** dynamic range:
+### Technique 2 — Characterizing Interference
 
 ```
-MENU → 22 DBMax:     TOP of display (ceiling)
-MENU → 23 DBMin:     BOTTOM of display (floor)
-```
+Step 1 — Tune near your frequency
+  Step size: 2.5–6.25 kHz for fine detail
+  [* SCAN] -> look for peaks near your operating frequency
 
-**Adjustment effects:**
+Step 2 — Analyze characteristics
+  Peak width -> interference bandwidth
+  Steady vs. bursty -> continuous vs. digital protocol
+  Waterfall timing -> on/off duty cycle
 
-```
-DEFAULT SETTING:  DBMax = -50,  DBMin = -130
-┌─────────────────────────────────────┐
-│  (weak signals not visible here)     │
-│        ╱╲                           │  ← MAX -50 dBm
-│       ╱  ╲                          │
-│ ────╱──────╲──────────────────      │
-│  Noise floor region                 │
-└─────────────────────────────────────┘
-  MIN -130 dBm = Ultra-sensitive
+Step 3 — Identify by shape
+  Steady flat carrier  --------   -> Beacon, unmodulated source
+  Bursty spikes        | | | |    -> DTMF, data, scanner
+  Wideband hump     /--------\   -> Broadband noise or switching PSU
 
-ZOOMED IN:  DBMax = -80,  DBMin = -130
-┌─────────────────────────────────────┐
-│           ╱╲                        │  ← Signal not clipped
-│          ╱  ╲                       │
-│         ╱────╲  (enlarged view)     │  ← MAX -80 dBm
-│  ───────      ───────               │
-│  Noise floor filled 50% of screen   │
-└─────────────────────────────────────┘
-  MIN -130 dBm = All noise visible
-
-ZOOMED OUT:  DBMax = -50,  DBMin = -100
-┴┬───────────────────────────────────┬┴
-│  Strong signals compressed          │  ← MAX -50 dBm
-│  Noise floor squashed              │
-│        ╱╲                           │
-│       ╱  ╲                          │
-│ ────╱──────╲──────────────────      │
-│  Noise invisible (below floor)      │
-└───────────────────────────────────────┘
-  MIN -100 = Weak signals not shown
-```
-
-**Practical guide:**
-```
-Finding weak signals:
-  → Set DBMax closer to -80 dBm
-  → Set DBMin to -130 dBm
-  → Watch weak peaks appear
-
-Avoiding saturation:
-  → Set DBMax to -50 dBm
-  → Strong signals won't clip
-  → View wide dynamic range
-
-Clean display:
-  → Set DBMin to -100 dBm
-  → Noise floor visually disappears
-  → Easier to see real signals
+Step 4 — Mitigate with BPF
+  [PTT] -> STILL on the interfering frequency
+  [MENU] x4 -> select BPF
+  [DOWN] -> narrow filter -> does adjacent signal drop on S-meter?
 ```
 
 ---
 
-### 🔧 FREQUENCY STEP SIZE
-
-Determines **horizontal axis** resolution:
+### Technique 3 — Manual Gain Optimization
 
 ```
-STEP SIZE → How wide each display bin covers
-Menu → 11 Step → Select 2.5k / 6.25k / 12.5k / 25k / 50k / 100k
+Overload symptoms (reduce gain):
+  Multiple false peaks across band (intermodulation products)
+  S-meter stuck at maximum
+  Distorted audio despite strong signal
+  Fix: STILL -> MENU -> LNAs -> DOWN (reduce coarse gain)
+       or LNA -> DOWN (reduce main preamplifier)
 
-EXAMPLE: 145.5 MHz with different step sizes
-
-Step = 25 kHz:   Bin width = 320 kHz total  (coarse, fast)
-┌─────────────────────────────────────┐
-│  145------145.5-----146------146.5  │  ← Each pixel = 25 kHz
-└─────────────────────────────────────┘
-
-Step = 12.5 kHz: Bin width = 1.6 MHz total (standard)
-┌─────────────────────────────────────┐
-│  145.4-145.5-145.625-145.75-145.875  │  ← Each pixel = 12.5 kHz
-│  -146-146.125-146.25-146.375-146.5   │
-└─────────────────────────────────────┘
-
-Step = 2.5 kHz:  Bin width = 320 kHz total (fine, slow)
-┌─────────────────────────────────────┐
-│ Many pixels per 1 MHz, excellent detail  │  ← Each pixel = 2.5 kHz
-└─────────────────────────────────────┘
-```
-
-**Selection guide:**
-| Step Size | Scan Speed | Detail | Use Case |
-|-----------|-----------|--------|----------|
-| **100 kHz** | Very fast | Low | Band overview |
-| **50 kHz** | Fast | Low-med | Quick survey |
-| **25 kHz** | Normal | Medium | General use |
-| **12.5 kHz** | Normal | Good | Default, balanced |
-| **6.25 kHz** | Slow | High | Signal detail |
-| **2.5 kHz** | Very slow | Excellent | Precise analysis |
-
----
-
-### 📊 SQUELCH ADJUSTMENT (RSSI Trigger)
-
-Controls what frequency signals trigger lock:
-
-```
-MENU → 06 Squelch:  0-9 level
-
-With signal at -95 dBm:
-
-Squelch = 0 (always listen):
-  ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄  ← All signals detected
-  Catches weak signals, but noisy
-
-Squelch = 5 (moderate):
-  ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄  ← Reasonable threshold
-  Balanced detection
-
-Squelch = 9 (tight):
-  ▄▄▄▄▄▄▄▄▄▄▄  ← Only strong signals
-  Clean but misses weak TX
-```
-
-**Practical suggestions:**
-```
-Blind scanning (search mode):
-  → Set squelch 3-4 (loose, catch all activity)
-  → Stop on any frequency with signal
-  → Listen to verify
-
-Repeater hunting (known band):
-  → Set squelch 5-6 (moderate)
-  → Typical repeater signals detected
-  → Few false triggers
-
-Weak signal monitoring:
-  → Set squelch 1-2 (very sensitive)
-  → Catches marginal signals
-  → Higher noise, but no miss
-
-Interference rejection:
-  → Set squelch 7-8 (tight)
-  → Only strong interference locked
-  → May miss legitimate weak signals
+Weak signal symptoms (increase gain):
+  Peak visible in trace but S-meter barely moves
+  Audio cuts in and out at squelch threshold
+  Fix: STILL -> MENU -> LNA -> UP
+       or VGA -> UP
+       Also: [F] to lower trigger threshold
 ```
 
 ---
 
-## TROUBLESHOOTING GUIDE
-
-### ❓ Problem: Spectrum Trace Looks Flat (No Variation)
-
-**Diagnosis Steps:**
+### Technique 4 — Catching Intermittent Transmissions
 
 ```
-STEP 1: Is scan running?
-  ✓ Watch waterfall: Should scroll smoothly
-  ✗ If frozen → Press [* SCAN] to start
-
-STEP 2: Check display scaling
-  ✓ Go to Menu → 22 DBMax / 23 DBMin
-  ✗ If DBMin = -100 dBm and noise = -120 dBm
-    → Everything below -100 not displayed!
-  → Solution: Set DBMin = -130 dBm
-
-STEP 3: Check squelch
-  ✓ If squelch > 5 and signals weak
-    → Squelch filters out all signals!
-  → Solution: Press [F]+[UP]/[DOWN] to reduce
-
-STEP 4: Measure actual signal
-  ✓ Tune to known signal (repeater, beacon)
-  ✗ If spectrum still flat
-    → RSSI measurement failing
-    → Try: [EXIT], reboot radio, retry
+1. [MENU] in SPECTRUM -> enable Peak Hold (PH in status bar)
+2. [F] several times to lower trigger level
+3. Run scanner for several minutes unattended
+4. Return and look for:
+   - Dotted peak hold line at any frequency -> signal was there
+   - Waterfall vertical flash -> exactly when it occurred
+   - The dotted line decays ~5 seconds after signal ends
+5. [PTT] if peak is still fresh -> STILL -> verify frequency
 ```
 
 ---
 
-### ❓ Problem: Waterfall Not Scrolling / Frozen
-
-**Diagnosis:**
+### Technique 5 — Repeater Discovery
 
 ```
-STEP 1: Is scan active?
-  → Watch spectrum trace peak
-  → Should move left-right continuously
-  ✗ If frozen in place
-    → Scan paused or listen locked
-    → Solution: Press [EXIT] to resume scan
-
-STEP 2: Is listen mode locked?
-  → Check frequency: Should be "locked" text
-  ✗ If locked on single frequency
-    → Signal detected, radio waiting
-    → Solution: [EXIT] to exit listen mode
-
-STEP 3: Reload spectrum
-  → Press [EXIT] (exit analyzer)
-  → Press [F]+[5] (reopen analyzer)
-  → Press [* SCAN]
-  → Waterfall should animate
+1. Step size: 25 kHz (standard repeater channel spacing)
+2. Modulation: FM
+3. Trigger level: moderate (-100 to -95 dBm)
+4. Wide scan: 144–148 MHz (VHF) or 430–440 MHz (UHF)
+5. Radio auto-locks each repeater output
+6. Note frequency; calculate input:
+   VHF: output - 600 kHz = input
+   UHF: output - 5000 kHz = input
 ```
 
 ---
 
-### ❓ Problem: Peak Hold Dotted Line Not Visible
+## 8. SIGNAL SHAPE GALLERY
 
-**Explanation:**
-
+### FM Signal (Frequency Modulated)
 ```
-CHECK 1: Is peak hold enabled?
-  → Press [MENU] in scan mode to toggle.
-  → Status bar shows "PH" when active.
-
-CHECK 2: Has the signal faded?
-  → Peak hold decays at a fixed rate per sweep.
-  → Full fade takes approximately 5 seconds after signal ends.
-  → This is intentional — stale history clears automatically.
-
-CHECK 3: Was a signal ever seen?
-  → Peak hold only shows where a signal exceeded the noise floor.
-  → If no signal has been received since enabling, nothing to show yet.
+         /\
+        /  \
+-------/----\-------   Width: 12.5-25 kHz, smooth symmetric hump
 ```
 
----
-
-### ❓ Problem: S-Meter Reading Doesn't Match Spectrum Peak
-
-**Possible causes:**
-
+### AM Signal (Amplitude Modulated)
 ```
-Cause #1: Different frequencies
-  You're looking at spectrum at 146.000 MHz
-  S-meter showing current RX at 145.500 MHz
-  → They're measuring different things!
-  → Solution: Tune VFO to same frequency as peak
+      /\    /\
+-----/  \--/  \-------  Width: 8-10 kHz, double sidebands flanking carrier
+```
 
-Cause #2: Time lag
-  Spectrum updates every ~60 ms
-  S-meter updates every 500 ms
-  → Frequency changed between updates
-  → Solution: Stop scanning, let both stabilize
+### SSB Signal (Single Sideband)
+```
+            /\
+-----------/  \-------  Width: 3-4 kHz, single asymmetric peak, one side only
+```
 
-Cause #3: Different modulation
-  FM mode: Different AGC gain than AM
-  SSB mode: Different sensitivity
-  → Spectrum shows broadband noise
-  → S-meter shows demodulated strength
-  → Solution: Compare same modulation mode
+### CW / Carrier Wave (Morse)
+```
+           |
+-----------|-----------  Width: < 1 kHz, extremely narrow spike
+```
 
-Cause #4: Multipath (urban)
-  Signal reflects off buildings
-  → Different path strengths
-  → Spectrum shows combined power
-  → Solution: Expected behavior, not error
+### Digital / Data Burst
+```
+      |||||||||
+------||||||||---------  Width: baud-rate dependent, square-topped envelope
+```
+
+### Interference / Intermodulation
+```
+  /\  /\   /\    /\
+-/--\/--\-/--\--/--\---  Multiple peaks, no single center, complex pattern
 ```
 
 ---
 
-### ❓ Problem: Spectrum Grass Slows / Becomes Static After 2-3 Seconds
+## 9. ADVANCED CONFIGURATION
 
-**Important: This is NORMAL behavior!**
+### 9.1 DBMax / DBMin — Vertical Scaling
+
+`[3]` increases DBMax (raises ceiling). `[9]` decreases DBMin (lowers floor).
+
+| Goal | Suggested DBMax | Suggested DBMin |
+|------|----------------|----------------|
+| Find weak signals | −80 dBm | −130 dBm |
+| General monitoring | −50 dBm | −130 dBm |
+| Urban noise-free | −50 dBm | −100 dBm |
+| Signal shape detail | −70 dBm | −120 dBm |
+
+---
+
+### 9.2 Scan Step Size
+
+| Step | Total Span (128 bins) | Use Case |
+|------|-----------------------|----------|
+| 2.5 kHz | 320 kHz | Precision narrow-band analysis |
+| 6.25 kHz | 800 kHz | Fine signal detail |
+| 12.5 kHz | 1.6 MHz | Default balanced scan |
+| 25 kHz | 3.2 MHz | General VHF/UHF monitoring |
+| 50 kHz | 6.4 MHz | Fast band survey |
+| 100 kHz | 12.8 MHz | Full-band overview |
+
+---
+
+### 9.3 Listening Bandwidth
+
+`[6]` cycles: Wide (25 kHz) → Standard (12.5 kHz) → Narrow (6.25 kHz) → Narrower.
+
+This controls the IF filter applied **during LISTEN and STILL mode RX**. It is separate from the BPF register inspector setting. Use narrower bandwidth to reduce adjacent channel interference while monitoring a specific signal.
+
+---
+
+### 9.4 Modulation Mode
+
+`[0]` cycles: FM → USB → LSB → AM → FM.
+
+| Mode | Use |
+|------|-----|
+| FM | Amateur VHF/UHF, PMR, weather, repeaters |
+| USB | Digital HF, SSB voice above 10 MHz |
+| LSB | SSB voice below 10 MHz |
+| AM | Aviation, AM broadcast monitoring |
+
+**Note:** Changing modulation triggers `RADIO_SetModulation()` which resets REG_3D. The firmware immediately reapplies `BPFRegOptions[bpfSavedIdx]` after this write, preserving your BPF selection.
+
+---
+
+### 9.5 RSSI Trigger Level
+
+Controls which signal strength causes the scanner to lock.
+
+- `[*]` in STILL mode → raise threshold (only stronger signals lock)
+- `[F]` in STILL mode → lower threshold (weaker signals can lock)
+
+| Environment | Guidance |
+|-------------|---------|
+| Rural, weak signal hunt | Set low — catch everything above noise floor |
+| Suburban general use | Moderate — filter ambient noise |
+| Dense urban / high RF | Higher — skip intermittent noise triggers |
+
+---
+
+### 9.6 Blacklist
+
+`[SIDE1]` in SPECTRUM / LISTEN mode adds the current peak to the skip list (up to 15 entries). Blacklisted frequencies are ignored for the rest of the session. Resets on scan restart or radio reboot.
+
+---
+
+### 9.7 Monitor Mode
+
+`[SIDE1]` in **STILL mode** toggles monitor mode. When active, squelch is bypassed and audio is always open on the locked frequency. Useful for listening to signals below the squelch threshold, verifying channel noise, or monitoring while manually adjusting gain registers.
+
+---
+
+## 10. TROUBLESHOOTING GUIDE
+
+### Problem: Spectrum Trace Looks Flat
 
 ```
-Why it happens:
-  Spectrum analyzer includes synthetic noise generation
-  to show activity at quiet frequencies.
-  
-  This noise uses an averaging filter (EMA):
-  newNoise = (oldNoise * 7/8) + (randomVariation * 1/8)
-  
-  With zero-mean random input:
-  → Filter converges to average (baseFloor)
-  → After 12-18 cycles → becomes static
-  → This is CORRECT averaging behavior!
+Check 1 - Scan running?
+  Waterfall should scroll every sweep.
+  If frozen: press [* SCAN].
 
-Is it broken?
-  NO! The filter is working correctly.
-  Showing stable noise floor = filter working.
-  
-Result: Clean signal display after grass stabilizes ✓
-```
+Check 2 - DBMin too high?
+  If noise floor is at -120 dBm but DBMin = -100, nothing shows.
+  Fix: press [9] to lower DBMin to -130 dBm.
 
-**If you want to reset grass animation:**
-```
-Press [* SCAN] to restart
-→ Grass animation restarts
-→ Cycling through different frequencies
-→ Spectrum remains active
+Check 3 - Trigger too tight blocking display?
+  High trigger with weak signals = scanner locks nothing visible.
+  Fix: press [F] in STILL to lower trigger.
 ```
 
 ---
 
-## REFERENCE TABLES
+### Problem: STILL Mode Shows Wrong dBm (e.g., 32597 dBm)
 
-### 🔢 STANDARD FREQUENCY BANDS (UV-K1/K5 V3)
+**Root cause (pre-v7.6.5br3):** `RSSI_MAX_VALUE = 65535U` was used as both a blacklist sentinel and an arithmetic clamp ceiling. Cast to `int16_t`, `65535U` = `−1`, making every valid positive RSSI overflow the comparison and get pinned to the sentinel, producing bogus values.
 
-| Band | Range | Steps | Notes |
-|------|-------|-------|-------|
-| **VHF** | 136-174 MHz | 25-50 kHz | Amateur 2m, Aviation, Weather |
-| **UHF** | 400-480 MHz | 25-50 kHz | Amateur 70cm, PMR, Industry |
-| **Extended** | 50-940 MHz | Custom | Depends on F-Lock setting |
+**Fixed in v7.6.5br3:** Hardware ceiling is now `RSSI_HW_MAX_VALUE = 511` (BK4819 REG_67 bits [8:0]). If you still see values above +50 dBm, you are running firmware older than v7.6.5br3.
 
-### 📊 TYPICAL SIGNAL LEVELS (Meter Distance)
+---
 
-| Distance | Frequency | Environment | S-Meter | dBm |
-|----------|-----------|-------------|---------|------|
-| **1 m** | 146 MHz | Free space | S9+20 | -50 |
-| **10 m** | 146 MHz | Free space | S9 | -70 |
-| **100 m** | 146 MHz | Free space | S5-S6 | -100 |
-| **1 km** | 146 MHz | Line-of-sight | S3-S4 | -120 |
-| **10 km** | 146 MHz | Urban | S0-S1 | -130 |
-| **100 m** | 430 MHz | Free space | S6-S7 | -95 |
-| **1 km** | 430 MHz | Free space | S2-S3 | -125 |
+### Problem: BPF Shows 8.46 kHz and Cannot Be Changed
 
-### 🎯 SIGNAL BANDWIDTH BY MODE
+**Root cause (pre-v7.6.5br3):** `BK4819_ReadRegister(BK4819_REG_3D)` returned inconsistent values because REG_3D is not reliably readable via SPI. The nearest-match algorithm always resolved to index 0.
 
-| Mode | Typical Width | Display Width |
-|------|---------------|---------------|
-| **FM 12.5k** | 10 kHz | 2-3 pixels |
-| **FM 25k** | 20 kHz | 4-5 pixels |
-| **AM** | 10 kHz | 2-3 pixels |
-| **USB/LSB** | 3-4 kHz | 1 pixel |
-| **CW** | 500 Hz | <1 pixel (narrow) |
+**Fixed in v7.6.5br3:** BPF index is stored in software (`bpfSavedIdx`). Hardware is written on every change and reapplied after every register-reset event. No hardware readback is used.
 
-### 📢 COMMON REPEATER OFFSETS (North America)
+---
 
-| Band | Offset | Notes |
-|------|--------|-------|
-| **144-148 MHz** | +600 kHz | Standard VHF repeater |
-| **145.1-145.5** | -600 kHz | Popular VHF band |
-| **420-450 MHz** | +5 MHz | Standard UHF repeater |
-| **449-450 MHz** | -5 MHz | High-side UHF |
+### Problem: PTT Does Nothing / Cannot Enter STILL Mode
 
-**To find repeater pair:**
-Set OffSet in menu → Spectrum shows both TX (main) and RX (offset)
+In v7.6.5br3 and later, if `[PTT]` is pressed with no valid peak detected, a **NO DETECTED ACTIVE SIGNAL** overlay appears for ~300 ms. This replaces the silent-fail behavior.
+
+**Fix:** Lower trigger level with `[F]`, wait for a full scan cycle to detect a signal, then press `[PTT]`.
+
+---
+
+### Problem: Arrow Keys Change the Wrong Register (Multiple Values Change at Once)
+
+**Root cause (pre-v7.6.5br3):** `LockAGC()` was called before reading `BK4819_REG_13`. `BK4819_InitAGC()` inside `LockAGC()` wrote `0x03BE` to REG_13, overwriting all three sub-fields before the update was applied.
+
+**Fixed in v7.6.5br3:** REG_13 is read first (pre-lock snapshot), then `LockAGC()` is called, then only the target field is modified within the captured value.
+
+---
+
+### Problem: Waterfall Appears Frozen
+
+```
+Check 1 - In LISTEN mode?
+  Radio holds frequency when signal detected.
+  Press [EXIT] to force-resume scanning.
+
+Check 2 - In STILL mode?
+  STILL does not sweep. Waterfall shows only current frequency.
+  Press [EXIT] to return to SPECTRUM.
+
+Check 3 - Full restart
+  [EXIT] -> [F]+[5] -> re-enter -> [* SCAN]
+```
+
+---
+
+### Problem: Peak Hold Line Not Visible
+
+```
+Check 1 - Is peak hold enabled?
+  [MENU] in SPECTRUM to toggle. "PH" shows in status bar.
+
+Check 2 - Did a signal occur since enabling?
+  Peak hold only shows where signal exceeded noise floor.
+  Enable first, then let a signal occur.
+
+Check 3 - Has it faded already?
+  Peak hold decays to baseline ~5 seconds after signal ends.
+  Enable and wait for fresh peak activity.
+
+Check 4 - DBMin set too high?
+  If DBMin is high and peak hold line is at the very top pixel,
+  it may fall outside the visible area.
+  Lower DBMin with [9].
+```
+
+---
+
+## 11. REFERENCE TABLES
+
+### Frequency Band Coverage (UV-K1 / UV-K5 V3)
+
+| Band | Range | Typical Step | Notes |
+|------|-------|-------------|-------|
+| VHF | 136–174 MHz | 25–50 kHz | Aviation, Marine, Amateur 2m |
+| UHF | 400–480 MHz | 25–50 kHz | Amateur 70cm, PMR446, Industry |
+| Extended | 50–940 MHz | Custom | Subject to regional F-Lock setting |
+
+---
+
+### S-Meter to dBm (Approximate, BK4819 Calibrated)
+
+| S-Unit | dBm | Notes |
+|--------|-----|-------|
+| S0 | −130 | Noise floor (quiet environment) |
+| S1 | −124 | Barely detectable |
+| S2 | −118 | Weak |
+| S3 | −112 | Readable with difficulty |
+| S4 | −106 | Readable |
+| S5 | −100 | Good signal |
+| S6 | −94 | Strong |
+| S7 | −88 | Very strong |
+| S8 | −82 | Excellent |
+| S9 | −73 | Full quieting |
+| S9+10 | −63 | Very loud |
+| S9+20 | −53 | Overload region |
+
+---
+
+### BPF Preset Register Values
+
+| Index | Display | REG_3D Value (hex) |
+|-------|---------|-------------------|
+| 0 | 8.46 kHz | 0x0000 |
+| 1 | 7.25 kHz | 0x2AAB |
+| 2 | 6.35 kHz | 0x5555 |
+| 3 | 5.64 kHz | 0x7FFF |
+| 4 | 5.08 kHz | 0xAAA9 |
+| 5 | 4.62 kHz | 0xD553 |
+| 6 | 4.23 kHz | 0xFFFD |
+
+---
+
+### Common Repeater Offsets (North America)
+
+| Band | Standard Offset | Notes |
+|------|----------------|-------|
+| 144–148 MHz | +600 kHz | VHF standard |
+| 145.1–145.5 MHz | −600 kHz | |
+| 420–450 MHz | +5 MHz | UHF standard |
+| 449–450 MHz | −5 MHz | |
+
+---
+
+### Recommended BPF by Modulation and Conditions
+
+| Modulation | Good Conditions | Adjacent Interference |
+|------------|----------------|----------------------|
+| FM 25 kHz | Index 1–2 | Index 3–4 |
+| FM 12.5 kHz | Index 2–3 | Index 4–5 |
+| AM voice | Index 3–4 | Index 5–6 |
+| USB / LSB | Index 4–5 | Index 6 |
+| CW / Narrow | Index 5–6 | Index 6 |
 
 ---
 
 ## QUICK REFERENCE CARD
 
 ```
-ACTIVATION:           [F] + [5]
-START SCANNING:       [* SCAN]
-STOP/EXIT:            [EXIT]
-ZOOM IN:              [F] + step down
-ZOOM OUT:             [F] + step up
-ADJUST SQUELCH:       [F] + [UP]/[DOWN]
-BLACKLIST FREQ:       [SIDE1] during scan
-PEAK HOLD:            [MENU] (scan mode; PH shown in status bar)
-LISTEN MODE:          Auto (when signal detected)
-EXIT LISTEN:          [EXIT]
+ACTIVATE SPECTRUM ........ [F] + [5]
+START SCAN ............... [* SCAN]
+EXIT SPECTRUM ............ [EXIT]
+CYCLE MODULATION ......... [0]
+STEP FREQUENCY ........... [UP] / [DOWN]
+ADJUST dBMax ............. [3]
+ADJUST dBMin ............. [9]
+CYCLE LISTEN BW .......... [6]
+TOGGLE PEAK HOLD ......... [MENU]  (SPECTRUM mode; "PH" in status bar)
+BLACKLIST FREQUENCY ...... [SIDE1] (SPECTRUM / LISTEN)
+TOGGLE BACKLIGHT ......... [SIDE2]
+PTT -> STILL MODE ........ [PTT]   (requires signal above trigger)
+
+IN STILL MODE:
+  SELECT REGISTER ........ [MENU]  (LNAs -> LNA -> VGA -> BPF -> loop)
+  ADJUST VALUE ........... [UP] / [DOWN]  (rotary, wraps at both ends)
+  DESELECT / EXIT ........ [EXIT]
+  TOGGLE MONITOR MODE .... [SIDE1]
+  TRIGGER LEVEL UP ....... [*]
+  TRIGGER LEVEL DOWN ..... [F]
+  DIRECT FREQUENCY ....... [5]
 ```
 
 ---
 
-## CONCLUSION
-
-The spectrum analyzer is a powerful tool for:
-- ✅ Finding signals without known frequencies
-- ✅ Understanding RF environment
-- ✅ Identifying interference sources
-- ✅ Monitoring network activity
-- ✅ Learning about RF propagation
-- ✅ Professional signal analysis
-
-**Key takeaways:**
-1. **Spectrum trace** = Current signal strength at each frequency
-2. **Waterfall** = History over time (top = newest)
-3. **Peak hold** = Maximum ever observed (fades gradually)
-4. **Noise floor** = Minimum detectable signal on your radio
-5. **S-meter** = Overall signal strength in standard scale
-
-**Next steps:**
-- Start with wide scan (100 kHz step) for overview
-- Narrow to interesting regions (12.5 kHz step)
-- Use peak hold to catch intermittent signals
-- Adjust DBMax/DBMin for clear viewing
-- Master squelch for targeted searching
-
----
-
-**Document Version:** 1.0  
-**For Firmware:** 7.6.0+  
-**Last Updated:** February 28, 2026
-
-*Professional spectrum analysis at your fingertips—Happy exploring!*
-
----
-
-## v7.6.5 Visual Improvements
-- Spectrum graph baseline, shade, and peak hold are now 1 pixel lower for improved alignment and clarity.
-- Spectrum and noise grass now pulse upward in sync with RX voice (heartbeat effect).
-- Peak hold trace and shade are visually aligned with the main trace.
+**Document:** SPECTRUM_ANALYZER_GUIDE.md  
+**Firmware:** ApeX Edition v7.6.5br3  
+**Build:** n7six.ApeX-k1.v7.6.5br3 (UV-K1 / UV-K5 V3, PY32F071)  
+**Author:** N7SIX, Sean  
+**License:** Apache License, Version 2.0  
+**Last Updated:** April 5, 2026

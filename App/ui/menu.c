@@ -46,7 +46,7 @@
 #endif
 
 #ifndef VERSION_STRING_2
-    #define VERSION_STRING_2 "v7.6.5br2"
+    #define VERSION_STRING_2 "v7.6.5br3"
 #endif
 
 

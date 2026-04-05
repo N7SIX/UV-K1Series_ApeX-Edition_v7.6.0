@@ -12,6 +12,7 @@ License: Apache License, Version 2.0
 This repository now stores release notes as separate version files for cleaner maintenance and archival clarity.
 
 ## Current Recommended Notes
+- [N7SIX v7.6.5br3 Patch ApeX](release-notes/v7.6.5br3-patch-apex.md)
 - [N7SIX v7.6.5br2 ApeX](release-notes/v7.6.5br2-apex.md)
 
 ## Versioned Release Notes

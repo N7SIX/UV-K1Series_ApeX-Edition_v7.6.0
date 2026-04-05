@@ -416,13 +416,13 @@ N7SIX_IS_TOP_LEVEL:STATIC=ON
 N7SIX_SOURCE_DIR:STATIC=/src
 
 //No help, variable specified on the command line.
-TARGET:UNINITIALIZED=n7six.ApeX-k1.v7.6.5br2
+TARGET:UNINITIALIZED=n7six.ApeX-k1.v7.6.5br3
 
 //No help, variable specified on the command line.
 VERSION_STRING_1:UNINITIALIZED=v0.22
 
 //No help, variable specified on the command line.
-VERSION_STRING_2:UNINITIALIZED=v7.6.5br2
+VERSION_STRING_2:UNINITIALIZED=v7.6.5br3
 
 
 ########################
