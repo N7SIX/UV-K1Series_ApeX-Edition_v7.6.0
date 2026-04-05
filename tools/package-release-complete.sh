@@ -226,8 +226,10 @@ FLASHING FIRMWARE TO UV-K1 / UV-K5 V3
 
 RECOMMENDED FLASHING METHODS (ONLY):
 
-1. Multi-UVTools (recommended desktop method)
-2. UVTools2 (recommended web method)
+1. Multi-UVTools (web-based)
+  https://spm81.github.io/Multi-UVTools/#home
+2. UVTools2 (web-based)
+  https://armel.github.io/uvtools2/
 
 Before flashing:
 1. Back up calibration/settings
@@ -236,14 +238,15 @@ Before flashing:
 
 METHOD 1: Multi-UVTools
 
-1. Open Multi-UVTools
+1. Open Multi-UVTools in browser:
+  https://spm81.github.io/Multi-UVTools/#home
 2. Select flash/update mode
 3. Choose file: Firmware/n7six.ApeX-k1.${VERSION}.bin
 4. Start flash and wait for completion
 
 METHOD 2: UVTools2
 
-1. Open UVTools2 in browser: https://armel.github.io/uvtools2/?mode=flash
+1. Open UVTools2 in browser: https://armel.github.io/uvtools2/
 2. Connect radio in flash mode
 3. Select file: Firmware/n7six.ApeX-k1.${VERSION}.bin
 4. Start flash and wait for completion
