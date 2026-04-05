@@ -12,7 +12,7 @@ License: Apache License, Version 2.0
 
 Edition: ApeX (all-in-one build)
 Firmware family: v7.6.x
-Manual revision: April 3, 2026
+Manual revision: April 5, 2026
 
 ---
 
@@ -27,7 +27,7 @@ Manual revision: April 3, 2026
 7. Professional Spectrum Analyzer
 8. FM Broadcast Receiver
 9. Air Copy
-10. Games And Utility Features
+10. Utility Features
 11. Menu And Advanced Settings
 12. Persistence Model (What Is Saved)
 13. Removed Or Deprecated Features
@@ -44,12 +44,21 @@ This firmware is distributed without warranty. Use at your own risk.
 
 Important:
 - Back up calibration data immediately after flashing.
+- Use this firmware only on UV-K1 / UV-K5 V3 hardware built on PY32F071.
 - Verify legal TX/RX frequencies for your region.
 - Confirm power limits and emission rules before transmitting.
 - Understand that incorrect flashing or unsupported settings can brick a device.
 
+Runtime safety protections in current ApeX builds:
+- TX is blocked below a calibrated 7.0V minimum safety threshold.
+- EEPROM/flash persistence is blocked below a calibrated 7.0V minimum safety threshold.
+- Pending settings, channel, VFO, and FM saves are deferred until voltage is safe again.
+- Spectrum settings now use the native flash path for full-block persistence instead of the legacy 8-byte compatibility writer.
+- Settings persistence now includes versioned A/B snapshots with checksum validation, generation-based recovery, and write-readback verification retries.
+- Corrupt or out-of-range battery calibration and multiple settings fields are sanitized on boot.
+
 Recommended tools:
-- UVTools2 for calibration backup and restore.
+- Multi-UVTools by spm81/UVTools2 by f4hwn for calibration backup and restore.
 - Dedicated CHIRP driver from the project ecosystem.
 
 ---
@@ -291,14 +300,17 @@ Notes:
 
 General system settings:
 - Saved through the firmware settings subsystem.
+- Persistence writes are now gated by battery safety logic. If battery voltage is below the minimum safe threshold, writes are deferred instead of committed immediately.
+- Settings commits additionally write to versioned A/B snapshots with checksum verification so interrupted writes can recover to the newest valid copy at boot.
 
 Spectrum-specific settings:
-- Saved through spectrum persistence blocks (EEPROM and compatibility save path where enabled).
+- Saved through the dedicated native flash persistence block.
 - Exit path guarantees save.
 - Runtime autosave reduces loss risk for power-off without explicit exit.
 
 Practical guidance:
 - After changing multiple spectrum parameters, allow a short idle period for delayed autosave to commit if you are not exiting explicitly.
+- If the battery is weak, the firmware may intentionally postpone the write until supply voltage recovers or external power is present.
 
 ---
 
@@ -354,9 +366,23 @@ If fallback occurs:
 Current behavior:
 - Exit saves immediately.
 - Runtime autosave is delayed to reduce write wear.
+- If battery voltage is below the minimum safe write threshold, persistence is deferred to avoid corruption.
+- If one snapshot copy is invalid after an interrupted write, boot recovery falls back automatically to the other valid snapshot copy.
 
 Best practice:
 - Use EXIT when possible after major spectrum changes.
+- Recharge or power externally if you notice repeated low-voltage warnings before expecting settings to persist.
+
+### Radio will not transmit on a weak battery
+
+Current behavior:
+- TX is blocked below the calibrated 7.0V minimum safety threshold.
+
+Why:
+- This reduces brownout risk, unstable RF behavior, and flash corruption caused by supply collapse during or after transmit activity.
+
+Recommended action:
+- Recharge the pack, confirm battery calibration is valid, or test with known-good external power.
 
 ---
 
@@ -452,7 +478,7 @@ Software architecture:
 
 ## Appendix B — Spectrum Settings Storage Map
 
-All spectrum settings are stored at EEPROM address `0x1E80` (20 bytes, last byte is checksum).
+All spectrum settings are stored as a 20-byte native flash block at `0x010080`, which corresponds to the legacy logical compatibility region `0x1E80`. The last byte is a checksum.
 
 | Byte(s) | Bits | Setting | Notes |
 |---------|------|---------|-------|
@@ -488,6 +514,13 @@ All spectrum settings are stored at EEPROM address `0x1E80` (20 bytes, last byte
   - Updated for peak hold re-introduction: decaying dotted overlay, KEY_MENU toggle, PH status indicator.
   - Corrected frequency shift step cap (±2500.00k max, ±1000.00k first-boot default).
   - Updated Removed Features section: peak hold is no longer removed.
+
+- April 5, 2026
+  - Added runtime safety protections section for low-voltage TX and persistence blocking.
+  - Documented deferred-save behavior when battery voltage is below the safe threshold.
+  - Corrected spectrum persistence description to the native flash storage path.
+  - Added troubleshooting guidance for blocked TX and delayed save behavior under weak battery conditions.
+  - Added transactional settings persistence details: versioned A/B snapshot, checksum validation, generation-based rollback, and write-readback verification retries.
 
 - March 2026 and earlier
   - Prior drafts included legacy visualization and transitional feature notes.

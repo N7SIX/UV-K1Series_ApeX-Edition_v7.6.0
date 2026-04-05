@@ -40,6 +40,13 @@ Anyway, have fun.
 >
 > _FR - Je recommande de sauvegarder vos données de calibration avec [uvtools2](https://armel.github.io/uvtools2/) juste après avoir flashé ce firmware. C'est un bon réflexe à avoir._
 
+> [!IMPORTANT]
+> EN - Current ApeX safety protections include low-voltage TX blocking and low-voltage persistence blocking at 7.0 V (calibrated battery average), deferred save handling when battery voltage is unsafe, and hardened spectrum settings storage using the native flash path instead of the legacy 8-byte compatibility writer.
+>
+> EN - Additional persistence hardening now includes a versioned A/B settings snapshot with checksum validation, generation-based boot recovery, and write-readback verification retries.
+>
+> EN - These protections reduce the risk of EEPROM/flash corruption during weak-battery conditions, but they do not replace correct model selection or calibration backup. This firmware remains intended for UV-K1 and UV-K5 V3 only.
+
 # Donations
 
 Special thanks to Jean-Cyrille F6IWW (2 times), Fabrice 14RC123, David F4BPP, Olivier 14RC206, Frédéric F4ESO, Stéphane F5LGW (2 times), Jorge Ornelas (4 times), Laurent F4AXK, Christophe Morel, Clayton W0LED, Pierre Antoine F6FWB, Jean-Claude 14FRS3306, Thierry F4GVO, Eric F1NOU, PricelessToolkit, Ady M6NYJ, Tom McGovern (3 times), Joseph Roth, Pierre-Yves Colin, Frank DJ7FG, Marcel Testaz, Brian Frobisher, Yannick F4JFO, Paolo Bussola, Dirk DL8DF, Levente Szőke (2 times), Bernard-Michel Herrera, Jérôme Saintespes, Paul Davies, RS (3 times), Johan F4WAT, Robert Wörle, Rafael Sundorf, Paul Harker, Peter Fintl, Pascal F4ICR (2 times), Mike DL2MF, Eric KI1C (2 times), Phil G0ELM, Jérôme Lambert, Meinhard Frank Günther, Eliot Vedel, Alfonso EA7KDF, Jean-François F1EVM, Robert DC1RDB, Ian KE2CHJ, Daryl VK3AWA, Roberto Brunelli, Robert Boardman, Stephen Oliver, Nicolas F4INE, William Bruno and Daniel OK2VLK for their [donations](https://www.paypal.com/paypalme/F4HWN). That’s so kind of them. Thanks so much 🙏🏻
@@ -69,6 +76,14 @@ Special thanks to Jean-Cyrille F6IWW (2 times), Fabrice 14RC123, David F4BPP, Ol
 - improve bandscope (Spectrum Analyser):
   - add channel name,
   - add save of some spectrum parameters,
+  - harden spectrum settings persistence by writing the full settings block through the native flash path,
+- improve operational safety and persistence integrity:
+  - block TX below a calibrated 7.0V minimum safety threshold,
+  - block EEPROM/flash persistence below a calibrated 7.0V minimum safety threshold,
+  - defer pending settings/channel/VFO/FM saves until battery voltage is safe again,
+  - add versioned A/B settings snapshots with checksum and generation-based boot recovery,
+  - add write-readback verification and retry path for snapshot commits,
+  - reduce brownout-related corruption risk on weak or aging battery packs,
 - improve UI:
   - menu index is always visible, even if a menu is selected,
   - s-meter new design (Classic or Tiny),

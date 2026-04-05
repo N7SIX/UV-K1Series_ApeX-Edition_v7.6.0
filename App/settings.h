@@ -308,6 +308,8 @@ typedef struct {
 } EEPROM_Config_t;
 
 extern EEPROM_Config_t gEeprom;
+extern uint8_t gSettingsPersistErrorCount;
+extern uint8_t gSettingsPersistRecoveryCount;
 
 void     SETTINGS_InitEEPROM(void);
 void     SETTINGS_LoadCalibration(void);

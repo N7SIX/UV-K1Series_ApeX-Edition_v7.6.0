@@ -259,6 +259,64 @@ static void usb_free(void* ptr) {
 - Phase 2 (v7.9): Menu mode, VFO changes
 - Phase 3 (v8.0): Deprecate old globals
 
+---
+
+## April 2026 Implemented: Transactional Settings Snapshot (A/B)
+
+The persistence layer now includes an additional transactional snapshot mechanism in `App/settings.c` to improve recovery after interrupted writes.
+
+### Storage Layout
+
+- Snapshot A base address: `0x01E000`
+- Snapshot B base address: `0x01F000`
+- Snapshot header fields:
+    - `magic` (`0x53534631`, ASCII `SSF1`)
+    - `version` (`1`)
+    - `payloadLength`
+    - `generation`
+    - `checksum`
+- Snapshot payload includes:
+    - Full `EEPROM_Config_t`
+    - Selected runtime settings mirrored outside `gEeprom` (`gSetting_F_LOCK`, `gSetting_350EN`, `gSetting_live_DTMF_decoder`, `gSetting_battery_text`, `gSetting_backlight_on_tx_rx`)
+
+### Integrity Model
+
+- Payload checksum uses 32-bit FNV-1a over the payload bytes.
+- A snapshot is valid only if all of the following match:
+    - `magic` and `version`
+    - `payloadLength`
+    - recomputed checksum
+
+### Boot Recovery Rules
+
+At `SETTINGS_InitEEPROM()` completion, `SETTINGS_LoadSnapshotIfAvailable()` is called.
+
+Selection logic:
+- If both snapshots are invalid: keep currently loaded settings path.
+- If one snapshot is valid: apply it and increment `gSettingsPersistRecoveryCount`.
+- If both are valid: apply the higher `generation` snapshot.
+
+When a snapshot is applied, VFO pointer members are rebuilt (`pRX`/`pTX`) to keep recovered structures internally consistent.
+
+### Commit Rules
+
+At the end of `SETTINGS_SaveSettings()`, `SETTINGS_SaveSnapshot()` is called.
+
+Commit logic:
+- Determine next generation as `max(genA, genB) + 1`.
+- Write to the older generation slot first (A or B).
+- Perform readback verification (`memcmp` full snapshot).
+- If verification fails, retry once on the alternate slot.
+- If both attempts fail, increment `gSettingsPersistErrorCount`.
+
+### Relationship To Voltage Safety
+
+Snapshot writes are reached through normal settings save flow, which is already protected by low-voltage persistence gating (`SETTINGS_CanPersist()` and app-level deferred save logic).
+
+Result:
+- Better survivability under weak battery and interrupted-write scenarios.
+- Recovery favors newest valid state while preserving fallback behavior.
+
 ### 8. Deferred EEPROM Writes
 **Complexity:** 3-4 hours  
 **Benefit:** Non-blocking EEPROM writes don't stall audio/UI  

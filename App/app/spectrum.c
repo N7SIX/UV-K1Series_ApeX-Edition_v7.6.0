@@ -142,6 +142,7 @@ static void ShowChannelName(uint32_t f, uint8_t leftX, uint8_t rightX);
  // EEPROM addresses for persistent spectrum settings (reserved region)
  // Using addresses 0x1E80-0x1E8F for spectrum state (16 bytes)
  #define SPECTRUM_EEPROM_ADDR        0x1E80
+#define SPECTRUM_FLASH_ADDR         0x010080
 #define SPECTRUM_EEPROM_SIZE        20  // Increased for ham features
 #define SPECTRUM_EEPROM_CHECKSUM_INDEX (SPECTRUM_EEPROM_SIZE - 1)
  // =============================================================================
@@ -871,8 +872,8 @@ static void UpdateScanInfo() {
      }
     buffer[SPECTRUM_EEPROM_CHECKSUM_INDEX] = checksum;
      
-     // Write to EEPROM
-     EEPROM_WriteBuffer(SPECTRUM_EEPROM_ADDR, buffer);
+    // Write full payload atomically through native flash path.
+    PY25Q16_WriteBuffer(SPECTRUM_FLASH_ADDR, buffer, sizeof(buffer), false);
  }
 
  /**
@@ -884,8 +885,8 @@ static void UpdateScanInfo() {
  static void SPECTRUM_LoadSettings(void) {
      uint8_t buffer[SPECTRUM_EEPROM_SIZE] = { 0 };
      
-     // Read from EEPROM
-     EEPROM_ReadBuffer(SPECTRUM_EEPROM_ADDR, buffer, SPECTRUM_EEPROM_SIZE);
+    // Read full payload through native flash path.
+    PY25Q16_ReadBuffer(SPECTRUM_FLASH_ADDR, buffer, sizeof(buffer));
      
      // Verify checksum
      uint8_t checksum = 0;

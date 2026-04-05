@@ -23,6 +23,7 @@ This document provides technical background for users interested in understandin
 6. [Advanced Configuration](#advanced-configuration)
 7. [Performance Tuning](#performance-tuning)
 8. [Troubleshooting Deep Dive](#troubleshooting-deep-dive)
+9. [Persistence Memory Map](#persistence-memory-map)
 
 ---
 
@@ -619,6 +620,34 @@ Frequency-to-frequency comparison is **more accurate** than absolute:
 
 ---
 
+## PERSISTENCE MEMORY MAP
+
+This quick reference summarizes the primary persistence regions relevant to runtime safety and recovery.
+
+| Region | Address | Storage Path | Purpose | Safety/Recovery Notes |
+|--------|---------|--------------|---------|-----------------------|
+| Core settings block | `0x004000+` (multiple offsets) | Native flash (`PY25Q16_*`) via settings subsystem | Main radio/user settings (`gEeprom` fields and related persisted options) | Writes are blocked below calibrated 7.0V threshold and deferred until voltage is safe. |
+| Spectrum settings block | `0x010080` (legacy logical `0x1E80`) | Native flash full-block write/read | Spectrum runtime parameters and checksum byte | Uses native full-block path (not legacy 8-byte compatibility writer) to reduce partial-write risk. |
+| Settings snapshot A | `0x01E000` | Native flash snapshot record | Transactional recovery copy (A) for settings payload | Versioned header + checksum validation; generation compared at boot. |
+| Settings snapshot B | `0x01F000` | Native flash snapshot record | Transactional recovery copy (B) for settings payload | Alternate slot used for fallback and retry verification. |
+
+### Snapshot Selection Rules (Boot)
+
+1. Validate both A and B snapshot headers and payload checksums.
+2. If both are valid, select the higher generation snapshot.
+3. If only one is valid, apply the valid snapshot and increment recovery counter.
+4. If neither is valid, keep normal settings-load path behavior.
+
+### Snapshot Commit Rules (Save)
+
+1. Compute next generation as `max(genA, genB) + 1`.
+2. Write to older-generation slot first.
+3. Read back and verify full snapshot bytes.
+4. If verify fails, retry once in alternate slot.
+5. If both attempts fail, increment persistence error counter.
+
+---
+
 ## REFERENCES
 
 - **BK4819 Datasheet**: Receiver IC used (available from manufacturer)
@@ -629,6 +658,6 @@ Frequency-to-frequency comparison is **more accurate** than absolute:
 
 ---
 
-**Document Version**: 1.0  
+**Document Version**: 1.1  
 **For Firmware**: 7.6.0+  
-**Last Updated**: February 2026
+**Last Updated**: April 2026

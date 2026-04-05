@@ -1223,6 +1223,9 @@ void RADIO_PrepareTX(void)
     } else if (gCurrentVfo->BUSY_CHANNEL_LOCK && gCurrentFunction == FUNCTION_RECEIVE) {
         // busy RX'ing a station
         State = VFO_STATE_BUSY;
+    } else if (!BATTERY_IsVoltageSafeForCriticalOps()) {
+        // block TX below calibrated minimum threshold to avoid brownout-induced faults
+        State = VFO_STATE_BAT_LOW;
     } else if (gBatteryDisplayLevel == 0) {
         // charge your battery !git co
         State = VFO_STATE_BAT_LOW;

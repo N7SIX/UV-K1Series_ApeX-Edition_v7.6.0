@@ -62,6 +62,7 @@
 #include "driver/bk1080.h"
 #include "driver/bk4819.h"
 #include "driver/py25q16.h"
+#include "helper/battery.h"
 #include "misc.h"
 #include "settings.h"
 #include "ui/menu.h"
@@ -78,6 +79,176 @@ static const uint32_t gDefaultFrequencyTable[] =
 #endif
 
 EEPROM_Config_t gEeprom = { 0 };
+uint8_t gSettingsPersistErrorCount = 0;
+uint8_t gSettingsPersistRecoveryCount = 0;
+
+#define SETTINGS_SNAPSHOT_MAGIC      0x53534631u  // 'SSF1'
+#define SETTINGS_SNAPSHOT_VERSION    1u
+#define SETTINGS_SNAPSHOT_ADDR_A     0x01E000u
+#define SETTINGS_SNAPSHOT_ADDR_B     0x01F000u
+
+typedef struct {
+    uint32_t magic;
+    uint16_t version;
+    uint16_t payloadLength;
+    uint32_t generation;
+    uint32_t checksum;
+} SETTINGS_SnapshotHeader_t;
+
+typedef struct {
+    EEPROM_Config_t eeprom;
+    uint8_t settingFLock;
+    bool setting350En;
+    bool settingLiveDtmfDecoder;
+    uint8_t settingBatteryText;
+    uint8_t settingBacklightOnTxRx;
+} SETTINGS_SnapshotPayload_t;
+
+typedef struct {
+    SETTINGS_SnapshotHeader_t header;
+    SETTINGS_SnapshotPayload_t payload;
+} SETTINGS_Snapshot_t;
+
+static uint32_t SETTINGS_SnapshotChecksum(const uint8_t *data, uint32_t size)
+{
+    uint32_t hash = 2166136261u;  // FNV-1a 32-bit offset basis
+
+    for (uint32_t i = 0; i < size; i++) {
+        hash ^= data[i];
+        hash *= 16777619u;
+    }
+
+    return hash;
+}
+
+static bool SETTINGS_ReadSnapshot(uint32_t addr, SETTINGS_Snapshot_t *out)
+{
+    if (out == NULL) {
+        return false;
+    }
+
+    PY25Q16_ReadBuffer(addr, out, sizeof(*out));
+
+    if (out->header.magic != SETTINGS_SNAPSHOT_MAGIC ||
+        out->header.version != SETTINGS_SNAPSHOT_VERSION ||
+        out->header.payloadLength != sizeof(out->payload)) {
+        return false;
+    }
+
+    const uint32_t checksum = SETTINGS_SnapshotChecksum((const uint8_t *)&out->payload, sizeof(out->payload));
+
+    return checksum == out->header.checksum;
+}
+
+static void SETTINGS_ApplySnapshot(const SETTINGS_SnapshotPayload_t *payload)
+{
+    if (payload == NULL) {
+        return;
+    }
+
+    gEeprom = payload->eeprom;
+    gSetting_F_LOCK = payload->settingFLock;
+    gSetting_350EN = payload->setting350En;
+    gSetting_live_DTMF_decoder = payload->settingLiveDtmfDecoder;
+    gSetting_battery_text = payload->settingBatteryText;
+    gSetting_backlight_on_tx_rx = payload->settingBacklightOnTxRx;
+
+    // Rebuild embedded pointers in recovered VFO state.
+    for (uint8_t i = 0; i < ARRAY_SIZE(gEeprom.VfoInfo); i++) {
+        VFO_Info_t *vfo = &gEeprom.VfoInfo[i];
+        vfo->pRX = &vfo->freq_config_RX;
+        vfo->pTX = &vfo->freq_config_TX;
+
+        if (vfo->FrequencyReverse) {
+            vfo->pRX = &vfo->freq_config_TX;
+            vfo->pTX = &vfo->freq_config_RX;
+        }
+    }
+}
+
+static void SETTINGS_LoadSnapshotIfAvailable(void)
+{
+    SETTINGS_Snapshot_t snapshotA;
+    SETTINGS_Snapshot_t snapshotB;
+    const bool validA = SETTINGS_ReadSnapshot(SETTINGS_SNAPSHOT_ADDR_A, &snapshotA);
+    const bool validB = SETTINGS_ReadSnapshot(SETTINGS_SNAPSHOT_ADDR_B, &snapshotB);
+
+    if (!validA && !validB) {
+        return;
+    }
+
+    if (validA && validB) {
+        SETTINGS_ApplySnapshot((snapshotA.header.generation >= snapshotB.header.generation)
+            ? &snapshotA.payload
+            : &snapshotB.payload);
+        return;
+    }
+
+    SETTINGS_ApplySnapshot(validA ? &snapshotA.payload : &snapshotB.payload);
+    if (gSettingsPersistRecoveryCount < 0xFFu) {
+        gSettingsPersistRecoveryCount++;
+    }
+}
+
+static bool SETTINGS_SaveSnapshot(void)
+{
+    SETTINGS_Snapshot_t currentA;
+    SETTINGS_Snapshot_t currentB;
+    const bool validA = SETTINGS_ReadSnapshot(SETTINGS_SNAPSHOT_ADDR_A, &currentA);
+    const bool validB = SETTINGS_ReadSnapshot(SETTINGS_SNAPSHOT_ADDR_B, &currentB);
+    const uint32_t genA = validA ? currentA.header.generation : 0;
+    const uint32_t genB = validB ? currentB.header.generation : 0;
+    const uint32_t nextGeneration = ((genA > genB) ? genA : genB) + 1u;
+
+    SETTINGS_Snapshot_t snapshot;
+    memset(&snapshot, 0, sizeof(snapshot));
+
+    snapshot.header.magic = SETTINGS_SNAPSHOT_MAGIC;
+    snapshot.header.version = SETTINGS_SNAPSHOT_VERSION;
+    snapshot.header.payloadLength = sizeof(snapshot.payload);
+    snapshot.header.generation = nextGeneration;
+
+    snapshot.payload.eeprom = gEeprom;
+    snapshot.payload.settingFLock = gSetting_F_LOCK;
+    snapshot.payload.setting350En = gSetting_350EN;
+    snapshot.payload.settingLiveDtmfDecoder = gSetting_live_DTMF_decoder;
+    snapshot.payload.settingBatteryText = gSetting_battery_text;
+    snapshot.payload.settingBacklightOnTxRx = gSetting_backlight_on_tx_rx;
+
+    snapshot.header.checksum = SETTINGS_SnapshotChecksum((const uint8_t *)&snapshot.payload, sizeof(snapshot.payload));
+
+    uint32_t targetAddr = (genA <= genB) ? SETTINGS_SNAPSHOT_ADDR_A : SETTINGS_SNAPSHOT_ADDR_B;
+
+    for (uint8_t attempt = 0; attempt < 2; attempt++) {
+        SETTINGS_Snapshot_t verify;
+
+        PY25Q16_WriteBuffer(targetAddr, &snapshot, sizeof(snapshot), false);
+        PY25Q16_ReadBuffer(targetAddr, &verify, sizeof(verify));
+
+        if (memcmp(&snapshot, &verify, sizeof(snapshot)) == 0) {
+            return true;
+        }
+
+        targetAddr = (targetAddr == SETTINGS_SNAPSHOT_ADDR_A) ? SETTINGS_SNAPSHOT_ADDR_B : SETTINGS_SNAPSHOT_ADDR_A;
+    }
+
+    if (gSettingsPersistErrorCount < 0xFFu) {
+        gSettingsPersistErrorCount++;
+    }
+
+    return false;
+}
+
+static bool SETTINGS_CanPersist(void)
+{
+    // During early boot the averaged voltage may be zero before the first sampling pass.
+    // Keep startup behavior intact and enforce safety once live telemetry is available.
+    if (gBatteryVoltageAverage == 0) {
+        return true;
+    }
+
+    return gChargingWithTypeC || BATTERY_IsVoltageSafeForCriticalOps();
+}
 
 void SETTINGS_InitEEPROM(void)
 {
@@ -451,6 +622,8 @@ void SETTINGS_InitEEPROM(void)
         gSetting_set_ptt_session = gSetting_set_ptt;
         gEeprom.KEY_LOCK_PTT = gSetting_set_lck;
     #endif
+
+    SETTINGS_LoadSnapshotIfAvailable();
 }
 
 void SETTINGS_LoadCalibration(void)
@@ -584,6 +757,10 @@ void SETTINGS_FetchChannelName(char *s, const int channel)
 
 void SETTINGS_FactoryReset(bool bIsAll)
 {
+    if (!SETTINGS_CanPersist()) {
+        return;
+    }
+
     // 0000 - 0c80
     PY25Q16_SectorErase(0);
     // 0c80 - 0d60
@@ -676,6 +853,10 @@ void SETTINGS_FactoryReset(bool bIsAll)
 #ifdef ENABLE_FMRADIO
 void SETTINGS_SaveFM(void)
     {
+        if (!SETTINGS_CanPersist()) {
+            return;
+        }
+
         union {
             struct {
                 uint16_t selFreq;
@@ -703,6 +884,10 @@ void SETTINGS_SaveFM(void)
 
 void SETTINGS_SaveVfoIndices(void)
 {
+    if (!SETTINGS_CanPersist()) {
+        return;
+    }
+
     uint8_t State[8];
 
     #ifndef ENABLE_NOAA
@@ -727,6 +912,10 @@ void SETTINGS_SaveVfoIndices(void)
 
 void SETTINGS_SaveSettings(void)
 {
+    if (!SETTINGS_CanPersist()) {
+        return;
+    }
+
     uint8_t *State;
     uint8_t tmp = 0;
     uint8_t SecBuf[0x50];
@@ -992,10 +1181,16 @@ void SETTINGS_SaveSettings(void)
 #ifdef ENABLE_FEAT_N7SIX_VOL
     SETTINGS_WriteCurrentVol();
 #endif
+
+    (void)SETTINGS_SaveSnapshot();
 }
 
 void SETTINGS_SaveChannel(uint8_t Channel, uint8_t VFO, const VFO_Info_t *pVFO, uint8_t Mode)
 {
+    if (!SETTINGS_CanPersist()) {
+        return;
+    }
+
 #ifdef ENABLE_NOAA
     if (IS_NOAA_CHANNEL(Channel))
         return;
@@ -1067,12 +1262,20 @@ void SETTINGS_SaveChannel(uint8_t Channel, uint8_t VFO, const VFO_Info_t *pVFO, 
 
 void SETTINGS_SaveBatteryCalibration(const uint16_t * batteryCalibration)
 {
+    if (!SETTINGS_CanPersist()) {
+        return;
+    }
+
     // 0x1F40
     PY25Q16_WriteBuffer(0x010000 + 0x140, batteryCalibration, 12, false);
 }
 
 void SETTINGS_SaveChannelName(uint8_t channel, const char * name)
 {
+    if (!SETTINGS_CanPersist()) {
+        return;
+    }
+
     uint16_t offset = channel * 16;
     uint8_t buf[16] = {0};
     memcpy(buf, name, MIN(strlen(name), 10u));
@@ -1082,6 +1285,10 @@ void SETTINGS_SaveChannelName(uint8_t channel, const char * name)
 
 void SETTINGS_UpdateChannel(uint8_t channel, const VFO_Info_t *pVFO, bool keep, bool check, bool save)
 {
+    if (save && !SETTINGS_CanPersist()) {
+        save = false;
+    }
+
 #ifdef ENABLE_NOAA
     if (!IS_NOAA_CHANNEL(channel))
 #endif
@@ -1134,6 +1341,10 @@ void SETTINGS_UpdateChannel(uint8_t channel, const VFO_Info_t *pVFO, bool keep, 
 
 void SETTINGS_WriteBuildOptions(void)
 {
+    if (!SETTINGS_CanPersist()) {
+        return;
+    }
+
     uint8_t State[8];
 
 #ifdef ENABLE_FEAT_N7SIX
@@ -1197,6 +1408,10 @@ State[1] = 0
 #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
     void SETTINGS_WriteCurrentState(void)
     {
+        if (!SETTINGS_CanPersist()) {
+            return;
+        }
+
         uint8_t State[0x10];
         // 0x0E78
         PY25Q16_ReadBuffer(0x004000, State, sizeof(State));
@@ -1209,6 +1424,10 @@ State[1] = 0
 #ifdef ENABLE_FEAT_N7SIX_VOL
     void SETTINGS_WriteCurrentVol(void)
     {
+        if (!SETTINGS_CanPersist()) {
+            return;
+        }
+
         uint8_t State[8];
         // 0x1F88
         PY25Q16_ReadBuffer(0x010000 + 0x188, State, sizeof(State));
@@ -1220,6 +1439,10 @@ State[1] = 0
 #ifdef ENABLE_FEAT_N7SIX
 void SETTINGS_ResetTxLock(void)
 {
+    if (!SETTINGS_CanPersist()) {
+        return;
+    }
+
     // PERFORMANCE CRITICAL: This operation resets TX lock flags across all 3200 bytes (0xc80) of channel config.
     // CURRENT: Batching reduces blocking to 10 separate SPI transactions (~30ms+ of UI blocking)
     // 

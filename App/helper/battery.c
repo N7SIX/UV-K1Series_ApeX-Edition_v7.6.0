@@ -306,3 +306,8 @@ void BATTERY_TimeSlice500ms(void)
         BACKLIGHT_TurnOff();
     }
 }
+
+bool BATTERY_IsVoltageSafeForCriticalOps(void)
+{
+    return gBatteryVoltageAverage >= BATTERY_MIN_SAFE_WRITE_10MV;
+}

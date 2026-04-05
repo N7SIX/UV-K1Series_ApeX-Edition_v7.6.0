@@ -26,6 +26,43 @@ This document catalogs the **6 comprehensive stability improvements** implemente
 5. **Code Clarity** - Clarifies legacy keyboard logic; identifies safe removal path
 6. **Display Engine Verification** - Confirms hardware fixes (A0_Set, CS_Release) present
 
+Supplementary April 2026 safety hardening is also now present in the firmware:
+- Calibrated 7.0V minimum safety threshold for TX
+- Calibrated 7.0V minimum safety threshold for EEPROM/flash persistence
+- Deferred-save retention under unsafe battery conditions
+- Full-block native flash persistence for spectrum settings
+- Transactional settings A/B snapshots with checksum and generation-based fallback
+
+---
+
+## April 2026 Addendum — Weak-Battery Protection & Persistence Hardening
+
+This addendum documents the post-audit safety work added after the original six-item stability package.
+
+### Added Runtime Protections
+
+1. **Low-Voltage TX Interlock**
+- TX is blocked when the calibrated battery average falls below 7.0V.
+- Purpose: reduce brownout-induced instability, especially on older packs with high internal resistance.
+
+2. **Low-Voltage Persistence Interlock**
+- EEPROM/flash writes are blocked when calibrated battery average falls below 7.0V.
+- Purpose: reduce partial writes and configuration corruption during weak-battery operation.
+
+3. **Deferred Save Retention**
+- Pending settings, VFO, FM, and channel-save requests are retained until voltage becomes safe again.
+- Purpose: avoid both corruption and silent loss of pending changes.
+
+4. **Spectrum Settings Native Flash Path**
+- The 20-byte spectrum settings block now uses the full native flash writer path instead of the legacy 8-byte compatibility writer.
+- Purpose: eliminate a concrete partial-persistence risk identified during the audit.
+
+5. **Transactional Settings Snapshot Layer (A/B)**
+- Added versioned A/B snapshot storage for core settings with payload checksum validation.
+- Boot restore now selects the newest valid snapshot by generation and falls back to the alternate copy if needed.
+- Snapshot commits use write-readback verification with retry/fallback behavior.
+- Purpose: improve settings survivability across interrupted writes and weak-power edge conditions.
+
 ---
 
 ## ✅ All Implemented Fixes (6/6 Complete!)

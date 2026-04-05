@@ -2227,31 +2227,41 @@ Skip:
         gFlagAcceptSetting  = false;
     }
 
+    const bool canPersistNow = (gBatteryVoltageAverage == 0)
+        || gChargingWithTypeC
+        || BATTERY_IsVoltageSafeForCriticalOps();
+
     if (gRequestSaveSettings) {
-        if (!bKeyHeld)
-            SETTINGS_SaveSettings();
-        else
-            flagSaveSettings = 1;
-        gRequestSaveSettings = false;
-        gUpdateStatus        = true;
+        if (canPersistNow) {
+            if (!bKeyHeld)
+                SETTINGS_SaveSettings();
+            else
+                flagSaveSettings = 1;
+            gRequestSaveSettings = false;
+            gUpdateStatus        = true;
+        }
     }
 
 #ifdef ENABLE_FMRADIO
     if (gRequestSaveFM) {
-        gRequestSaveFM = false;
-        if (!bKeyHeld)
-            SETTINGS_SaveFM();
-        else
-            gFlagSaveFM = true;
+        if (canPersistNow) {
+            gRequestSaveFM = false;
+            if (!bKeyHeld)
+                SETTINGS_SaveFM();
+            else
+                gFlagSaveFM = true;
+        }
     }
 #endif
 
     if (gRequestSaveVFO) {
-        gRequestSaveVFO = false;
-        if (!bKeyHeld)
-            SETTINGS_SaveVfoIndices();
-        else
-            flagSaveVfo = true;
+        if (canPersistNow) {
+            gRequestSaveVFO = false;
+            if (!bKeyHeld)
+                SETTINGS_SaveVfoIndices();
+            else
+                flagSaveVfo = true;
+        }
     }
 
     if (gRequestSaveChannel > 0) { 
@@ -2262,7 +2272,11 @@ Skip:
         // REFACTORING NEEDED: Replace with callback-based system or explicit channel save message struct.
         // For now, ensure key release detection is correct before saving to prevent data loss.
         
-        if ((!bKeyHeld && !bKeyPressed) || UI_MENU_GetCurrentMenuId())
+        if (!canPersistNow) {
+            if (gRequestDisplayScreen == DISPLAY_INVALID)
+                gRequestDisplayScreen = DISPLAY_MAIN;
+        }
+        else if ((!bKeyHeld && !bKeyPressed) || UI_MENU_GetCurrentMenuId())
         {
             SETTINGS_SaveChannel(gTxVfo->CHANNEL_SAVE, gEeprom.TX_VFO, gTxVfo, gRequestSaveChannel);
 
@@ -2277,7 +2291,8 @@ Skip:
                 gRequestDisplayScreen = DISPLAY_MAIN;
         }
 
-        gRequestSaveChannel = 0;
+        if (canPersistNow)
+            gRequestSaveChannel = 0;
     }
 
     if (gVfoConfigureMode != VFO_CONFIGURE_NONE) {
