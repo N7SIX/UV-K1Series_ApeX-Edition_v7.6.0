@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Quick Release Helper — Packages documentation and uploads to GitHub release
+# Quick Release Helper — Packages complete release ZIP and uploads to GitHub release
 # Usage: ./tools/quick-release.sh <VERSION> <TITLE> <NOTES_FILE>
 #
 # Example:
@@ -19,10 +19,10 @@ BUILD_DIR="$REPO_ROOT/build"
 echo "📦 ApeX Release Helper v1.0"
 echo ""
 
-# Step 1: Package documentation
-echo "Step 1️⃣  Packaging documentation..."
-"$REPO_ROOT/tools/package-release-docs.sh" "$VERSION" "$BUILD_DIR"
-ZIP_FILE="$BUILD_DIR/ApeX-${VERSION}_Documentation.zip"
+# Step 1: Package complete release
+echo "Step 1️⃣  Packaging complete release..."
+"$REPO_ROOT/tools/package-release-complete.sh" "$VERSION" "$BUILD_DIR"
+ZIP_FILE="$BUILD_DIR/ApeX-${VERSION}-Complete-Release.zip"
 
 # Step 2: Verify release file exists
 echo ""
@@ -31,7 +31,7 @@ if [[ ! -f "$ZIP_FILE" ]]; then
     echo "❌ ERROR: Zip file not found at $ZIP_FILE" >&2
     exit 1
 fi
-echo "✓ Documentation package: $ZIP_FILE"
+echo "✓ Complete package: $ZIP_FILE"
 
 # Step 3: Verify GitHub release exists
 echo ""
@@ -45,13 +45,13 @@ if ! gh release view "$VERSION" > /dev/null 2>&1; then
     exit 1
 fi
 
-# Step 4: Upload documentation to existing release
+# Step 4: Upload complete package to existing release
 echo ""
-echo "Step 4️⃣  Uploading documentation to GitHub release..."
+echo "Step 4️⃣  Uploading complete package to GitHub release..."
 gh release upload "$VERSION" "$ZIP_FILE" --clobber
 
 # Step 5: Success message
 echo ""
-echo "✅ Release documentation successfully uploaded!"
+echo "✅ Complete release package successfully uploaded!"
 echo ""
 echo "Release: https://github.com/N7SIX/UV-K1Series_ApeX-Edition_v7.6.0/releases/tag/$VERSION"

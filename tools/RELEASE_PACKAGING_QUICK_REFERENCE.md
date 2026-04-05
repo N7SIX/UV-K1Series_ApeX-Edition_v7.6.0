@@ -1,12 +1,12 @@
-# ApeX Release Documentation — Quick Reference
+# ApeX Complete Release — Quick Reference
 
 ## Release Packaging in 3 Steps
 
-### Step 1: Package Documentation
+### Step 1: Package Complete Release
 ```bash
-./tools/package-release-docs.sh v7.6.5br3 build/
+./tools/package-release-complete.sh v7.6.5br3 build/
 ```
-✓ Creates: `build/ApeX-v7.6.5br3_Documentation.zip` (24KB)
+✓ Creates: `build/ApeX-v7.6.5br3-Complete-Release.zip`
 
 ### Step 2: Create Release on GitHub
 ```bash
@@ -16,9 +16,9 @@ gh release create v7.6.5br3 \
   --notes-file=release-notes.txt
 ```
 
-### Step 3: Attach Documentation
+### Step 3: Attach Complete Package
 ```bash
-gh release upload v7.6.5br3 build/ApeX-v7.6.5br3_Documentation.zip
+gh release upload v7.6.5br3 build/ApeX-v7.6.5br3-Complete-Release.zip
 ```
 
 ---
@@ -27,19 +27,19 @@ gh release upload v7.6.5br3 build/ApeX-v7.6.5br3_Documentation.zip
 
 If release already exists:
 ```bash
-./tools/package-release-docs.sh v7.6.5br3 build/
-gh release upload v7.6.5br3 build/ApeX-v7.6.5br3_Documentation.zip --clobber
+./tools/package-release-complete.sh v7.6.5br3 build/
+gh release upload v7.6.5br3 build/ApeX-v7.6.5br3-Complete-Release.zip --clobber
 ```
 
 ---
 
-## Files Included in Every Release ZIP
+## Files Included in Every Complete Release ZIP
 
-| File | Purpose | Size |
-|------|---------|------|
-| Owner's Manual - ApeX Edition.md | Complete user manual | ~18 KB |
-| SPECTRUM_ANALYZER_GUIDE.md | Spectrum analyzer reference | ~32 KB |
-| v7.6.5br3-patch-apex.md | Release-specific notes | ~4 KB |
+| Group | Files |
+|------|-------|
+| Firmware | `.bin`, `.hex`, `.elf`, `.map` |
+| Documentation | Owner's Manual, Spectrum Analyzer Guide, latest release note |
+| Extra | `MANIFEST.txt`, `FLASHING_INSTRUCTIONS.txt` |
 
 ---
 
@@ -52,14 +52,14 @@ gh release upload v7.6.5br3 build/ApeX-v7.6.5br3_Documentation.zip --clobber
 - [ ] `Documentation/Owner's Manual - ApeX Edition.md` updated (if UI/features change)
 - [ ] Release note created: `Documentation/release-notes/v<VERSION>*-apex.md`
 - [ ] Build verified: `./compile-with-docker.sh ApeX` (clean 83/83)
-- [ ] Documentation package created and verified
+- [ ] Complete release package created and verified
 
 ### Verify Package Before Release
 
 ```bash
-./tools/package-release-docs.sh v7.6.5br3 build/
-unzip -l build/ApeX-v7.6.5br3_Documentation.zip
-ls -lh build/ApeX-v7.6.5br3_Documentation.zip
+./tools/package-release-complete.sh v7.6.5br3 build/
+unzip -l build/ApeX-v7.6.5br3-Complete-Release.zip
+ls -lh build/ApeX-v7.6.5br3-Complete-Release.zip
 ```
 
 ---
@@ -87,10 +87,18 @@ https://github.com/N7SIX/UV-K1Series_ApeX-Edition_v7.6.0/releases/tag/v7.6.5br3
 ## Standard ZIP Structure
 
 ```
-ApeX-v7.6.5br3_Documentation/
-├── Owner's Manual - ApeX Edition.md
-├── SPECTRUM_ANALYZER_GUIDE.md
-└── v7.6.5br3-patch-apex.md
+ApeX-v7.6.5br3/
+├── Firmware/
+│   ├── n7six.ApeX-k1.v7.6.5br3.bin
+│   ├── n7six.ApeX-k1.v7.6.5br3.hex
+│   ├── n7six.ApeX-k1.v7.6.5br3.elf
+│   └── n7six.ApeX-k1.v7.6.5br3.map
+├── Documentation/
+│   ├── Owner's Manual - ApeX Edition.md
+│   ├── SPECTRUM_ANALYZER_GUIDE.md
+│   └── v7.6.5br3-patch-apex.md
+├── MANIFEST.txt
+└── FLASHING_INSTRUCTIONS.txt
 ```
 
 Users extract this folder and reference markdown files locally.

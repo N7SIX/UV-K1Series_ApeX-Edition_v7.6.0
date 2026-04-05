@@ -91,7 +91,7 @@ cat FLASHING_INSTRUCTIONS.txt
 ```
 
 ### Step 3: Flash the Firmware
-Use STM32CubeProgrammer or your preferred tool with:
+Use Multi-UVTools or UVTools2 with:
 ```
 File: Firmware/n7six.ApeX-k1.v7.6.5br3.bin
 Target Address: 0x00000000
@@ -113,9 +113,8 @@ Supported:   UV-K1, UV-K5 V3 (PY32F071 only)
 ```
 
 **How to use:**
-1. STM32CubeProgrammer: File → Open File → select .bin
-2. openocd: `flash write_bank 0 <file.bin> 0`
-3. Generic programmer: Select binary mode, address 0x00000000
+1. Multi-UVTools: open flash mode, select `.bin`, flash
+2. UVTools2: open `https://armel.github.io/uvtools2/?mode=flash`, select `.bin`, flash
 
 ### Firmware/n7six.ApeX-k1.v7.6.5br3.hex
 ```
@@ -198,7 +197,7 @@ A: No. The .elf file contains debug symbols and is for development/analysis only
 A: Yes, back up your settings/frequencies. The flashing process resets calibration data.
 
 **Q: What if flashing fails?**  
-A: See `FLASHING_INSTRUCTIONS.txt` troubleshooting section, or check GitHub issues.
+A: Retry using Multi-UVTools or UVTools2 and check `FLASHING_INSTRUCTIONS.txt` troubleshooting steps.
 
 **Q: Which radio version do I have?**  
 A: Check radio model: UV-K1 or UV-K5 V3. This firmware is **NOT** for UV-K5 V1/V2.

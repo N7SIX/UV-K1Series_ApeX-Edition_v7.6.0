@@ -2,24 +2,25 @@
 
 This directory contains utility scripts and tools for building, testing, and releasing the ApeX Edition firmware.
 
-## Release Packaging Tools (NEW)
+## Release Packaging Tools
 
-### Standard Release Documentation Package
+### Standard Complete Release Package
 
-All GitHub releases now include a standardized documentation package containing essential user guides.
+All GitHub releases use one standardized complete package containing firmware artifacts and documentation.
 
-**New Scripts:**
-- `package-release-docs.sh` — Packages documentation into a ZIP file for release attachments
-- `quick-release.sh` — Helper script to package and upload documentation to an existing GitHub release
+**Scripts:**
+- `package-release-complete.sh` — Packages firmware build outputs + docs into one ZIP
+- `quick-release.sh` — Helper script to package and upload the complete ZIP to an existing GitHub release
 
 #### Quick Start
 
 ```bash
-# Create documentation package for a release
-./tools/package-release-docs.sh v7.6.5br3 build/
+# Create complete package for a release
+./tools/package-release-complete.sh v7.6.5br3 build/
 
-# Output: build/ApeX-v7.6.5br3_Documentation.zip
+# Output: build/ApeX-v7.6.5br3-Complete-Release.zip
 # Contains:
+#   - Firmware: .bin, .hex, .elf, .map
 #   - Owner's Manual - ApeX Edition.md
 #   - SPECTRUM_ANALYZER_GUIDE.md
 #   - v7.6.5br3-patch-apex.md (latest release note)
@@ -56,9 +57,9 @@ See [RELEASE_PACKAGING_STANDARD.md](RELEASE_PACKAGING_STANDARD.md) for complete 
 ```
 1. Update code and documentation
 2. Create/update release notes in Documentation/release-notes/
-3. Package documentation: ./tools/package-release-docs.sh v<VERSION> build/
+3. Package release: ./tools/package-release-complete.sh v<VERSION> build/
 4. Create GitHub release (with release notes)
-5. Attach ZIP documentation file
+5. Attach complete ZIP file
 6. Publish release
 ```
 
