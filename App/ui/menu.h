@@ -158,7 +158,8 @@ enum
     MENU_F2SHRT,
     MENU_F2LONG,
     MENU_MLONG,
-    MENU_BATTYP
+    MENU_BATTYP,
+    MENU_BATINF
 };
 
 extern const uint8_t FIRST_HIDDEN_MENU_ITEM;

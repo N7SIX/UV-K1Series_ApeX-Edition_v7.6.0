@@ -206,7 +206,7 @@ void BOARD_ADC_GetBatteryInfo(uint16_t *pVoltage, uint16_t *pCurrent)
     LL_ADC_REG_StartConversionSWStart(ADC1);
     while (!LL_ADC_IsActiveFlag_EOS(ADC1))
         ;
-    LL_ADC_ClearFlag_JEOS(ADC1);
+    LL_ADC_ClearFlag_EOS(ADC1);
 
     *pVoltage = LL_ADC_REG_ReadConversionData12(ADC1);
     *pCurrent = 0;

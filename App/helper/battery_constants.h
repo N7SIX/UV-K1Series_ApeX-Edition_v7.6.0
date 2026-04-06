@@ -4,6 +4,7 @@
 // Battery voltage levels (10mV units)
 #define BATTERY_OVERVOLT_THRESHOLD_10MV    890  // 8.90 V (overvoltage condition)
 #define BATTERY_2200M_CRITICAL_10MV        630  // 6.30 V (critical for 1600/2200)
+#define BATTERY_2500M_CRITICAL_10MV        620  // 6.20 V (critical for 2500)
 #define BATTERY_3500M_CRITICAL_10MV        600  // 6.00 V (critical for 3500)
 
 // Safety thresholds (10mV units)

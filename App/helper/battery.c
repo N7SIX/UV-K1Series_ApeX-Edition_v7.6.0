@@ -72,6 +72,7 @@ bool              gLowBatteryBlink;
 bool              gLowBattery;
 bool              gLowBatteryConfirmed;
 uint16_t          gBatteryCheckCounter;
+static uint16_t   gBatterySessionPeakVoltage_10mV;
 
 typedef enum {
     BATTERY_LOW_INACTIVE,
@@ -115,8 +116,8 @@ const uint16_t Voltage2PercentageTable[][7][2] = {
         {0,   0  },
     },
 
-    // Estimated discharge curve for 1500 mAh K1 battery (improve this)
-    [BATTERY_TYPE_1500_MAH] = {
+    // Estimated discharge curve for 1400 mAh K1 battery (improve this)
+    [BATTERY_TYPE_1400_MAH] = {
         {828, 100},  // Fully charged (measured ~8.28V)
         {813, 97 },  // Top end
         {758, 25 },  // Mid level
@@ -163,6 +164,43 @@ unsigned int BATTERY_VoltsToPercent(const unsigned int voltage_10mV)
     return 0;
 }
 
+uint16_t BATTERY_GetSessionPeakVoltage_10mV(void)
+{
+    return gBatterySessionPeakVoltage_10mV;
+}
+
+uint16_t BATTERY_GetNominalCapacitymAh(void)
+{
+    switch (gEeprom.BATTERY_TYPE)
+    {
+        case BATTERY_TYPE_1600_MAH: return 1600;
+        case BATTERY_TYPE_2200_MAH: return 2200;
+        case BATTERY_TYPE_3500_MAH: return 3500;
+        case BATTERY_TYPE_1400_MAH: return 1400;
+        case BATTERY_TYPE_2500_MAH: return 2500;
+        default:                    return 0;
+    }
+}
+
+uint16_t BATTERY_GetEstimatedRemainingmAh(void)
+{
+    const uint16_t nominal_mAh = BATTERY_GetNominalCapacitymAh();
+    const uint8_t soc_percent = BATTERY_VoltsToPercent(gBatteryVoltageAverage);
+    return (uint16_t)((nominal_mAh * soc_percent) / 100);
+}
+
+uint8_t BATTERY_GetEstimatedHealthPercent(void)
+{
+    const uint16_t full_reference_10mV = Voltage2PercentageTable[gEeprom.BATTERY_TYPE][0][0];
+    const uint16_t peak_10mV = MAX(gBatterySessionPeakVoltage_10mV, gBatteryVoltageAverage);
+
+    if (full_reference_10mV == 0)
+        return 0;
+
+    const uint16_t health = (uint16_t)((peak_10mV * 100u) / full_reference_10mV);
+    return (uint8_t)MIN(health, 100u);
+}
+
 void BATTERY_GetReadings(const bool bDisplayBatteryLevel)
 {
     const uint8_t  PreviousBatteryLevel = gBatteryDisplayLevel;
@@ -174,9 +212,18 @@ void BATTERY_GetReadings(const bool bDisplayBatteryLevel)
 
     gBatteryVoltageAverage = (Voltage * 760) / calibration;
 
+    if (gBatteryVoltageAverage > gBatterySessionPeakVoltage_10mV)
+        gBatterySessionPeakVoltage_10mV = gBatteryVoltageAverage;
+
     if(gBatteryVoltageAverage > BATTERY_OVERVOLT_THRESHOLD_10MV)
         gBatteryDisplayLevel = BATTERY_DISPLAY_LEVEL_OVERVOLT; // battery overvoltage
-    else if(gBatteryVoltageAverage < BATTERY_2200M_CRITICAL_10MV && (gEeprom.BATTERY_TYPE == BATTERY_TYPE_1600_MAH || gEeprom.BATTERY_TYPE == BATTERY_TYPE_2200_MAH))
+    else if(gBatteryVoltageAverage < BATTERY_2200M_CRITICAL_10MV
+            && (gEeprom.BATTERY_TYPE == BATTERY_TYPE_1600_MAH
+                || gEeprom.BATTERY_TYPE == BATTERY_TYPE_2200_MAH
+            || gEeprom.BATTERY_TYPE == BATTERY_TYPE_1400_MAH))
+        gBatteryDisplayLevel = BATTERY_DISPLAY_LEVEL_CRITICAL; // battery critical
+    else if(gBatteryVoltageAverage < BATTERY_2500M_CRITICAL_10MV
+            && (gEeprom.BATTERY_TYPE == BATTERY_TYPE_2500_MAH))
         gBatteryDisplayLevel = BATTERY_DISPLAY_LEVEL_CRITICAL; // battery critical
     else if(gBatteryVoltageAverage < BATTERY_3500M_CRITICAL_10MV && (gEeprom.BATTERY_TYPE == BATTERY_TYPE_3500_MAH))
         gBatteryDisplayLevel = BATTERY_DISPLAY_LEVEL_CRITICAL; // battery critical

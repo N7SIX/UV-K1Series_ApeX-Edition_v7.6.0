@@ -41,6 +41,10 @@
 #include "inputbox.h"
 #include "menu.h"
 #include "ui.h"
+
+#ifndef ARRAY_SIZE
+    #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+#endif
 #ifndef AUTHOR_STRING_2
     #define AUTHOR_STRING_2 "N7SIX"
 #endif
@@ -191,6 +195,7 @@ const t_menu_item MenuList[] =
 #endif
     {"BatCal",      MENU_BATCAL        }, // battery voltage calibration
     {"BatTyp",      MENU_BATTYP        }, // battery type 1600/2200mAh
+    {"BatInf",      MENU_BATINF        }, // battery diagnostics and health estimate
     {"Reset",       MENU_RESET         }, // might be better to move this to the hidden menu items ?
 
     {"",                              0xff               }  // end of list - DO NOT delete or move this this
@@ -1133,6 +1138,32 @@ void UI_DisplayMenu(void)
             strncpy(String, gSubMenu_BATTYP[gSubMenuSelection], sizeof(String) - 1);
             String[sizeof(String) - 1] = '\0';
             break;
+
+        case MENU_BATINF:
+        {
+            static const char *const battery_type_short[] = {
+                "1600K5",
+                "2200K5",
+                "3500K5",
+                "1400K1",
+                "2500K1"
+            };
+
+            const uint8_t type = gEeprom.BATTERY_TYPE;
+            const char *type_name = (type < ARRAY_SIZE(battery_type_short)) ? battery_type_short[type] : "UNK";
+            const uint8_t soc = BATTERY_VoltsToPercent(gBatteryVoltageAverage);
+            const uint8_t health = BATTERY_GetEstimatedHealthPercent();
+            const uint16_t remain = BATTERY_GetEstimatedRemainingmAh();
+
+            snprintf(String, sizeof(String),
+                "%u.%02uV %u%%\nH:%u%% R:%um\n%s %s",
+                gBatteryVoltageAverage / 100, gBatteryVoltageAverage % 100,
+                soc,
+                health, remain,
+                type_name,
+                gChargingWithTypeC ? "CHG" : "IDL");
+            break;
+        }
 
         case MENU_F1SHRT:
         case MENU_F1LONG:

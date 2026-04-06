@@ -404,7 +404,11 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
 
         case MENU_BATTYP:
             //*pMin = 0;
-            *pMax = 4;
+            *pMax = ARRAY_SIZE(gSubMenu_BATTYP) - 1;
+            break;
+
+        case MENU_BATINF:
+            *pMax = 0;
             break;
 
         case MENU_F1SHRT:
@@ -1372,6 +1376,10 @@ void MENU_ShowCurrentSetting(void)
 
         case MENU_BATTYP:
             gSubMenuSelection = gEeprom.BATTERY_TYPE;
+            break;
+
+        case MENU_BATINF:
+            gSubMenuSelection = 0;
             break;
 
         case MENU_F1SHRT:
