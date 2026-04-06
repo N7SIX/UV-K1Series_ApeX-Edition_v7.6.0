@@ -2,5 +2,8 @@
   "github.copilot-chat.enabled": false,
   "github.copilot-chat.experimental.enable": false,
   "github.copilot.enabled": false,
-  "problems.autoReveal": false
+  "problems.autoReveal": false,
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/ApeX/compile_commands.json",
+  "C_Cpp.default.configuration": "UV-K1-PY32"
 }

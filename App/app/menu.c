@@ -922,11 +922,26 @@ void MENU_AcceptSetting(void)
         #endif
 
         case MENU_BATCAL:
-        {                                                                // voltages are averages between discharge curves of 1600 and 2200 mAh
-            // gBatteryCalibration[0] = (520ul * gSubMenuSelection) / 760;  // 5.20V empty, blinking above this value, reduced functionality below
+        {
+            // Save a coherent 2-point calibration pair (5.2V and 7.6V references).
+            uint16_t cal_high = (uint16_t)gSubMenuSelection;
+            uint16_t cal_low  = (uint16_t)((520ul * cal_high) / 760);
+
+            if (cal_low < 1500)
+                cal_low = 1500;
+            else if (cal_low > 3500)
+                cal_low = 3500;
+
+            // Keep low-point value in valid storage range; if coherence is impossible
+            // at this high reference, store a safe fallback and let runtime use 1-point mode.
+            if (cal_low + 10 >= cal_high)
+                cal_low = 1500;
+
+            gBatteryCalibration[0] = cal_low;
+
             // gBatteryCalibration[1] = (689ul * gSubMenuSelection) / 760;  // 6.89V,  ~5%, 1 bars above this value
             // gBatteryCalibration[2] = (724ul * gSubMenuSelection) / 760;  // 7.24V, ~17%, 2 bars above this value
-            gBatteryCalibration[3] =          gSubMenuSelection;         // 7.6V,  ~29%, 3 bars above this value
+            gBatteryCalibration[3] = cal_high;                           // 7.6V, ~29%, 3 bars above this value
             // gBatteryCalibration[4] = (771ul * gSubMenuSelection) / 760;  // 7.71V, ~65%, 4 bars above this value
             // gBatteryCalibration[5] = 2300;
             SETTINGS_SaveBatteryCalibration(gBatteryCalibration);

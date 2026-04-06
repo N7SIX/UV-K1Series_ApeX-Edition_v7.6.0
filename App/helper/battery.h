@@ -45,6 +45,7 @@ typedef enum {
 
 
 unsigned int BATTERY_VoltsToPercent(unsigned int voltage_10mV);
+uint16_t BATTERY_AdcToVoltage10mV(uint16_t adc_value);
 uint8_t BATTERY_GetEstimatedHealthPercent(void);
 uint16_t BATTERY_GetNominalCapacitymAh(void);
 uint16_t BATTERY_GetEstimatedRemainingmAh(void);

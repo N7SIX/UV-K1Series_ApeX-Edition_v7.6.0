@@ -12,6 +12,7 @@ License: Apache License, Version 2.0
 This repository uses short, version-specific update summaries with a shared professional template.
 
 ## Current Version Summaries
+- [v7.6.5br4 Patch Update Summary](v7.6.5br4_UPDATE_SUMMARY.md)
 - [v7.6.5br3 Patch Update Summary](v7.6.5br3_UPDATE_SUMMARY.md)
 - [v7.6.6 Update Summary](v7.6.6_UPDATE_SUMMARY.md)
 - [v7.6.5 Update Summary](v7.6.5_UPDATE_SUMMARY.md)

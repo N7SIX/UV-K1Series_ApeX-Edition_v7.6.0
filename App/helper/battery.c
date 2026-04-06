@@ -85,6 +85,9 @@ const uint16_t    lowBatteryPeriod = 30;
 
 volatile uint16_t gPowerSave_10ms;
 
+#define BATTERY_CAL_LOW_REF_10MV   520
+#define BATTERY_CAL_HIGH_REF_10MV  760
+
 const uint16_t Voltage2PercentageTable[][7][2] = {
     [BATTERY_TYPE_1600_MAH] = {
         {828, 100},
@@ -164,6 +167,34 @@ unsigned int BATTERY_VoltsToPercent(const unsigned int voltage_10mV)
     return 0;
 }
 
+uint16_t BATTERY_AdcToVoltage10mV(const uint16_t adc_value)
+{
+    uint16_t cal_high = gBatteryCalibration[3];
+    if (cal_high < 1500 || cal_high > 3500)
+        cal_high = 2200;
+
+    const uint16_t cal_low = gBatteryCalibration[0];
+    const uint16_t expected_low = (uint16_t)((cal_high * BATTERY_CAL_LOW_REF_10MV) / BATTERY_CAL_HIGH_REF_10MV);
+
+    // Use 2-point linear calibration only when low/high points are plausible, monotonic,
+    // and physically coherent with the 5.2V/7.6V reference ratio.
+    if (cal_low >= 1500 && cal_low <= 3500 && cal_low + 10 < cal_high
+        && cal_low + 120 >= expected_low && cal_low <= expected_low + 120)
+    {
+        int32_t voltage_10mV = BATTERY_CAL_LOW_REF_10MV
+            + ((int32_t)(adc_value - cal_low) * (BATTERY_CAL_HIGH_REF_10MV - BATTERY_CAL_LOW_REF_10MV))
+                / (int32_t)(cal_high - cal_low);
+
+        if (voltage_10mV < 0)
+            voltage_10mV = 0;
+
+        return (uint16_t)voltage_10mV;
+    }
+
+    // Fallback preserves previous behavior when only high-point calibration is reliable.
+    return (uint16_t)(((uint32_t)adc_value * BATTERY_CAL_HIGH_REF_10MV) / cal_high);
+}
+
 uint16_t BATTERY_GetSessionPeakVoltage_10mV(void)
 {
     return gBatterySessionPeakVoltage_10mV;
@@ -205,12 +236,7 @@ void BATTERY_GetReadings(const bool bDisplayBatteryLevel)
 {
     const uint8_t  PreviousBatteryLevel = gBatteryDisplayLevel;
     const uint16_t Voltage              = (gBatteryVoltages[0] + gBatteryVoltages[1] + gBatteryVoltages[2] + gBatteryVoltages[3]) / 4;
-    uint16_t       calibration          = gBatteryCalibration[3];
-
-    if (calibration < 1500 || calibration > 3500)
-        calibration = 2200;
-
-    gBatteryVoltageAverage = (Voltage * 760) / calibration;
+    gBatteryVoltageAverage = BATTERY_AdcToVoltage10mV(Voltage);
 
     if (gBatteryVoltageAverage > gBatterySessionPeakVoltage_10mV)
         gBatterySessionPeakVoltage_10mV = gBatteryVoltageAverage;

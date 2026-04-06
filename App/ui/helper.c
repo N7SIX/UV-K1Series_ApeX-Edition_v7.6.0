@@ -312,9 +312,12 @@ static void sort(int16_t *a, int16_t *b)
       }
     }
 
-    static const uint8_t gFont5x5[17][5] = {
+    static const uint8_t gFont5x5[24][5] = {
         {0x04, 0x0A, 0x11, 0x1F, 0x11}, // A
         {0x1E, 0x11, 0x1E, 0x11, 0x1E}, // B
+        {0x0E, 0x11, 0x10, 0x11, 0x0E}, // C
+        {0x11, 0x11, 0x1F, 0x11, 0x11}, // H
+        {0x1E, 0x11, 0x1E, 0x12, 0x11}, // R
         {0x11, 0x1B, 0x15, 0x11, 0x11}, // M
         {0x11, 0x11, 0x0A, 0x0A, 0x04}, // V
         {0x1F, 0x10, 0x1E, 0x10, 0x10}, // F
@@ -329,19 +332,33 @@ static void sort(int16_t *a, int16_t *b)
         {0x0E, 0x10, 0x1E, 0x11, 0x0E}, // 6
         {0x1F, 0x01, 0x02, 0x04, 0x04}, // 7
         {0x0E, 0x11, 0x0E, 0x11, 0x0E}, // 8
-        {0x0E, 0x11, 0x0F, 0x01, 0x0E}  // 9
+        {0x0E, 0x11, 0x0F, 0x01, 0x0E}, // 9
+        {0x00, 0x04, 0x00, 0x04, 0x00}, // :
+        {0x01, 0x02, 0x04, 0x08, 0x10}, // /
+        {0x18, 0x19, 0x02, 0x13, 0x03}, // %
+        {0x00, 0x00, 0x00, 0x0C, 0x0C}  // .
     };
 
     void UI_Draw5x5Char(char c, uint8_t x, uint8_t y, bool fill) {
         const uint8_t *glyph = NULL;
         if (c == 'A') glyph = gFont5x5[0];
         else if (c == 'B') glyph = gFont5x5[1];
-        else if (c == 'M') glyph = gFont5x5[2];
-        else if (c == 'V') glyph = gFont5x5[3];
-        else if (c == 'F') glyph = gFont5x5[4];
-        else if (c == 'O') glyph = gFont5x5[5];
-        else if (c == 'N') glyph = gFont5x5[6];
-        else if (c >= '0' && c <= '9') glyph = gFont5x5[7 + (c - '0')];
+        else if (c == 'C') glyph = gFont5x5[2];
+        else if (c == 'H') glyph = gFont5x5[3];
+        else if (c == 'R') glyph = gFont5x5[4];
+        else if (c == 'a') glyph = gFont5x5[0];
+        else if (c == 'h') glyph = gFont5x5[3];
+        else if (c == 'M' || c == 'm') glyph = gFont5x5[5];
+        else if (c == 'V') glyph = gFont5x5[6];
+        else if (c == 'F') glyph = gFont5x5[7];
+        else if (c == 'O') glyph = gFont5x5[8];
+        else if (c == 'N') glyph = gFont5x5[9];
+        else if (c >= '0' && c <= '9') glyph = gFont5x5[10 + (c - '0')];
+        else if (c == ':') glyph = gFont5x5[20];
+        else if (c == '/') glyph = gFont5x5[21];
+        else if (c == '%') glyph = gFont5x5[22];
+        else if (c == '.') glyph = gFont5x5[23];
+        else if (c == ' ') return;
         if (!glyph) return;
 
         for (int row = 0; row < 5; ++row) {

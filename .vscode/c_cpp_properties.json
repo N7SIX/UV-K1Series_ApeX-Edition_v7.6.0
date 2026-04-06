@@ -1,15 +1,31 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "UV-K1-PY32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/Core/Inc",
+                "${workspaceFolder}/Drivers/PY32F071_HAL_Driver/Inc",
+                "${workspaceFolder}/Drivers/CMSIS/Include",
+                "${workspaceFolder}/Drivers/CMSIS/Device/PY32F071/Include",
+                "${workspaceFolder}/App",
+                "${workspaceFolder}/App/usb",
+                "${workspaceFolder}/Middlewares/CherryUSB/core",
+                "${workspaceFolder}/Middlewares/CherryUSB/port",
+                "${workspaceFolder}/Middlewares/CherryUSB/common",
+                "${workspaceFolder}/Middlewares/CherryUSB/class/cdc"
             ],
-            "defines": [],
-            "compilerPath": "/usr/bin/clang",
+            "defines": [
+                "PY32F071x8",
+                "USE_FULL_LL_DRIVER",
+                "ENABLE_FEAT_N7SIX",
+                "ENABLE_SPECTRUM",
+                "ENABLE_FMRADIO",
+                "PRINTF_INCLUDE_CONFIG_H"
+            ],
+            "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "linux-clang-x64"
+            "intelliSenseMode": "linux-gcc-x64"
         }
     ],
     "version": 4

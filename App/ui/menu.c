@@ -50,7 +50,7 @@
 #endif
 
 #ifndef VERSION_STRING_2
-    #define VERSION_STRING_2 "v7.6.5br3"
+    #define VERSION_STRING_2 "v7.6.5br4"
 #endif
 
 
@@ -195,13 +195,38 @@ const t_menu_item MenuList[] =
 #endif
     {"BatCal",      MENU_BATCAL        }, // battery voltage calibration
     {"BatTyp",      MENU_BATTYP        }, // battery type 1600/2200mAh
-    {"BatInf",      MENU_BATINF        }, // battery diagnostics and health estimate
     {"Reset",       MENU_RESET         }, // might be better to move this to the hidden menu items ?
 
     {"",                              0xff               }  // end of list - DO NOT delete or move this this
 };
 
 const uint8_t FIRST_HIDDEN_MENU_ITEM = MENU_F_LOCK;
+
+static bool UI_MenuGetFramePixel(const uint8_t x, const uint8_t y)
+{
+    return (gFrameBuffer[y / 8][x] & (uint8_t)(1u << (y % 8))) != 0;
+}
+
+static void UI_MenuSetFramePixel(const uint8_t x, const uint8_t y, const bool on)
+{
+    const uint8_t mask = (uint8_t)(1u << (y % 8));
+    if (on)
+        gFrameBuffer[y / 8][x] |= mask;
+    else
+        gFrameBuffer[y / 8][x] &= (uint8_t)~mask;
+}
+
+static void UI_MenuShiftRegionDown1Px(const uint8_t x1, const uint8_t x2, const uint8_t y1, const uint8_t y2)
+{
+    for (uint8_t x = x1; x <= x2; x++)
+    {
+        for (int y = y2; y > y1; y--)
+        {
+            UI_MenuSetFramePixel(x, (uint8_t)y, UI_MenuGetFramePixel(x, (uint8_t)(y - 1)));
+        }
+        UI_MenuSetFramePixel(x, y1, false);
+    }
+}
 
 const char gSubMenu_TXP[][6] =
 {
@@ -1139,32 +1164,6 @@ void UI_DisplayMenu(void)
             String[sizeof(String) - 1] = '\0';
             break;
 
-        case MENU_BATINF:
-        {
-            static const char *const battery_type_short[] = {
-                "1600K5",
-                "2200K5",
-                "3500K5",
-                "1400K1",
-                "2500K1"
-            };
-
-            const uint8_t type = gEeprom.BATTERY_TYPE;
-            const char *type_name = (type < ARRAY_SIZE(battery_type_short)) ? battery_type_short[type] : "UNK";
-            const uint8_t soc = BATTERY_VoltsToPercent(gBatteryVoltageAverage);
-            const uint8_t health = BATTERY_GetEstimatedHealthPercent();
-            const uint16_t remain = BATTERY_GetEstimatedRemainingmAh();
-
-            snprintf(String, sizeof(String),
-                "%u.%02uV %u%%\nH:%u%% R:%um\n%s %s",
-                gBatteryVoltageAverage / 100, gBatteryVoltageAverage % 100,
-                soc,
-                health, remain,
-                type_name,
-                gChargingWithTypeC ? "CHG" : "IDL");
-            break;
-        }
-
         case MENU_F1SHRT:
         case MENU_F1LONG:
         case MENU_F2SHRT:
@@ -1346,37 +1345,65 @@ void UI_DisplayMenu(void)
             // only for SysInf
             if(UI_MENU_GetCurrentMenuId() == MENU_VOL)
             {
+                const uint8_t h_y = 10;
+                const uint8_t h_label_x = 52;
+
                 sprintf(edit, "%u.%02uV %u%%",
                     gBatteryVoltageAverage / 100, gBatteryVoltageAverage % 100,
                     BATTERY_VoltsToPercent(gBatteryVoltageAverage)
                 );
 
-                UI_PrintStringSmallNormal(edit, 54, 127, 1);
+                UI_Draw5x5String(edit, 52, 2, true);
+
+                UI_Draw5x5Char('H', h_label_x, h_y, true);
+                UI_Draw5x5Char(':', h_label_x + 5, h_y, true); // colon shifted 1px left
+
+                sprintf(edit, "%u%%", BATTERY_GetEstimatedHealthPercent());
+                UI_Draw5x5String(edit, h_label_x + 9, h_y, true); // value shifted 3px left
+
+                const uint8_t r_label_x = h_label_x + 9 + (uint8_t)(strlen(edit) * 6) + 2;
+                UI_Draw5x5Char('C', r_label_x, h_y, true);
+                UI_Draw5x5Char(':', r_label_x + 5, h_y, true); // colon shifted 1px left
+
+                sprintf(edit, "%um", BATTERY_GetEstimatedRemainingmAh());
+                UI_Draw5x5String(edit, r_label_x + 9, h_y, true); // value shifted 3px left
 
                 #ifdef ENABLE_FEAT_N7SIX
+                    // Draw full-size SysInf labels shifted up by ~7 pixels.
+                    UI_PrintString(AUTHOR_STRING_2, 52, 127, 2, 8);
+                    UI_PrintString(VERSION_STRING_2, 52, 127, 4, 8);
+
+                    // Move the big author/version block down by 1 pixel without changing size.
+                    UI_MenuShiftRegionDown1Px(52, 127, 16, 47);
+
+                    // Keep edition tag visible at the bottom area.
                     UI_PrintStringSmallNormal(Edition, 54, 127, 6);
                 #endif
 
-                y = 2;
+                already_printed = true;
+                y = 3;
             }
 
-            // draw the text lines
-            for (i = 0; i < len && lines > 0; lines--)
+            // draw the text lines (skip when already custom-rendered, e.g. SysInf)
+            if (!already_printed)
             {
-                if (small)
-                    UI_PrintStringSmallNormal(String + i, menu_item_x1, menu_item_x2, y);
-                else
-                    UI_PrintString(String + i, menu_item_x1, menu_item_x2, y, 8);
+                for (i = 0; i < len && lines > 0; lines--)
+                {
+                    if (small)
+                        UI_PrintStringSmallNormal(String + i, menu_item_x1, menu_item_x2, y);
+                    else
+                        UI_PrintString(String + i, menu_item_x1, menu_item_x2, y, 8);
 
-                // look for start of next line
-                while (i < len && String[i] >= 32)
-                    i++;
+                    // look for start of next line
+                    while (i < len && String[i] >= 32)
+                        i++;
 
-                // hop over the null term char(s)
-                while (i < len && String[i] < 32)
-                    i++;
+                    // hop over the null term char(s)
+                    while (i < len && String[i] < 32)
+                        i++;
 
-                y += small ? 1 : 2;
+                    y += small ? 1 : 2;
+                }
             }
         }
     }
