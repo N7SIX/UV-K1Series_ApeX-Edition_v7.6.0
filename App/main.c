@@ -118,7 +118,9 @@ void Main(void)
     // --- FORCE UNLOCK KEYBOARD ON EVERY BOOT ---
     // --- FORCE CLEAR ALL LOCK STATES ON EVERY BOOT ---
     gEeprom.KEY_LOCK = false;
+#ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
     gEeprom.MENU_LOCK = false;
+#endif
     gEeprom.KEY_LOCK_PTT = false;
     gEeprom.AUTO_KEYPAD_LOCK = 0;
     SETTINGS_SaveSettings();
@@ -146,8 +148,10 @@ void Main(void)
 #ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
     if (BootMode == BOOT_MODE_RESCUE_OPS)
     {
+#ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
         gEeprom.MENU_LOCK = !gEeprom.MENU_LOCK;
         SETTINGS_SaveSettings();
+#endif
     }
 
     /*
