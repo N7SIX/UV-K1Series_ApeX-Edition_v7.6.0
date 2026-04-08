@@ -937,14 +937,13 @@ void MENU_AcceptSetting(void)
             if (cal_low + 10 >= cal_high)
                 cal_low = 1500;
 
-            gBatteryCalibration[0] = cal_low;
+            gBatteryCalib.BatLo = cal_low;
+            gBatteryCalib.BatHi = cal_high;
+            // BatTol and BatChk can be set/calculated here as needed
+            gBatteryCalib.BatTol = gBatteryCalib.BatHi - gBatteryCalib.BatLo;
+            gBatteryCalib.BatChk = (gBatteryCalib.BatHi + gBatteryCalib.BatLo) / 2;
 
-            // gBatteryCalibration[1] = (689ul * gSubMenuSelection) / 760;  // 6.89V,  ~5%, 1 bars above this value
-            // gBatteryCalibration[2] = (724ul * gSubMenuSelection) / 760;  // 7.24V, ~17%, 2 bars above this value
-            gBatteryCalibration[3] = cal_high;                           // 7.6V, ~29%, 3 bars above this value
-            // gBatteryCalibration[4] = (771ul * gSubMenuSelection) / 760;  // 7.71V, ~65%, 4 bars above this value
-            // gBatteryCalibration[5] = 2300;
-            SETTINGS_SaveBatteryCalibration(gBatteryCalibration);
+            SETTINGS_SaveBatteryCalibStruct(&gBatteryCalib);
             return;
         }
 
@@ -1386,7 +1385,7 @@ void MENU_ShowCurrentSetting(void)
         #endif
 
         case MENU_BATCAL:
-            gSubMenuSelection = gBatteryCalibration[3];
+            gSubMenuSelection = gBatteryCalib.BatHi;
             break;
 
         case MENU_BATTYP:

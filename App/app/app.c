@@ -1732,7 +1732,8 @@ void APP_TimeSlice500ms(void)
 
     if (gReducedService)
     {
-        uint16_t calibration = gBatteryCalibration[3];
+
+        uint16_t calibration = gBatteryCalib.BatHi;
         if (calibration < 1500 || calibration > 3500)
             calibration = 2200;
 

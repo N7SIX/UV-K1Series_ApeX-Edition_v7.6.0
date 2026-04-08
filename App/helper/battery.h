@@ -20,7 +20,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-extern uint16_t          gBatteryCalibration[6];
+typedef struct {
+    uint16_t BatHi;   // High reference ADC value (e.g., 8.4V)
+    uint16_t BatLo;   // Low reference ADC value (e.g., 6.0V)
+    uint16_t BatTol;  // Tolerance (user-defined or calculated)
+    uint16_t BatChk;  // Check value (for verification)
+} BatteryCalib_t;
+
+extern BatteryCalib_t gBatteryCalib;
 extern uint16_t          gBatteryCurrentVoltage;
 extern uint16_t          gBatteryCurrent;
 extern uint16_t          gBatteryVoltages[4];

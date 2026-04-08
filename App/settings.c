@@ -272,7 +272,8 @@ void SETTINGS_InitEEPROM(void)
     }
     gEeprom.TX_TIMEOUT_TIMER     = (Data[2] > 4 && Data[2] < 180) ? Data[2] : 11;
     #ifdef ENABLE_NOAA
-        gEeprom.NOAA_AUTO_SCAN   = (Data[3] <  2) ? Data[3] : false;
+        // Range check: only 0 or 1 allowed
+        gEeprom.NOAA_AUTO_SCAN = (Data[3] == 1) ? 1 : 0;
     #endif
     #ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
         gEeprom.KEY_LOCK = (Data[4] & 0x01) != 0;
@@ -629,7 +630,6 @@ void SETTINGS_InitEEPROM(void)
 void SETTINGS_LoadCalibration(void)
 {
 //  uint8_t Mic;
-    bool repairBatteryCalibration = false;
 
     // 0x1EC0
     PY25Q16_ReadBuffer(0x010000 + 0xc0, gEEPROM_RSSI_CALIB[3], 8);
@@ -642,36 +642,34 @@ void SETTINGS_LoadCalibration(void)
     memcpy(gEEPROM_RSSI_CALIB[1], gEEPROM_RSSI_CALIB[0], 8);
     memcpy(gEEPROM_RSSI_CALIB[2], gEEPROM_RSSI_CALIB[0], 8);
 
-    // 0x1F40
-    PY25Q16_ReadBuffer(0x010000 + 0x140, gBatteryCalibration, 12);
-    if (gBatteryCalibration[0] < 1500 || gBatteryCalibration[0] > 3500)
-    {
-        gBatteryCalibration[0] = 1900;
-        repairBatteryCalibration = true;
-    }
+    // 0x1F40: Read new struct (8 bytes)
+    PY25Q16_ReadBuffer(0x010000 + 0x140, &gBatteryCalib, sizeof(BatteryCalib_t));
 
-    if (gBatteryCalibration[1] < 1500 || gBatteryCalibration[1] > 3500)
-    {
-        gBatteryCalibration[1] = 2000;
-        repairBatteryCalibration = true;
+    // Migrate from old array if needed (legacy support)
+    bool migrate = false;
+    uint16_t legacy[6];
+    PY25Q16_ReadBuffer(0x010000 + 0x140, legacy, 12);
+    if ((gBatteryCalib.BatHi < 1500 || gBatteryCalib.BatHi > 3500) &&
+        (legacy[1] >= 1500 && legacy[1] <= 3500)) {
+        gBatteryCalib.BatHi = legacy[1];
+        migrate = true;
     }
-
-    // Guard corrupted calibration storage: index 3 is used as voltage conversion denominator.
-    if (gBatteryCalibration[3] < 1500 || gBatteryCalibration[3] > 3500)
-    {
-        gBatteryCalibration[3] = 2200;
-        repairBatteryCalibration = true;
+    if ((gBatteryCalib.BatLo < 1500 || gBatteryCalib.BatLo > 3500) &&
+        (legacy[0] >= 1500 && legacy[0] <= 3500)) {
+        gBatteryCalib.BatLo = legacy[0];
+        migrate = true;
     }
-
-    if (gBatteryCalibration[5] != 2300)
-    {
-        gBatteryCalibration[5] = 2300;
-        repairBatteryCalibration = true;
+    if (gBatteryCalib.BatTol == 0 && legacy[5] != 0) {
+        gBatteryCalib.BatTol = legacy[5];
+        migrate = true;
     }
-
-    if (repairBatteryCalibration)
-    {
-        SETTINGS_SaveBatteryCalibration(gBatteryCalibration);
+    if ((gBatteryCalib.BatChk < 1500 || gBatteryCalib.BatChk > 3500) &&
+        (legacy[3] >= 1500 && legacy[3] <= 3500)) {
+        gBatteryCalib.BatChk = legacy[3];
+        migrate = true;
+    }
+    if (migrate) {
+        SETTINGS_SaveBatteryCalibStruct(&gBatteryCalib);
     }
 
     #ifdef ENABLE_VOX
@@ -1260,14 +1258,23 @@ void SETTINGS_SaveChannel(uint8_t Channel, uint8_t VFO, const VFO_Info_t *pVFO, 
 
 }
 
+
 void SETTINGS_SaveBatteryCalibration(const uint16_t * batteryCalibration)
 {
     if (!SETTINGS_CanPersist()) {
         return;
     }
-
-    // 0x1F40
+    // 0x1F40 (legacy array, 12 bytes)
     PY25Q16_WriteBuffer(0x010000 + 0x140, batteryCalibration, 12, false);
+}
+
+void SETTINGS_SaveBatteryCalibStruct(const BatteryCalib_t * calib)
+{
+    if (!SETTINGS_CanPersist()) {
+        return;
+    }
+    // 0x1F40 (new struct, 8 bytes)
+    PY25Q16_WriteBuffer(0x010000 + 0x140, calib, sizeof(BatteryCalib_t), false);
 }
 
 void SETTINGS_SaveChannelName(uint8_t channel, const char * name)

@@ -378,6 +378,17 @@ Total (spectrum mode) | — | ~25%
 
 **Impact on user experience**:
 - Spectrum trace updates every 3 frames (~50 ms), appears smooth
+
+---
+
+## BATTERY CALIBRATION SYSTEM (v7.6.5+)
+
+### Architecture
+- Calibration data is stored in a `BatteryCalib_t` struct (fields: BatHi, BatLo, BatTol, BatChk) at EEPROM address 0x010140.
+- Menu → BatCal workflow: user sets low and high reference points, tolerance, and can view summary in SysInf.
+- All voltage conversion and diagnostics (health/capacity) use this struct for robust, explicit mapping and future extensibility.
+- Calibration logic is robust to invalid/legacy data and always range-checked for safety.
+- SetNWR menu bug fixed: NOAA_AUTO_SCAN is always range-checked and clamped to valid values after flash.
 - Waterfall scrolls smoothly (updated every frame)
 - Peak hold fades continuously
 - Occasional "gaps" between updates (imperceptible to human eye)

@@ -102,9 +102,30 @@ Press [F] while in VFO mode, then:
 | **&lt;25%** | Critical | Charge immediately |
 | **BUZZER + ICON FLASH** | Battery depleted | Replace/charge now |
 
----
 
-## S-METER INTERPRETATION
+### Battery Calibration & Diagnostics
+
+**Professional Two-Point Calibration (BatCal Menu):**
+- Access via Menu → BatCal
+- Set low (BatLo) and high (BatHi) reference points using a precision power supply or known-good battery
+- Adjust tolerance (BatTol) as needed
+- Calibration data is stored in EEPROM as a `BatteryCalib_t` struct (address 0x010140)
+- Summary and health/capacity diagnostics are shown in SysInf (Menu → SysInf)
+
+| Display | Meaning | Action |
+|---------|---------|--------|
+| **100%** | Full battery | Ready for deployment |
+| **75%-50%** | Good condition | No action needed |
+| **50%-25%** | Low battery | Plan charging soon |
+| **<25%** | Critical | Charge immediately |
+| **BUZZER + ICON FLASH** | Battery depleted | Replace/charge now |
+
+**SysInf Diagnostics:**
+- Shows voltage, state-of-charge, health (H), and capacity (C) in compact 5x5 text
+- Diagnostics use the new calibration struct for accurate readings
+
+**Note:** Calibration logic is robust to invalid/legacy data and always range-checked for safety.
+
 
 ```
 S0    No signal

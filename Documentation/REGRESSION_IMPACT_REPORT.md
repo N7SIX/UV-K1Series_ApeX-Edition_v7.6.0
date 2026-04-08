@@ -18,6 +18,11 @@ License: Apache License, Version 2.0
 
 ## Edition Consolidation (March 2026)
 
+## Battery Calibration and Menu/UI Robustness (v7.6.5+)
+
+- All calibration logic migrated to new `BatteryCalib_t` struct at EEPROM 0x010140; BatCal menu and SysInf diagnostics updated.
+- SetNWR menu bug fixed: NOAA_AUTO_SCAN is always range-checked and clamped to valid values after flash.
+
 As of v7.6.5, only the ApeX (all-in-one) edition is built and supported. All features from previous editions (Bandscope, Broadcast, Basic, RescueOps, Game) are now included in ApeX. Build scripts, documentation, and presets have been updated accordingly.
 
 ---

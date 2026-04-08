@@ -17,6 +17,12 @@ License: Apache License, Version 2.0
 
 ## Key Findings at a Glance
 
+### Recent Improvements (v7.6.5+)
+| Change | Impact |
+|--------|--------|
+| Professional two-point battery calibration system (BatteryCalib_t struct, BatCal menu, SysInf diagnostics) | Robust, explicit calibration, improved diagnostics, future extensibility |
+| SetNWR menu bug fix (NOAA_AUTO_SCAN always range-checked) | Menu always displays valid state after flash |
+
 ### 🔴 Critical Issues (Fix Immediately)
 | Issue | Risk | Impact | Effort |
 |-------|------|--------|--------|

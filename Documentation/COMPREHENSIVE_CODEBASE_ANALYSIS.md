@@ -1,5 +1,15 @@
 <!--
 =====================================================================================
+## Battery Calibration System (v7.6.5+)
+
+### Professional Two-Point Calibration Architecture
+
+- All battery calibration logic migrated to a new `BatteryCalib_t` struct (fields: BatHi, BatLo, BatTol, BatChk) mapped at EEPROM 0x010140.
+- Menu → BatCal workflow: user sets low and high reference points, tolerance, and can view summary in SysInf.
+- All voltage conversion and diagnostics (health/capacity) now use this struct for robust, explicit mapping and future extensibility.
+- Legacy calibration code fully removed; menu/UI logic updated to use new struct.
+- Calibration logic is robust to invalid/legacy data and always range-checked for safety.
+- SetNWR menu bug fixed: NOAA_AUTO_SCAN is always range-checked and clamped to valid values after flash.
 Comprehensive Codebase Analysis
 Author: N7SIX, Sean
 Version: v7.6.0 (ApeX Edition)

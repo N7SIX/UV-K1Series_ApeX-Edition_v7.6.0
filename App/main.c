@@ -115,6 +115,16 @@ void Main(void)
     SETTINGS_WriteBuildOptions();
     SETTINGS_LoadCalibration();
 
+    // --- FORCE UNLOCK KEYBOARD ON EVERY BOOT ---
+    // --- FORCE CLEAR ALL LOCK STATES ON EVERY BOOT ---
+    gEeprom.KEY_LOCK = false;
+    gEeprom.MENU_LOCK = false;
+    gEeprom.KEY_LOCK_PTT = false;
+    gEeprom.AUTO_KEYPAD_LOCK = 0;
+    SETTINGS_SaveSettings();
+    // -------------------------------------------------
+    // -------------------------------------------
+
     RADIO_ConfigureChannel(0, VFO_CONFIGURE_RELOAD);
     RADIO_ConfigureChannel(1, VFO_CONFIGURE_RELOAD);
 

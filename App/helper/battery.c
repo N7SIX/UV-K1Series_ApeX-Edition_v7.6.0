@@ -61,7 +61,7 @@
 #include "battery_constants.h"
 //#include "debugging.h"
 
-uint16_t          gBatteryCalibration[6];
+BatteryCalib_t    gBatteryCalib;
 uint16_t          gBatteryCurrentVoltage;
 uint16_t          gBatteryCurrent;
 uint16_t          gBatteryVoltages[4];
@@ -169,11 +169,11 @@ unsigned int BATTERY_VoltsToPercent(const unsigned int voltage_10mV)
 
 uint16_t BATTERY_AdcToVoltage10mV(const uint16_t adc_value)
 {
-    uint16_t cal_high = gBatteryCalibration[3];
+    uint16_t cal_high = gBatteryCalib.BatHi;
     if (cal_high < 1500 || cal_high > 3500)
         cal_high = 2200;
 
-    const uint16_t cal_low = gBatteryCalibration[0];
+    const uint16_t cal_low = gBatteryCalib.BatLo;
     const uint16_t expected_low = (uint16_t)((cal_high * BATTERY_CAL_LOW_REF_10MV) / BATTERY_CAL_HIGH_REF_10MV);
 
     // Use 2-point linear calibration only when low/high points are plausible, monotonic,
