@@ -20,12 +20,16 @@ Archive member included to satisfy reference by file (symbol)
                               CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/App/app/spectrum.c.obj (__aeabi_lmul)
 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-exit.o)
                               /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/crt0.o (exit)
+/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-errno.o)
+                              CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/syscalls.c.obj (__errno)
 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-init.o)
                               /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/crt0.o (__libc_init_array)
 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memmove.o)
                               CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/App/app/dtmf.c.obj (memmove)
 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memset.o)
                               /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/crt0.o (memset)
+/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
+                              /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-errno.o) (_impure_ptr)
 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memcpy-stub.o)
                               CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/App/driver/bk4829.c.obj (memcpy)
 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-strlen.o)
@@ -58,8 +62,6 @@ Archive member included to satisfy reference by file (symbol)
                               /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-stdio.o) (_close_r)
 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-reent.o)
                               /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-lseekr.o) (errno)
-/opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
-                              /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-fflush.o) (_impure_ptr)
 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-mlock.o)
                               /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-mallocr.o) (__malloc_lock)
 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-sbrkr.o)
@@ -101,6 +103,14 @@ Discarded input sections
  .bss           0x00000000        0x0 CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/system_py32f071.c.obj
  .text.SystemCoreClockUpdate
                 0x00000000       0x94 CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/system_py32f071.c.obj
+ .text          0x00000000        0x0 CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/syscalls.c.obj
+ .data          0x00000000        0x0 CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/syscalls.c.obj
+ .bss           0x00000000        0x0 CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/syscalls.c.obj
+ .text._sbrk    0x00000000       0x38 CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/syscalls.c.obj
+ .bss.heap_end  0x00000000        0x4 CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/syscalls.c.obj
+ .comment       0x00000000       0x46 CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/syscalls.c.obj
+ .ARM.attributes
+                0x00000000       0x2c CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/syscalls.c.obj
  .text          0x00000000       0x14 CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/startup_py32f071xx.s.obj
  .data          0x00000000        0x0 CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/startup_py32f071xx.s.obj
  .bss           0x00000000        0x0 CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/startup_py32f071xx.s.obj
@@ -683,6 +693,13 @@ Discarded input sections
  .debug_frame   0x00000000       0x28 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-exit.o)
  .ARM.attributes
                 0x00000000       0x2c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-exit.o)
+ .text          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-errno.o)
+ .data          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-errno.o)
+ .bss           0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-errno.o)
+ .text.__errno  0x00000000        0xc /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-errno.o)
+ .debug_frame   0x00000000       0x20 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-errno.o)
+ .ARM.attributes
+                0x00000000       0x2c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-errno.o)
  .text          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-init.o)
  .data          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-init.o)
  .bss           0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-init.o)
@@ -692,6 +709,15 @@ Discarded input sections
  .text          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memset.o)
  .data          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memset.o)
  .bss           0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memset.o)
+ .text          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
+ .data          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
+ .bss           0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
+ .data._impure_ptr
+                0x00000000        0x4 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
+ .data._impure_data
+                0x00000000       0x4c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
+ .ARM.attributes
+                0x00000000       0x2c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
  .text          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memcpy-stub.o)
  .data          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memcpy-stub.o)
  .bss           0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-memcpy-stub.o)
@@ -866,15 +892,6 @@ Discarded input sections
  .debug_frame   0x00000000       0x2c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-reent.o)
  .ARM.attributes
                 0x00000000       0x2c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-reent.o)
- .text          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
- .data          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
- .bss           0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
- .data._impure_ptr
-                0x00000000        0x4 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
- .data._impure_data
-                0x00000000       0x4c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
- .ARM.attributes
-                0x00000000       0x2c /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-impure.o)
  .text          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-mlock.o)
  .data          0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-mlock.o)
  .bss           0x00000000        0x0 /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg_nano.a(libc_a-mlock.o)
@@ -924,6 +941,7 @@ LOAD /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eab
 LOAD CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/main.c.obj
 LOAD CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/py32f071_it.c.obj
 LOAD CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/system_py32f071.c.obj
+LOAD CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/Src/syscalls.c.obj
 LOAD CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Core/startup_py32f071xx.s.obj
 LOAD CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Drivers/PY32F071_HAL_Driver/Src/py32f071_ll_rcc.c.obj
 LOAD CMakeFiles/n7six.ApeX-k1.v7.6.5br4.dir/Drivers/PY32F071_HAL_Driver/Src/py32f071_ll_pwr.c.obj
@@ -3988,7 +4006,7 @@ LOAD /opt/toolchain/bin/../lib/gcc/arm-none-eabi/13.3.1/thumb/v6-m/nofp/crtn.o
                 0x200032c0      0x600 load address 0x0801825c
                 0x200032c0                        . = ALIGN (0x8)
                 [!provide]                        PROVIDE (end = .)
-                [!provide]                        PROVIDE (_end = .)
+                0x200032c0                        PROVIDE (_end = .)
                 0x200034c0                        . = (. + _Min_Heap_Size)
  *fill*         0x200032c0      0x200 
                 0x200038c0                        . = (. + _Min_Stack_Size)
