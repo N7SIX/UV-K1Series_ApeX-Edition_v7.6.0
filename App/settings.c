@@ -253,6 +253,44 @@ static bool SETTINGS_CanPersist(void)
 void SETTINGS_InitEEPROM(void)
 {
     uint8_t Data[16] = {0};
+
+    // --- Migration logic: If no valid ApeX snapshot, try to import legacy F4HWN/armel/uv-k1-k5v3-firmware-custom data ---
+    SETTINGS_Snapshot_t snapshotA, snapshotB;
+    bool validA = SETTINGS_ReadSnapshot(SETTINGS_SNAPSHOT_ADDR_A, &snapshotA);
+    bool validB = SETTINGS_ReadSnapshot(SETTINGS_SNAPSHOT_ADDR_B, &snapshotB);
+    if (!validA && !validB) {
+        // No valid ApeX snapshot found, attempt legacy import
+        // Import channels (0..199)
+        for (uint16_t ch = 0; ch < 200; ch++) {
+            uint8_t buf[16];
+            PY25Q16_ReadBuffer(ch * 16, buf, 16);
+            // Minimal validation: RX freq must be in plausible range
+            uint32_t rx_freq = buf[0] | (buf[1]<<8) | (buf[2]<<16) | (buf[3]<<24);
+            if (rx_freq > 10000000 && rx_freq < 1000000000) {
+                // Map to gEeprom.VfoInfo if possible, or call SETTINGS_SaveChannel
+                // For simplicity, call SETTINGS_SaveChannel (if available)
+                // Otherwise, copy to gEeprom.VfoInfo[ch] (if struct matches)
+                // This is a placeholder for actual mapping logic
+                // TODO: Map all fields as needed
+            }
+        }
+        // Import channel names
+        for (uint16_t ch = 0; ch < 200; ch++) {
+            uint8_t namebuf[10];
+            PY25Q16_ReadBuffer(0x004000 + ch * 16, namebuf, 10);
+            // Null-terminate and validate
+            namebuf[9] = '\0';
+            // TODO: Map to gEeprom or call SETTINGS_SaveChannelName
+        }
+        // Import settings (example: squelch, timeout, locks, etc.)
+        PY25Q16_ReadBuffer(0x00A000, Data, 8);
+        gEeprom.SQUELCH_LEVEL    = (Data[1] < 10) ? Data[1] : 1;
+        gEeprom.TX_TIMEOUT_TIMER = (Data[2] > 4 && Data[2] < 180) ? Data[2] : 11;
+        // ... (repeat for other settings as needed, see legacy layout)
+
+        // After import, save as ApeX snapshot for future boots
+        SETTINGS_SaveSnapshot();
+    }
     // 0E70..0E77
     PY25Q16_ReadBuffer(0x004000, Data, 8);
     gEeprom.CHAN_1_CALL          = IS_MR_CHANNEL(Data[0]) ? Data[0] : MR_CHANNEL_FIRST;
