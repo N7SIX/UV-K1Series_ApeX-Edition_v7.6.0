@@ -13,7 +13,8 @@ License: Apache License, Version 2.0
 **SCOPE:** Professional persistence integrity hardening for settings commit and boot recovery paths.
 
 ### Core Firmware Changes
-
+4. **Airband/AM Restoration After Spectrum/Waterfall**
+   - Fixed a bug where Airband (AM) reception could be lost after using Spectrum/Waterfall. Now, all VFO state is fully restored on exit, ensuring reliable AM operation.
 1. **Versioned A/B Snapshot Format**
    - Added versioned snapshot header and payload structure for settings persistence.
    - Added payload checksum validation for snapshot integrity checks.

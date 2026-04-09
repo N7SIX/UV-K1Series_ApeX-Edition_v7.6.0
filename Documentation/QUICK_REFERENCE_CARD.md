@@ -41,7 +41,7 @@ VOLUME:          [UP]/[DOWN] (when holding no key)
 ---
 
 ## SPECTRUM ANALYZER QUICK START
-
+> **Note:** As of v7.6.5br4, Airband (AM) reception is fully restored after exiting Spectrum/Waterfall. No reboot is required.
 ```
 Step 1: Press [F] + [5]           → Bandscope opens
 Step 2: Press [* SCAN]             → Scanning starts

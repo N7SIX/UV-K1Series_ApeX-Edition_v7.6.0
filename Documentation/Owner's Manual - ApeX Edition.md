@@ -333,7 +333,8 @@ If older screenshots/manual fragments reference these overlays, treat them as hi
 ---
 
 ## Troubleshooting
-
+### Airband (AM) reception fails after using Spectrum/Waterfall?
+In v7.6.5 and earlier, entering and exiting Spectrum/Waterfall could cause Airband (AM) to stop working except in monitor mode. This is now fixed: the radio fully restores all Airband/AM settings after exiting spectrum features. If you still experience issues, power cycle the radio and ensure you are running the latest firmware.
 ### Spectrum appears unchanged after changing movement offset
 
 Cause:

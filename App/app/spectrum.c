@@ -1059,15 +1059,22 @@ static void ServiceSpectrumSettingsAutosave(void)
     spectrumSettingsDirty = false;
     spectrumSettingsAutosaveTicks = 0;
      
-     isInitialized = false;
-     isListening = false;
-     ToggleRX(false); 
-     RestoreRegisters(); 
-     RADIO_SetupRegisters(true); 
-     gCurrentFunction = FUNCTION_FOREGROUND;
-     gUpdateStatus = true;
-     gUpdateDisplay = true;
- }
+    isInitialized = false;
+    isListening = false;
+    ToggleRX(false);
+    RestoreRegisters();
+    // --- PATCH: Force full VFO state re-application for AM/Airband bug ---
+    if (gRxVfo) {
+        // Re-apply all VFO state: modulation, bandwidth, AGC, compander, etc.
+        RADIO_SetModulation(gRxVfo->Modulation);
+        RADIO_SetupAGC(gRxVfo->Modulation == MODULATION_AM, false);
+        BK4819_SetCompander((gRxVfo->Modulation == MODULATION_FM && gRxVfo->Compander >= 2) ? gRxVfo->Compander : 0);
+    }
+    RADIO_SetupRegisters(true);
+    gCurrentFunction = FUNCTION_FOREGROUND;
+    gUpdateStatus = true;
+    gUpdateDisplay = true;
+}
 
 /**
  * @brief Professional automatic trigger level optimization

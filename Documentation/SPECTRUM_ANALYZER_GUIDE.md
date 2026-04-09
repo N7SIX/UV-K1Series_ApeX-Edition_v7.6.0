@@ -6,7 +6,8 @@ Version: v7.6.5br3 (ApeX Edition)
 License: Apache License, Version 2.0
 =====================================================================================
 -->
-
+### Airband (AM) stops working after Spectrum/Waterfall?
+**Fixed in v7.6.5br4+**: Exiting Spectrum/Waterfall now fully restores all VFO state, including AM/Airband. If you experience loss of Airband reception after using spectrum features, update to the latest firmware.
 # UV-K1 SERIES ApeX EDITION
 # SPECTRUM ANALYZER — PROFESSIONAL USER GUIDE
 
