@@ -190,7 +190,7 @@ static void SETTINGS_LoadSnapshotIfAvailable(void)
     }
 }
 
-static bool SETTINGS_SaveSnapshot(void)
+bool SETTINGS_SaveSnapshot(void)
 {
     SETTINGS_Snapshot_t currentA;
     SETTINGS_Snapshot_t currentB;
@@ -307,13 +307,9 @@ void SETTINGS_InitEEPROM(void)
         gEeprom.TAIL_TONE_ELIMINATION = (Data[6] < 2) ? Data[6] : false;
     #endif
 
-    #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
-        gEeprom.VFO_OPEN = Data[7] & 0x01;
-        gEeprom.CURRENT_STATE = (Data[7] >> 1) & 0x07;
-        gEeprom.CURRENT_LIST = (Data[7] >> 4) & 0x07;
-    #else
-        gEeprom.VFO_OPEN              = (Data[7] < 2) ? Data[7] : true;
-    #endif
+    gEeprom.VFO_OPEN = Data[7] & 0x01;
+    gEeprom.CURRENT_STATE = (Data[7] >> 1) & 0x07;
+    gEeprom.CURRENT_LIST = (Data[7] >> 4) & 0x07;
 
     // 0E80..0E87
     PY25Q16_ReadBuffer(0x005000, Data, 8);
@@ -981,11 +977,7 @@ void SETTINGS_SaveSettings(void)
         State[6] = gEeprom.TAIL_TONE_ELIMINATION;
     #endif
 
-    #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
-        State[7] = (gEeprom.VFO_OPEN & 0x01) | ((gEeprom.CURRENT_STATE & 0x07) << 1) | ((gEeprom.SCAN_LIST_DEFAULT & 0x07) << 4);
-    #else
-        State[7] = gEeprom.VFO_OPEN;
-    #endif
+    State[7] = (gEeprom.VFO_OPEN & 0x01) | ((gEeprom.CURRENT_STATE & 0x07) << 1) | ((gEeprom.SCAN_LIST_DEFAULT & 0x07) << 4);
 
     PY25Q16_WriteBuffer(0x004000, SecBuf, 0x10, true);
 
@@ -1412,21 +1404,19 @@ State[1] = 0
     PY25Q16_WriteBuffer(0x00c000, State, sizeof(State), true);
 }
 
-#ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
-    void SETTINGS_WriteCurrentState(void)
-    {
-        if (!SETTINGS_CanPersist()) {
-            return;
-        }
-
-        uint8_t State[0x10];
-        // 0x0E78
-        PY25Q16_ReadBuffer(0x004000, State, sizeof(State));
-        //State[11] = (gEeprom.CURRENT_STATE << 4) | (gEeprom.BATTERY_SAVE & 0x0F);
-        State[15] = (gEeprom.VFO_OPEN & 0x01) | ((gEeprom.CURRENT_STATE & 0x07) << 1) | ((gEeprom.SCAN_LIST_DEFAULT & 0x07) << 4);
-        PY25Q16_WriteBuffer(0x004000, State, sizeof(State), true);
+void SETTINGS_WriteCurrentState(void)
+{
+    if (!SETTINGS_CanPersist()) {
+        return;
     }
-#endif
+
+    uint8_t State[0x10];
+    // 0x0E78
+    PY25Q16_ReadBuffer(0x004000, State, sizeof(State));
+    //State[11] = (gEeprom.CURRENT_STATE << 4) | (gEeprom.BATTERY_SAVE & 0x0F);
+    State[15] = (gEeprom.VFO_OPEN & 0x01) | ((gEeprom.CURRENT_STATE & 0x07) << 1) | ((gEeprom.SCAN_LIST_DEFAULT & 0x07) << 4);
+    PY25Q16_WriteBuffer(0x004000, State, sizeof(State), true);
+}
 
 #ifdef ENABLE_FEAT_N7SIX_VOL
     void SETTINGS_WriteCurrentVol(void)

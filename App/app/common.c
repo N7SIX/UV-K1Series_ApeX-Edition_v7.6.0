@@ -55,6 +55,8 @@
 #include "misc.h"
 #include "settings.h"
 #include "ui/ui.h"
+#include "app/events.h"
+#include <stddef.h>
 
 void COMMON_KeypadLockToggle() 
 {
@@ -100,6 +102,7 @@ void COMMON_SwitchVFOMode()
     if (gEeprom.VFO_OPEN)
 #endif
     {
+        bool modeChanged = false;
         if (IS_MR_CHANNEL(gTxVfo->CHANNEL_SAVE))
         {   // swap to frequency mode
             gEeprom.ScreenChannel[gEeprom.TX_VFO] = gEeprom.FreqChannel[gEeprom.TX_VFO];
@@ -108,21 +111,26 @@ void COMMON_SwitchVFOMode()
             #endif
             gRequestSaveVFO            = true;
             gVfoConfigureMode          = VFO_CONFIGURE_RELOAD;
-            return;
+            modeChanged = true;
         }
-
-        uint8_t Channel = RADIO_FindNextChannel(gEeprom.MrChannel[gEeprom.TX_VFO], 1, false, 0);
-        if (Channel != 0xFF)
-        {   // swap to channel mode
-            gEeprom.ScreenChannel[gEeprom.TX_VFO] = Channel;
-            #ifdef ENABLE_VOICE
-                AUDIO_SetVoiceID(0, VOICE_ID_CHANNEL_MODE);
-                AUDIO_SetDigitVoice(1, Channel + 1);
-                gAnotherVoiceID = (VOICE_ID_t)0xFE;
-            #endif
-            gRequestSaveVFO     = true;
-            gVfoConfigureMode   = VFO_CONFIGURE_RELOAD;
-            return;
+        else {
+            uint8_t Channel = RADIO_FindNextChannel(gEeprom.MrChannel[gEeprom.TX_VFO], 1, false, 0);
+            if (Channel != 0xFF)
+            {   // swap to channel mode
+                gEeprom.ScreenChannel[gEeprom.TX_VFO] = Channel;
+                #ifdef ENABLE_VOICE
+                    AUDIO_SetVoiceID(0, VOICE_ID_CHANNEL_MODE);
+                    AUDIO_SetDigitVoice(1, Channel + 1);
+                    gAnotherVoiceID = (VOICE_ID_t)0xFE;
+                #endif
+                gRequestSaveVFO     = true;
+                gVfoConfigureMode   = VFO_CONFIGURE_RELOAD;
+                modeChanged = true;
+            }
+        }
+        if (modeChanged) {
+            // Immediately persist mode state to EEPROM/flash
+            APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
         }
     }
 }

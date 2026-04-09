@@ -1,3 +1,14 @@
+// Ensure bool is always defined for all consumers
+#include <stdbool.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+bool SETTINGS_SaveSnapshot(void);
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *

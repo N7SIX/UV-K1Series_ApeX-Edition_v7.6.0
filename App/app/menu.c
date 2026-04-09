@@ -58,6 +58,7 @@
 #include "app/dtmf.h"
 #include "app/generic.h"
 #include "app/menu.h"
+#include "app/events.h"
 #include "app/scanner.h"
 #include "audio.h"
 #include "board.h"
@@ -516,24 +517,26 @@ void MENU_AcceptSetting(void)
             gVfoConfigureMode     = VFO_CONFIGURE;
             break;
 
-        case MENU_STEP:
+
+        case MENU_STEP: {
             gTxVfo->STEP_SETTING = FREQUENCY_GetStepIdxFromSortedIdx(gSubMenuSelection);
-            if (IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE))
-            {
-                gRequestSaveChannel = 1;
+            if (IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE)) {
+                uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
+                APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             }
             return;
+        }
 
-        case MENU_TXP:
+        case MENU_TXP: {
             gTxVfo->OUTPUT_POWER = gSubMenuSelection;
-            gRequestSaveChannel = 1;
+            uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
+            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             return;
+        }
 
         case MENU_T_DCS:
             pConfig = &gTxVfo->freq_config_TX;
-
             // Fallthrough
-
         case MENU_R_DCS: {
             if (gSubMenuSelection == 0) {
                 if (pConfig->CodeType == CODE_TYPE_CONTINUOUS_TONE) {
@@ -550,8 +553,8 @@ void MENU_AcceptSetting(void)
                 pConfig->CodeType = CODE_TYPE_REVERSE_DIGITAL;
                 pConfig->Code = gSubMenuSelection - 105;
             }
-
-            gRequestSaveChannel = 1;
+            uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
+            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             return;
         }
         case MENU_T_CTCS:
@@ -569,54 +572,62 @@ void MENU_AcceptSetting(void)
                 pConfig->Code     = gSubMenuSelection - 1;
                 pConfig->CodeType = CODE_TYPE_CONTINUOUS_TONE;
             }
-
-            gRequestSaveChannel = 1;
+            uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
+            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             return;
         }
-        case MENU_SFT_D:
+        case MENU_SFT_D: {
             gTxVfo->TX_OFFSET_FREQUENCY_DIRECTION = gSubMenuSelection;
-            gRequestSaveChannel                   = 1;
+            uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
+            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             return;
+        }
 
-        case MENU_OFFSET:
+        case MENU_OFFSET: {
             gTxVfo->TX_OFFSET_FREQUENCY = gSubMenuSelection;
-            gRequestSaveChannel         = 1;
+            uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
+            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             return;
+        }
 
-        case MENU_W_N:
+        case MENU_W_N: {
             gTxVfo->CHANNEL_BANDWIDTH = gSubMenuSelection;
-            gRequestSaveChannel       = 1;
+            uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
+            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             return;
+        }
 
 #ifndef ENABLE_FEAT_N7SIX
-        case MENU_SCR:
+        case MENU_SCR: {
             gTxVfo->SCRAMBLING_TYPE = gSubMenuSelection;
-            #if 0
-                if (gSubMenuSelection > 0 && gSetting_ScrambleEnable)
-                    BK4819_EnableScramble(gSubMenuSelection - 1);
-                else
-                    BK4819_DisableScramble();
-            #endif
-            gRequestSaveChannel     = 1;
+            /*
+            if (gSubMenuSelection > 0 && gSetting_ScrambleEnable)
+                BK4819_EnableScramble(gSubMenuSelection - 1);
+            else
+                BK4819_DisableScramble();
+            */
+            uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
+            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             return;
+        }
 #endif
 
-        case MENU_BCL:
+        case MENU_BCL: {
             gTxVfo->BUSY_CHANNEL_LOCK = gSubMenuSelection;
-            gRequestSaveChannel       = 1;
+            uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
+            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             return;
+        }
 
-        case MENU_MEM_CH:
+        case MENU_MEM_CH: {
             gTxVfo->CHANNEL_SAVE = gSubMenuSelection;
-            #if 0
-                gEeprom.MrChannel[0] = gSubMenuSelection;
-            #else
-                gEeprom.MrChannel[gEeprom.TX_VFO] = gSubMenuSelection;
-            #endif
-            gRequestSaveChannel = 2;
+            // Raise event for TX channel save (event-driven)
+            uint16_t channel_idx = gSubMenuSelection;
+            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             gVfoConfigureMode   = VFO_CONFIGURE_RELOAD;
             gFlagResetVfos      = true;
             return;
+        }
 
         case MENU_MEM_NAME:
             for (int i = 9; i >= 0; i--) {
@@ -786,21 +797,25 @@ void MENU_AcceptSetting(void)
             gEeprom.DTMF_PRELOAD_TIME = gSubMenuSelection * 10;
             break;
 
-        case MENU_PTT_ID:
+        case MENU_PTT_ID: {
             gTxVfo->DTMF_PTT_ID_TX_MODE = gSubMenuSelection;
-            gRequestSaveChannel         = 1;
+            uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
+            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             return;
+        }
 
         case MENU_BAT_TXT:
             gSetting_battery_text = gSubMenuSelection;
             break;
 
 #ifdef ENABLE_DTMF_CALLING
-        case MENU_D_DCD:
+        case MENU_D_DCD: {
             gTxVfo->DTMF_DECODING_ENABLE = gSubMenuSelection;
             DTMF_clear_RX();
-            gRequestSaveChannel = 1;
+            uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
+            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             return;
+        }
 #endif
 
         case MENU_D_LIVE_DEC:
@@ -834,10 +849,12 @@ void MENU_AcceptSetting(void)
             gEeprom.ROGER = gSubMenuSelection;
             break;
 
-        case MENU_AM:
+        case MENU_AM: {
             gTxVfo->Modulation     = gSubMenuSelection;
-            gRequestSaveChannel = 1;
+            uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
+            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             return;
+        }
 
         #ifndef ENABLE_FEAT_N7SIX
             #ifdef ENABLE_AM_FIX
@@ -1025,10 +1042,12 @@ void MENU_AcceptSetting(void)
         case MENU_SET_TMR:
             gSetting_set_tmr = gSubMenuSelection;
             break;
-        case MENU_TX_LOCK:
+        case MENU_TX_LOCK: {
             gTxVfo->TX_LOCK = gSubMenuSelection;
-            gRequestSaveChannel       = 1;
+            uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
+            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             return;
+        }
 #endif
     }
 

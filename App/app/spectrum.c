@@ -1842,7 +1842,7 @@ static void DrawPeakHold(void)
 {
     if (!peakHoldEnabled) return;
     uint16_t bars = GetDisplayWidth();
-    extern uint8_t gFrameBuffer[7][128];
+    extern uint8_t gFrameBuffer[FRAMEBUFFER_LINES][128];
     for (uint8_t i = 0; i < bars; i++) {
         if (peakHoldRssi[i] == 0) continue;
         uint8_t x = SpecIdxToX(i);
@@ -1985,7 +1985,7 @@ static void DrawWaterfall(void)
 
     const uint8_t WATERFALL_START_Y = 40;
     const uint16_t SPEC_WIDTH = GetDisplayWidth();
-    extern uint8_t gFrameBuffer[7][128];
+    extern uint8_t gFrameBuffer[FRAMEBUFFER_LINES][128];
 
     for (uint8_t y_offset = 0; y_offset < WATERFALL_HISTORY_DEPTH; y_offset++) {
         uint8_t y_pos = WATERFALL_START_Y + y_offset;
@@ -2027,7 +2027,7 @@ static void DrawSpectrumEnhanced(void)
 {
 #ifdef ENABLE_FEAT_N7SIX
     const uint16_t bars = GetDisplayWidth();
-    extern uint8_t gFrameBuffer[7][128];
+    extern uint8_t gFrameBuffer[FRAMEBUFFER_LINES][128];
     const uint8_t SHADE_MAX_Y = GetSpectrumBaseY();
 
     uint8_t prevX = SpecIdxToX(0);
@@ -2849,7 +2849,7 @@ static void Render()
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
     if (noSignalMsgT > 0)
     {
-        extern uint8_t gFrameBuffer[7][128];
+        extern uint8_t gFrameBuffer[FRAMEBUFFER_LINES][128];
         UI_FillRectangleBuffer(gFrameBuffer, 35, 18, 91, 36, false);
         UI_DrawRectangleBuffer(gFrameBuffer, 35, 18, 91, 36, true);
         GUI_DisplaySmallest("NO DETECTED",   42, 21, false, true);

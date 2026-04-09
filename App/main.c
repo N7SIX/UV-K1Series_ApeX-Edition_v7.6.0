@@ -60,9 +60,11 @@
 #include "helper/battery.h"
 #include "helper/boot.h"
 
+
 #include "ui/lock.h"
 #include "ui/welcome.h"
 #include "ui/menu.h"
+#include "ui/main.h" // For UI_DisplayMain
 
 #include "external/printf/printf.h"
 
@@ -76,9 +78,12 @@ void _putchar(__attribute__((unused)) char c)
 }
 
 void Main(void)
+
 {
     SYSTICK_Init();
     BOARD_Init();
+
+    // Removed MODE debug/status screen at boot
 
     // Always reset scan range state on boot to prevent invalid spectrum/scan state
 #ifdef ENABLE_SCAN_RANGES
@@ -113,6 +118,7 @@ void Main(void)
     #endif
 
     SETTINGS_WriteBuildOptions();
+        // Removed PRE debug/status screen before EEPROM restore
     SETTINGS_LoadCalibration();
 
     // --- FORCE UNLOCK KEYBOARD ON EVERY BOOT ---
@@ -154,6 +160,7 @@ void Main(void)
 #endif
     }
 
+        // Removed POST debug/status screen after EEPROM restore
     /*
     if(gEeprom.MENU_LOCK == true) // Force Main Only
     {
@@ -362,32 +369,52 @@ void Main(void)
     */
 
     #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
-        if (gEeprom.CURRENT_STATE == 2 || gEeprom.CURRENT_STATE == 5) {
-            gScanRangeStart = gScanRangeStart ? 0 : gTxVfo->pRX->Frequency;
-            gScanRangeStop = gEeprom.VfoInfo[!gEeprom.TX_VFO].freq_config_RX.Frequency;
-            if (gScanRangeStart > gScanRangeStop) {
-                SWAP(gScanRangeStart, gScanRangeStop);
+            if (gEeprom.CURRENT_STATE == 2 || gEeprom.CURRENT_STATE == 5) {
+                gScanRangeStart = gScanRangeStart ? 0 : gTxVfo->pRX->Frequency;
+                gScanRangeStop = gEeprom.VfoInfo[!gEeprom.TX_VFO].freq_config_RX.Frequency;
+                if (gScanRangeStart > gScanRangeStop) {
+                    SWAP(gScanRangeStart, gScanRangeStop);
+                }
             }
-        }
 
-        if (gEeprom.CURRENT_STATE == 1) {
-            gEeprom.SCAN_LIST_DEFAULT = gEeprom.CURRENT_LIST;
-        }
+            // Explicitly set main mode and display based on CURRENT_STATE
+            switch (gEeprom.CURRENT_STATE) {
+                case 1: // VFO mode
+                    // Set to VFO mode
+                    gEeprom.VFO_OPEN = 1;
+                    gScreenToDisplay = DISPLAY_MAIN;
+                    gEeprom.SCAN_LIST_DEFAULT = gEeprom.CURRENT_LIST;
+                    RADIO_SelectVfos();
+                    UI_DisplayMain();
+                    break;
+                case 2: // Memory mode
+                    // Set to Memory mode
+                    gEeprom.VFO_OPEN = 0;
+                    gScreenToDisplay = DISPLAY_MAIN;
+                    RADIO_SelectVfos();
+                    UI_DisplayMain();
+                    break;
+                case 3: // FM Radio
+                    #ifdef ENABLE_FMRADIO
+                    ACTION_FM();
+                    GUI_SelectNextDisplay(gRequestDisplayScreen);
+                    #endif
+                    break;
+                case 4: // Spectrum
+                case 5:
+                    #ifdef ENABLE_SPECTRUM
+                    APP_RunSpectrum();
+                    #endif
+                    break;
+                default:
+                    // No action for CURRENT_STATE == 0 or other unexpected values
+                    break;
+            }
 
-        if (gEeprom.CURRENT_STATE == 1 || gEeprom.CURRENT_STATE == 2) {
-            CHFRSCANNER_Start(true, SCAN_FWD);
-        }
-        #ifdef ENABLE_FMRADIO
-        else if (gEeprom.CURRENT_STATE == 3) {
-            ACTION_FM();
-            GUI_SelectNextDisplay(gRequestDisplayScreen);
-        }
-        #endif
-        #ifdef ENABLE_SPECTRUM
-        else if (gEeprom.CURRENT_STATE == 4 || gEeprom.CURRENT_STATE == 5) {
-            APP_RunSpectrum();
-        }
-        #endif
+            // Start scanner if needed
+            if (gEeprom.CURRENT_STATE == 1 || gEeprom.CURRENT_STATE == 2) {
+                CHFRSCANNER_Start(true, SCAN_FWD);
+            }
     #endif
         
     // Initialize Event System (Phase 2 Integration)

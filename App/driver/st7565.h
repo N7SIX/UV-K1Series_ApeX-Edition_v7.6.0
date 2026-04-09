@@ -23,9 +23,10 @@
 #define LCD_WIDTH       128
 #define LCD_HEIGHT       64
 #define FRAME_LINES 7
+#define FRAMEBUFFER_LINES 8
 
 extern uint8_t gStatusLine[LCD_WIDTH];
-extern uint8_t gFrameBuffer[FRAME_LINES][LCD_WIDTH];
+extern uint8_t gFrameBuffer[FRAMEBUFFER_LINES][LCD_WIDTH];
 
 // NOTE: ST7565 driver functions perform blocking SPI transfers and
 // manipulate shared framebuffers in RAM. They are NOT safe to call

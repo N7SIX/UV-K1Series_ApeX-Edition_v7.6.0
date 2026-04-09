@@ -43,6 +43,7 @@
 
 #include "events_handlers.h"
 #include "events.h"
+#include "../settings_event.h"
 
 // Forward declarations (actual implementations in respective modules)
 extern void SETTINGS_OnSaveChannel(APP_EventType_t event, const void *data);
@@ -75,6 +76,9 @@ void APP_InitializeEventHandlers(void)
     APP_SubscribeEvent(APP_EVENT_SAVE_CHANNEL, RADIO_OnSaveChannel);
     APP_SubscribeEvent(APP_EVENT_SAVE_CHANNEL, UI_OnChannelChange);
 
+    // Register SAVE_VFO handler (VFO/mode/power snapshot persistence)
+    #include "../settings_event.h"
+    APP_SubscribeEvent(APP_EVENT_SAVE_VFO, SETTINGS_OnSaveVfo);
     // TODO: Future event handler registrations here
     // APP_SubscribeEvent(APP_EVENT_FREQUENCY_CHANGE, RADIO_OnFrequencyChange);
     // APP_SubscribeEvent(APP_EVENT_MODE_CHANGE, RADIO_OnModeChange);

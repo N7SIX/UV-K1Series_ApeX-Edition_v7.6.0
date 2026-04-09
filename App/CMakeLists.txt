@@ -52,6 +52,7 @@ target_sources(App INTERFACE
     "version.c"
     main.c
     external/printf/printf.c
+    settings_event.c
 )
 
 

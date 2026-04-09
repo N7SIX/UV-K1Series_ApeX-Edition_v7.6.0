@@ -81,6 +81,7 @@
 #include "settings.h"
 #include "ui/inputbox.h"
 #include "ui/ui.h"
+#include "app/events.h"
 #include <stdlib.h>
 
 static void toggle_chan_scanlist(void)
@@ -508,7 +509,15 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
                 case KEY_0...KEY_5:
                     gEeprom.SCAN_LIST_DEFAULT = Key;
                     #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
-                        SETTINGS_WriteCurrentState();
+                        gEeprom.CURRENT_STATE = 2; // 2 = Memory mode (or scan)
+                        SETTINGS_SaveSnapshot();
+                        char dbg[24];
+                        snprintf(dbg, sizeof(dbg), "SAVE: %d", gEeprom.CURRENT_STATE);
+                        UI_DisplayClear();
+                        UI_PrintStringSmallNormal(dbg, 0, 127, 0);
+                        ST7565_BlitFullScreen();
+                        SYSTEM_DelayMs(500);
+                        APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
                     #endif
                     break;
                 default:
@@ -832,19 +841,31 @@ static void MAIN_Key_STAR(bool bKeyPressed, bool bKeyHeld)
         if (!bKeyPressed) // released
             return; 
 
-        /*
         #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
         if(gScanRangeStart == 0) // No ScanRange
         {
-            gEeprom.CURRENT_STATE = 1;
+            gEeprom.CURRENT_STATE = 1; // 1 = VFO mode
+            SETTINGS_SaveSnapshot();
+            char dbg[24];
+            snprintf(dbg, sizeof(dbg), "SAVE: %d", gEeprom.CURRENT_STATE);
+            UI_DisplayClear();
+            UI_PrintStringSmallNormal(dbg, 0, 127, 0);
+            ST7565_BlitFullScreen();
+            SYSTEM_DelayMs(500);
         }
         else // ScanRange
         {
-            gEeprom.CURRENT_STATE = 2;
+            gEeprom.CURRENT_STATE = 2; // 2 = Memory mode (or scan)
+            SETTINGS_SaveSnapshot();
+            char dbg[24];
+            snprintf(dbg, sizeof(dbg), "SAVE: %d", gEeprom.CURRENT_STATE);
+            UI_DisplayClear();
+            UI_PrintStringSmallNormal(dbg, 0, 127, 0);
+            ST7565_BlitFullScreen();
+            SYSTEM_DelayMs(500);
         }
-        SETTINGS_WriteCurrentState();
+        APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
         #endif
-        */
         ACTION_Scan(false);// toggle scanning
 
         gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
@@ -1055,6 +1076,12 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 #endif
         case KEY_0...KEY_9:
             MAIN_Key_DIGITS(Key, bKeyPressed, bKeyHeld);
+            // If a VFO/mode/power/channel change was requested, persist snapshot
+            if (!bKeyHeld && !bKeyPressed && (gRequestSaveVFO || gRequestSaveChannel)) {
+                APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
+                gRequestSaveVFO = 0;
+                gRequestSaveChannel = 0;
+            }
             break;
         case KEY_MENU:
             MAIN_Key_MENU(bKeyPressed, bKeyHeld);
@@ -1065,6 +1092,11 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
             #else
                 MAIN_Key_UP_DOWN(bKeyPressed, bKeyHeld, 1);
             #endif
+            if (!bKeyHeld && !bKeyPressed && (gRequestSaveVFO || gRequestSaveChannel)) {
+                APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
+                gRequestSaveVFO = 0;
+                gRequestSaveChannel = 0;
+            }
             break;
         case KEY_DOWN:
             #ifdef ENABLE_NAVIG_LEFT_RIGHT
@@ -1072,6 +1104,11 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
             #else
                 MAIN_Key_UP_DOWN(bKeyPressed, bKeyHeld, -1);
             #endif
+            if (!bKeyHeld && !bKeyPressed && (gRequestSaveVFO || gRequestSaveChannel)) {
+                APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
+                gRequestSaveVFO = 0;
+                gRequestSaveChannel = 0;
+            }
             break;
         case KEY_EXIT:
             MAIN_Key_EXIT(bKeyPressed, bKeyHeld);

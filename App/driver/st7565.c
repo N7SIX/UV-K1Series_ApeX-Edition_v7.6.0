@@ -76,7 +76,7 @@
 #define PIN_A0 GPIO_MAKE_PIN(GPIOA, LL_GPIO_PIN_6)
 
 uint8_t gStatusLine[LCD_WIDTH];
-uint8_t gFrameBuffer[FRAME_LINES][LCD_WIDTH];
+uint8_t gFrameBuffer[FRAMEBUFFER_LINES][LCD_WIDTH];
 
 static void SPI_Init()
 {
@@ -195,8 +195,8 @@ void ST7565_DrawLine(const unsigned int Column, const unsigned int Line, const u
         }
         else
         {
-            for (line = 1; line <= FRAME_LINES; line++) {
-                DrawLine(0, line, gFrameBuffer[line - 1], LCD_WIDTH);
+            for (uint8_t l = 1; l <= FRAMEBUFFER_LINES; l++) {
+                DrawLine(0, l, gFrameBuffer[l - 1], LCD_WIDTH);
             }
         }
 
@@ -222,7 +222,7 @@ void ST7565_DrawLine(const unsigned int Column, const unsigned int Line, const u
     {
         CS_Assert();
         ST7565_WriteByte(0x40);
-        for (unsigned line = 0; line < FRAME_LINES; line++) {
+        for (unsigned line = 0; line < FRAMEBUFFER_LINES; line++) {
             DrawLine(0, line+1, gFrameBuffer[line], LCD_WIDTH);
         }
         CS_Release();
@@ -248,13 +248,13 @@ void ST7565_DrawLine(const unsigned int Column, const unsigned int Line, const u
 void ST7565_FillScreen(uint8_t value)
 {
     // Update framebuffer first (fast RAM operation)
-    for (unsigned int page = 0; page < 8; page++) {
+    for (unsigned int page = 0; page < FRAMEBUFFER_LINES; page++) {
         memset(gFrameBuffer[page], value, 128);
     }
 
     // Push contents to display over SPI
     CS_Assert();
-    for (unsigned int page = 0; page < 8; page++) {
+    for (unsigned int page = 0; page < FRAMEBUFFER_LINES; page++) {
         // position cursor at start of page
         ST7565_SelectColumnAndLine(0, page);
         A0_Set();  // CRITICAL: Set A0 to data mode before writing pixel data
