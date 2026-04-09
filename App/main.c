@@ -27,7 +27,9 @@
 #include "misc.h"
 #include "radio.h"
 #include "settings.h"
+
 #include "version.h"
+#include "ui/ui.h" // For gScreenToDisplay, DISPLAY_MAIN
 
 #ifdef ENABLE_FEAT_N7SIX
     #ifdef ENABLE_FMRADIO
