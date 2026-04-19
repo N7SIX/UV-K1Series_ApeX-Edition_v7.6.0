@@ -1,0 +1,76 @@
+<!--
+=====================================================================================
+UV-K1 Series / UV-K5 V3 ApeX Edition Commit Message Standard
+Author: N7SIX, Sean and contributors
+License: Apache License, Version 2.0
+=====================================================================================
+-->
+
+# Commit Message Standard (Short and Precise)
+
+Use this file as the default commit-message template reference.
+
+## Standard Template
+
+<type>(<scope>): <short summary>
+
+Why:
+- <problem or reason>
+
+What:
+- <change 1>
+- <change 2>
+
+Impact:
+- <result for firmware/users>
+
+Validation:
+- <build/test/diagnostics>
+
+Files:
+- <path 1>
+- <path 2>
+
+## Rules
+- Subject line must be concise and clear.
+- Prefer factual and measurable statements.
+- Keep total message short; include only key technical points.
+- Add safety/compatibility notes when relevant.
+
+## Latest Example (v7.6.5br5)
+
+fix(battery-ui): harden calibration and merge BatInf into SysInf for v7.6.5br5
+
+Why:
+- Battery voltage could become unrealistic when low/high calibration points were incoherent.
+- Battery diagnostics required a separate menu path and duplicated rendering logic.
+
+What:
+- Added guarded `BATTERY_AdcToVoltage10mV()` two-point conversion with one-point fallback.
+- Updated BATCAL save path to persist coherent low/high calibration pairs.
+- Removed `BatInf` menu entry and integrated H/C diagnostics into SysInf custom rendering.
+- Updated version strings and ApeX target to `v7.6.5br5`.
+
+Impact:
+- Battery readouts are more stable and consistent across main battery and spectrum screens.
+- SysInf now provides consolidated battery diagnostics with cleaner UI behavior.
+
+Validation:
+- Build artifacts generated for `n7six.ApeX-k1.v7.6.5br5` (`.elf/.bin/.hex/.map`).
+- In-session checks confirmed realistic battery voltage and expected SysInf output.
+
+Files:
+- App/helper/battery.c
+- App/app/menu.c
+- App/ui/menu.c
+- App/app/spectrum.c
+- Documentation/release-notes/v7.6.5br5-apex.md
+- Documentation/v7.6.5br5_UPDATE_SUMMARY.md
+
+## Related Standards
+- [Release notes index](RELEASE_NOTES.md)
+- [Version update summaries index](UPDATE_SUMMARY.md)
+
+## Full Template and Archive
+- Full template: [Documentation/commit-messages/COMMIT_MESSAGE_TEMPLATE.txt](commit-messages/COMMIT_MESSAGE_TEMPLATE.txt)
+- Legacy historical commit log: [Documentation/commit-messages/archive/COMMIT_MESSAGE_legacy-log.txt](commit-messages/archive/COMMIT_MESSAGE_legacy-log.txt)

@@ -1,0 +1,43 @@
+<!--
+=====================================================================================
+Commit Message Template - ApeX Edition
+Author: N7SIX, Sean and contributors
+License: Apache License, Version 2.0
+=====================================================================================
+-->
+
+<type>(<scope>): <short summary>
+
+Why:
+- <problem or reason in one concise bullet>
+
+What:
+- <change 1>
+- <change 2>
+- <change 3>
+
+Impact:
+- <user/system impact>
+- <compatibility/safety note>
+
+Validation:
+- <build/test/diagnostic result>
+
+Files:
+- <path 1>
+- <path 2>
+
+---
+
+Type guide:
+- feat: new functionality
+- fix: bug fix or safety correction
+- refactor: internal restructuring without behavior change
+- docs: documentation-only change
+- chore: maintenance or tooling update
+
+Writing standard:
+- Keep subject line <= 72 characters.
+- Use imperative mood ("add", "fix", "align").
+- Keep message short and precise; avoid marketing language.
+- Include only verifiable facts.

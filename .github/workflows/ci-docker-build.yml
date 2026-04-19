@@ -1,0 +1,38 @@
+
+
+name: CI Docker Build & Static Analysis
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (for ARM emulation, if needed)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: docker build -t uvk1-uvk5v3 .
+
+      - name: Build all firmware presets
+        run: |
+          for preset in Custom Bandscope Broadcast Basic RescueOps Game ApeX; do
+            docker run --rm -v $(pwd):/src uvk1-uvk5v3 bash -c "cmake --preset $preset && cmake --build --preset $preset -j"
+          done
+
+      - name: Install cppcheck
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck static analysis
+        run: |
+          cppcheck --enable=all --inconclusive --error-exitcode=1 --force App/
