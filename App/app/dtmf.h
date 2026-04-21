@@ -20,10 +20,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define    MAX_DTMF_CONTACTS   16
 
 enum DTMF_State_t {
@@ -122,9 +118,5 @@ void DTMF_HandleRequest(void);
 #endif
 
 void DTMF_BufferShiftAppend(char *buffer, uint8_t *len, char c, uint8_t maxlen);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

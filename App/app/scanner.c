@@ -260,7 +260,7 @@ static void SCANNER_Key_MENU(bool bKeyPressed, bool bKeyHeld)
             gAnotherVoiceID = VOICE_ID_CONFIRM;
 #endif
             gRequestDisplayScreen = DISPLAY_SCANNER;
-            APP_RequestSaveChannel(2);
+            gRequestSaveChannel = 2;
             gScannerSaveState = SCAN_SAVE_NO_PROMPT;
             break;
 

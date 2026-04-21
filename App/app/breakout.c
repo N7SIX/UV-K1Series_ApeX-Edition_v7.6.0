@@ -194,15 +194,15 @@ void drawScore()
     memset(gStatusLine,  0, sizeof(gStatusLine));
 
     // Level
-    snprintf(str, sizeof(str), "Level %02u", levelCountBreackout);
+    sprintf(str, "Level %02u", levelCountBreackout);
     GUI_DisplaySmallest(str, 0, 1, true, true);
 
     // Ball
-    snprintf(str, sizeof(str), "Ball %02u", (ballCount < 0) ? 0 : ballCount);
+    sprintf(str, "Ball %02u", (ballCount < 0) ? 0 : ballCount);
     GUI_DisplaySmallest(str, 45, 1, true, true);
 
     // Score
-    snprintf(str, sizeof(str), "Score %04u", score);
+    sprintf(str, "Score %04u", score);
     GUI_DisplaySmallest(str, 88, 1, true, true);
 }
 

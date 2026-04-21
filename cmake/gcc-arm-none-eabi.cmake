@@ -43,4 +43,4 @@ set(TOOLCHAIN_LINK_LIBRARIES "m")
 
 # Suppress harmless "RWX segment" warning
 set(CMAKE_EXE_LINKER_FLAGS_INIT
-    "--specs=nano.specs -Wl,--gc-sections -Wl,--no-warn-rwx-segment")
+    "--specs=nosys.specs -Wl,--gc-sections -Wl,--no-warn-rwx-segment")

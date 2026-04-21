@@ -7,10 +7,6 @@
 #define BATTERY_2500M_CRITICAL_10MV        620  // 6.20 V (critical for 2500)
 #define BATTERY_3500M_CRITICAL_10MV        600  // 6.00 V (critical for 3500)
 
-// Calibration reference points (ADC mapping constants)
-#define BATTERY_CAL_LOW_REF_10MV   520  // 5.20 V reference
-#define BATTERY_CAL_HIGH_REF_10MV  760  // 7.60 V reference
-
 // Safety thresholds (10mV units)
 #define BATTERY_MIN_SAFE_TX_10MV           700  // 7.00 V minimum safe TX threshold
 #define BATTERY_MIN_SAFE_WRITE_10MV        700  // 7.00 V minimum safe EEPROM/flash write threshold

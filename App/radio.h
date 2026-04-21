@@ -23,41 +23,18 @@
 #include "dcs.h"
 #include "frequencies.h"
 
-
-
-/**
- * @defgroup Radio Radio State and VFO Management
- * @brief Core radio state, VFO, and modulation management for UV-K1 Series.
- *
- * This header defines the VFO_Info_t structure, radio state enums, and macros for
- * safe pointer access and atomicity. All radio state transitions and VFO operations
- * are managed through these APIs.
- *
- * @note VFO_Info_t and related global state must only be updated from the main thread.
- *       See settings.h for ATOMIC_GLOBAL_STATE_UPDATE macro if concurrency is ever needed.
- *
- * @{
- */
-
-/**
- * @brief Safely access VFO band, preventing null-pointer dereference.
- */
+// =============================================================================
+// SAFETY MACROS FOR VFO POINTER ACCESS
+// =============================================================================
+// These macros ensure null-pointer dereference is prevented for global VFO pointers
 #define SAFE_VFO_BAND(vfo, default_band) \
     ((vfo) && (vfo) != (void*)0 ? (vfo)->Band : (default_band))
 
-/**
- * @brief Safely access VFO modulation, preventing null-pointer dereference.
- */
 #define SAFE_VFO_MODULATION(vfo, default_mod) \
     ((vfo) && (vfo) != (void*)0 ? (vfo)->Modulation : (default_mod))
 
-/**
- * @brief Safely access VFO frequency, preventing null-pointer dereference.
- */
 #define SAFE_VFO_FREQUENCY(vfo, which, default_freq) \
     ((vfo) && (vfo) != (void*)0 && which && which != (void*)0 ? which->Frequency : (default_freq))
-
-/** @}*/
 
 enum {
     RADIO_CHANNEL_UP   = 0x01u,

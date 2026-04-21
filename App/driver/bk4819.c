@@ -249,17 +249,6 @@ uint16_t BK4819_ReadRegister(BK4819_REGISTER_t Register)
     return Value;
 }
 
-
-// Writes a register and verifies by reading back. Returns 0 on success, -1 on mismatch.
-int BK4819_WriteRegisterChecked(BK4819_REGISTER_t Register, uint16_t Data)
-{
-    BK4819_WriteRegister(Register, Data);
-    uint16_t verify = BK4819_ReadRegister(Register);
-    if (verify != Data)
-        return -1;
-    return 0;
-}
-
 void BK4819_WriteRegister(BK4819_REGISTER_t Register, uint16_t Data)
 {
     CS_Release();

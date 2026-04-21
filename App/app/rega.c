@@ -150,7 +150,7 @@ void REGA_TransmitZvei(const uint16_t tones[],const char message[])
     // Lock the keyboard
     gEeprom.KEY_LOCK = true;
 
-    APP_RequestSaveChannel(1);
+    gRequestSaveChannel = 1;
     gRequestSaveSettings = true;
 
     // Configure the receiver

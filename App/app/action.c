@@ -168,7 +168,7 @@ void ACTION_Power(void)
     if (++gTxVfo->OUTPUT_POWER > OUTPUT_POWER_HIGH)
         gTxVfo->OUTPUT_POWER = OUTPUT_POWER_LOW1;
 
-    APP_RequestSaveChannel(1);
+    gRequestSaveChannel = 1;
 
     gRequestDisplayScreen = gScreenToDisplay;
 
@@ -306,7 +306,7 @@ void ACTION_Scan(bool bRestart)
 
 void ACTION_SwitchDemodul(void)
 {
-    APP_RequestSaveChannel(1);
+    gRequestSaveChannel = 1;
 
     gTxVfo->Modulation++;
 

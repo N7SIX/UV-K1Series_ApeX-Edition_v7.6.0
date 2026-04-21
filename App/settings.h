@@ -36,48 +36,6 @@ bool SETTINGS_SaveSnapshot(void);
 #include "radio.h"
 #include <driver/backlight.h>
 
-
-/**
- * @defgroup Settings EEPROM and Settings Management
- * @brief Persistent configuration and radio state management for UV-K1 Series.
- *
- * This module defines the global settings structure (`gEeprom`), VFO state, and all enums
- * and macros for safe, atomic, and robust configuration handling. All persistent user
- * settings, channel banks, and runtime radio state are managed here.
- *
- * @note All updates to global state (gEeprom, VFO_Info_t) must occur in the main thread.
- *       Use the ATOMIC_GLOBAL_STATE_UPDATE macro if concurrency is ever introduced.
- *
- * @{
- */
-
-/**
- * @brief Atomically update global state (gEeprom, VFO_Info_t) if concurrency is introduced.
- *
- * Disables interrupts during the update block for atomicity. Not required for main-thread-only updates.
- *
- * Example:
- * @code
- * ATOMIC_GLOBAL_STATE_UPDATE({ gEeprom.KEY_LOCK = 1; gEeprom.BEEP_CONTROL = 0; });
- * @endcode
- */
-#define ATOMIC_GLOBAL_STATE_UPDATE(block) \
-    do { \
-        __disable_irq(); \
-        block \
-        __enable_irq(); \
-    } while (0)
-
-
-
-/**
- * @brief Save a snapshot of all settings and radio state to EEPROM (with CRC16 integrity).
- * @return true if successful, false on error.
- */
-bool SETTINGS_SaveSnapshot(void);
-
-/** @}*/
-
 extern uint8_t gSetting_set_pwr;
 extern bool    gSetting_set_gui;
 
@@ -377,7 +335,8 @@ void SETTINGS_SaveSettings(void);
 void SETTINGS_SaveChannelName(uint8_t channel, const char * name);
 void SETTINGS_SaveChannel(uint8_t Channel, uint8_t VFO, const VFO_Info_t *pVFO, uint8_t Mode);
 void SETTINGS_SaveBatteryCalibration(const uint16_t * batteryCalibration);
-void SETTINGS_SaveBatteryCalibStruct(const BatteryCalib_t * calib);void SETTINGS_SaveBatteryBaselineStruct(const BatteryBaseline_t * baseline);void SETTINGS_UpdateChannel(uint8_t channel, const VFO_Info_t *pVFO, bool keep, bool check, bool save);
+void SETTINGS_SaveBatteryCalibStruct(const BatteryCalib_t * calib);
+void SETTINGS_UpdateChannel(uint8_t channel, const VFO_Info_t *pVFO, bool keep, bool check, bool save);
 void SETTINGS_WriteBuildOptions(void);
 #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
     void SETTINGS_WriteCurrentState(void);

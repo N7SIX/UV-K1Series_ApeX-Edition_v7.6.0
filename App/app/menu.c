@@ -55,7 +55,6 @@
 #if !defined(ENABLE_OVERLAY)
     #include "py32f0xx.h"
 #endif
-#include "app/app.h"
 #include "app/dtmf.h"
 #include "app/generic.h"
 #include "app/menu.h"
@@ -621,10 +620,6 @@ void MENU_AcceptSetting(void)
         }
 
         case MENU_MEM_CH: {
-            // Save current TX VFO data (with all repeater settings) to the selected memory channel
-            // Mode=2 ensures all VFO fields are copied: frequency, offsets, CTCS, DCS, modulation, etc.
-            SETTINGS_SaveChannel(gSubMenuSelection, gEeprom.TX_VFO, gTxVfo, 2);
-            
             gTxVfo->CHANNEL_SAVE = gSubMenuSelection;
             // Raise event for TX channel save (event-driven)
             uint16_t channel_idx = gSubMenuSelection;
@@ -945,16 +940,25 @@ void MENU_AcceptSetting(void)
 
         case MENU_BATCAL:
         {
+            // Save a coherent 2-point calibration pair (5.2V and 7.6V references).
             uint16_t cal_high = (uint16_t)gSubMenuSelection;
-            bool validCal = false;
+            uint16_t cal_low  = (uint16_t)((520ul * cal_high) / 760);
 
-            BATTERY_SetAndValidateCalibration(cal_high, &validCal);
-            if (!validCal) {
-                gBatteryCalib.BatHi = cal_high;
-                gBatteryCalib.BatLo = 1500;
-                gBatteryCalib.BatTol = gBatteryCalib.BatHi - gBatteryCalib.BatLo;
-                gBatteryCalib.BatChk = (gBatteryCalib.BatHi + gBatteryCalib.BatLo) / 2;
-            }
+            if (cal_low < 1500)
+                cal_low = 1500;
+            else if (cal_low > 3500)
+                cal_low = 3500;
+
+            // Keep low-point value in valid storage range; if coherence is impossible
+            // at this high reference, store a safe fallback and let runtime use 1-point mode.
+            if (cal_low + 10 >= cal_high)
+                cal_low = 1500;
+
+            gBatteryCalib.BatLo = cal_low;
+            gBatteryCalib.BatHi = cal_high;
+            // BatTol and BatChk can be set/calculated here as needed
+            gBatteryCalib.BatTol = gBatteryCalib.BatHi - gBatteryCalib.BatLo;
+            gBatteryCalib.BatChk = (gBatteryCalib.BatHi + gBatteryCalib.BatLo) / 2;
 
             SETTINGS_SaveBatteryCalibStruct(&gBatteryCalib);
             return;
@@ -989,7 +993,7 @@ void MENU_AcceptSetting(void)
 #ifdef ENABLE_FEAT_N7SIX
         case MENU_SET_PWR:
             gSetting_set_pwr = gSubMenuSelection;
-            APP_RequestSaveChannel(1);
+            gRequestSaveChannel = 1;
             break;
         case MENU_SET_PTT:
             gSetting_set_ptt = gSubMenuSelection;

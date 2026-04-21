@@ -506,12 +506,12 @@ void DisplayRSSIBar(const bool now)
 #ifdef ENABLE_FEAT_N7SIX
     if (gSetting_set_gui)
     {
-        snprintf(str, sizeof(str), "%3d", -rssi_dBm);
+        sprintf(str, "%3d", -rssi_dBm);
         UI_PrintStringSmallNormal(str, LCD_WIDTH + 8, 0, line - 1);
     }
     else
     {
-        snprintf(str, sizeof(str), "% 4d %s", -rssi_dBm, "dBm");
+        sprintf(str, "% 4d %s", -rssi_dBm, "dBm");
         if(isMainOnly())
             GUI_DisplaySmallest(str, 2, 41, false, true);
         else
@@ -519,19 +519,19 @@ void DisplayRSSIBar(const bool now)
     }
 
     if(overS9Bars == 0) {
-        snprintf(str, sizeof(str), "S%d", s_level);
+        sprintf(str, "S%d", s_level);
     }
     else {
-        snprintf(str, sizeof(str), "+%02d", overS9dBm);
+        sprintf(str, "+%02d", overS9dBm);
     }
 
     UI_PrintStringSmallNormal(str, LCD_WIDTH + 38, 0, line - 1);
 #else
     if(overS9Bars == 0) {
-        snprintf(str, sizeof(str), "% 4d S%d", -rssi_dBm, s_level);
+        sprintf(str, "% 4d S%d", -rssi_dBm, s_level);
     }
     else {
-        snprintf(str, sizeof(str), "% 4d  %2d", -rssi_dBm, overS9dBm);
+        sprintf(str, "% 4d  %2d", -rssi_dBm, overS9dBm);
         memcpy(p_line + 2 + 7*5, &plus, ARRAY_SIZE(plus));
     }
 
@@ -598,7 +598,7 @@ void UI_MAIN_PrintAGC(bool now)
     int8_t pgaTab[] = {-33, -27, -21, -15, -9, -6, -3, 0};
     int16_t agcGain = lnaShortTab[agcGainReg.lnaS] + lnaTab[agcGainReg.lna] + mixerTab[agcGainReg.mixer] + pgaTab[agcGainReg.pga];
 
-    snprintf(buf, sizeof(buf), "%d%2d %2d %2d %3d", reg7e.agcEnab, reg7e.gainIdx, -agcGain, reg7e.agcSigStrength, BK4819_GetRSSI());
+    sprintf(buf, "%d%2d %2d %2d %3d", reg7e.agcEnab, reg7e.gainIdx, -agcGain, reg7e.agcSigStrength, BK4819_GetRSSI());
     UI_PrintStringSmallNormal(buf, 2, 0, 3);
     if(now)
         ST7565_BlitLine(3);
@@ -817,9 +817,9 @@ void UI_DisplayMain(void)
                     }
 
                     UI_PrintString("ScnRng", 5, 0, line + shift, 8);
-                    snprintf(String, sizeof(String), "%3u.%05u", gScanRangeStart / 100000, gScanRangeStart % 100000);
+                    sprintf(String, "%3u.%05u", gScanRangeStart / 100000, gScanRangeStart % 100000);
                     UI_PrintStringSmallNormal(String, 56, 0, line + shift);
-                    snprintf(String, sizeof(String), "%3u.%05u", gScanRangeStop / 100000, gScanRangeStop % 100000);
+                    sprintf(String, "%3u.%05u", gScanRangeStop / 100000, gScanRangeStop % 100000);
                     UI_PrintStringSmallNormal(String, 56, 0, line + shift + 1);
 
                     if (!isMainOnly())
@@ -831,9 +831,9 @@ void UI_DisplayMain(void)
                 }
 #else
                 UI_PrintString("ScnRng", 5, 0, line, 8);
-                snprintf(String, sizeof(String), "%3u.%05u", gScanRangeStart / 100000, gScanRangeStart % 100000);
+                sprintf(String, "%3u.%05u", gScanRangeStart / 100000, gScanRangeStart % 100000);
                 UI_PrintStringSmallNormal(String, 56, 0, line);
-                snprintf(String, sizeof(String), "%3u.%05u", gScanRangeStop / 100000, gScanRangeStop % 100000);
+                sprintf(String, "%3u.%05u", gScanRangeStop / 100000, gScanRangeStop % 100000);
                 UI_PrintStringSmallNormal(String, 56, 0, line + 1);
                 continue;
 #endif
@@ -866,7 +866,7 @@ void UI_DisplayMain(void)
                     if (gDTMF_CallState == DTMF_CALL_STATE_CALL_OUT) {
                         pPrintStr = (gDTMF_State == DTMF_STATE_CALL_OUT_RSP) ? "CALL OUT(RSP)" : "CALL OUT";
                     } else if (gDTMF_CallState == DTMF_CALL_STATE_RECEIVED || gDTMF_CallState == DTMF_CALL_STATE_RECEIVED_STAY) {
-                        snprintf(String, sizeof(String), "CALL FRM:%s", (DTMF_FindContact(gDTMF_Caller, Contact)) ? Contact : gDTMF_Caller);
+                        sprintf(String, "CALL FRM:%s", (DTMF_FindContact(gDTMF_Caller, Contact)) ? Contact : gDTMF_Caller);
                         pPrintStr = String;
                     } else if (gDTMF_IsTx) {
                         pPrintStr = (gDTMF_State == DTMF_STATE_TX_SUCC) ? "DTMF TX(SUCC)" : "DTMF TX";
@@ -875,7 +875,7 @@ void UI_DisplayMain(void)
                 else
 #endif
                 {
-                    snprintf(String, sizeof(String), ">%s", gDTMF_InputBox);
+                    sprintf(String, ">%s", gDTMF_InputBox);
                     pPrintStr = String;
                 }
 
@@ -983,9 +983,9 @@ void UI_DisplayMain(void)
             char miniString[5] = "";
 
             if (!inputting)
-                snprintf(miniString, sizeof(miniString), "M%u", gEeprom.ScreenChannel[vfo_num] + 1);
+                sprintf(miniString, "M%u", gEeprom.ScreenChannel[vfo_num] + 1);
             else
-                snprintf(miniString, sizeof(miniString), "M%.3s", INPUTBOX_GetAscii());  // show the input text
+                sprintf(miniString, "M%.3s", INPUTBOX_GetAscii());  // show the input text
 
             uint16_t icon_y = (line + 1) * 8 + 1;
             UI_Draw5x5String(miniString, x, icon_y, true);
@@ -1005,9 +1005,9 @@ void UI_DisplayMain(void)
             char miniString[8] = "";
 
             if (!inputting) {
-                snprintf(miniString, sizeof(miniString), "NOAA%u", 1 + gEeprom.ScreenChannel[vfo_num] - NOAA_CHANNEL_FIRST);
+                sprintf(miniString, "NOAA%u", 1 + gEeprom.ScreenChannel[vfo_num] - NOAA_CHANNEL_FIRST);
             } else {
-                snprintf(miniString, sizeof(miniString), "NOAA%.2s", INPUTBOX_GetAscii());
+                sprintf(miniString, "NOAA%.2s", INPUTBOX_GetAscii());
             }
 
             // Render NOAA in 3x5 so the label remains compact and readable.
@@ -1035,7 +1035,7 @@ void UI_DisplayMain(void)
         {   // user entering a frequency
             const char * ascii = INPUTBOX_GetAscii();
             bool isGigaF = frequency>=_1GHz_in_KHz;
-            snprintf(String, sizeof(String), "%.*s.%.3s", 3 + isGigaF, ascii, ascii + 3 + isGigaF);
+            sprintf(String, "%.*s.%.3s", 3 + isGigaF, ascii, ascii + 3 + isGigaF);
 #ifdef ENABLE_BIG_FREQ
             if(!isGigaF) {
                 // show the remaining 2 small frequency digits
@@ -1119,13 +1119,13 @@ void UI_DisplayMain(void)
     if (gEeprom.VfoInfo[vfo_num].Compander)
         memcpy(p_line0 + 120 + LCD_WIDTH, BITMAP_compand, sizeof(BITMAP_compand));
 #else
-    // (Low-priority) Consider relocating this symbol for better display clarity.
+    // TODO: Consider relocating this symbol for better display clarity.
 #endif
 
                 switch (gEeprom.CHANNEL_DISPLAY_MODE)
                 {
                     case MDF_FREQUENCY: // show the channel frequency
-                        snprintf(String, sizeof(String), "%3u.%05u", frequency / 100000, frequency % 100000);
+                        sprintf(String, "%3u.%05u", frequency / 100000, frequency % 100000);
 #ifdef ENABLE_BIG_FREQ
                         if(frequency < _1GHz_in_KHz) {
                             // show the remaining 2 small frequency digits
@@ -1144,7 +1144,7 @@ void UI_DisplayMain(void)
                         break;
 
                     case MDF_CHANNEL:   // show the channel number
-                        snprintf(String, sizeof(String), "CH-%03u", gEeprom.ScreenChannel[vfo_num] + 1);
+                        sprintf(String, "CH-%03u", gEeprom.ScreenChannel[vfo_num] + 1);
                         UI_PrintString(String, 32, 0, line, 8);
                         break;
 
@@ -1154,7 +1154,7 @@ void UI_DisplayMain(void)
                         SETTINGS_FetchChannelName(String, gEeprom.ScreenChannel[vfo_num]);
                         if (String[0] == 0)
                         {   // no channel name, show the channel number instead
-                            snprintf(String, sizeof(String), "CH-%03u", gEeprom.ScreenChannel[vfo_num] + 1);
+                            sprintf(String, "CH-%03u", gEeprom.ScreenChannel[vfo_num] + 1);
                         }
 
                         if (gEeprom.CHANNEL_DISPLAY_MODE == MDF_NAME) {
@@ -1183,7 +1183,7 @@ void UI_DisplayMain(void)
 #ifdef ENABLE_FEAT_N7SIX
                             if (isMainOnly())
                             {
-                                snprintf(String, sizeof(String), "%3u.%05u", frequency / 100000, frequency % 100000);
+                                sprintf(String, "%3u.%05u", frequency / 100000, frequency % 100000);
                                 if(frequency < _1GHz_in_KHz) {
                                     // show the remaining 2 small frequency digits
                                     UI_PrintStringSmallNormal(String + 7, 113, 0, line + 4);
@@ -1199,11 +1199,11 @@ void UI_DisplayMain(void)
                             }
                             else
                             {
-                                snprintf(String, sizeof(String), "%03u.%05u", frequency / 100000, frequency % 100000);
+                                sprintf(String, "%03u.%05u", frequency / 100000, frequency % 100000);
                                 UI_PrintStringSmallNormal(String, 32 + 4, 0, line + 1);
                             }
 #else                           // show the channel frequency below the channel number/name
-                            snprintf(String, sizeof(String), "%03u.%05u", frequency / 100000, frequency % 100000);
+                            sprintf(String, "%03u.%05u", frequency / 100000, frequency % 100000);
                             UI_PrintStringSmallNormal(String, 32 + 4, 0, line + 1);
 #endif
                         }
@@ -1213,7 +1213,7 @@ void UI_DisplayMain(void)
             }
             else
             {   // frequency mode
-                snprintf(String, sizeof(String), "%3u.%05u", frequency / 100000, frequency % 100000);
+                sprintf(String, "%3u.%05u", frequency / 100000, frequency % 100000);
 
 #ifdef ENABLE_BIG_FREQ
                 if(frequency < _1GHz_in_KHz) {
@@ -1301,19 +1301,19 @@ void UI_DisplayMain(void)
         switch((int)pConfig->CodeType)
         {
             case 1:
-            snprintf(String, sizeof(String), "%u.%u", CTCSS_Options[pConfig->Code] / 10, CTCSS_Options[pConfig->Code] % 10);
+            sprintf(String, "%u.%u", CTCSS_Options[pConfig->Code] / 10, CTCSS_Options[pConfig->Code] % 10);
             break;
 
             case 2:
-            snprintf(String, sizeof(String), "%03oN", DCS_Options[pConfig->Code]);
+            sprintf(String, "%03oN", DCS_Options[pConfig->Code]);
             break;
 
             case 3:
-            snprintf(String, sizeof(String), "%03oI", DCS_Options[pConfig->Code]);
+            sprintf(String, "%03oI", DCS_Options[pConfig->Code]);
             break;
 
             default:
-            snprintf(String, sizeof(String), "%d.%02uK", vfoInfo->StepFrequency / 100, vfoInfo->StepFrequency % 100);
+            sprintf(String, "%d.%02uK", vfoInfo->StepFrequency / 100, vfoInfo->StepFrequency % 100);
             shift = -10;
         }
 
@@ -1331,11 +1331,11 @@ void UI_DisplayMain(void)
 
                 if((vfoInfo->StepFrequency / 100) < 100)
                 {
-                    snprintf(String, sizeof(String), "%d.%02uK", vfoInfo->StepFrequency / 100, vfoInfo->StepFrequency % 100);
+                    sprintf(String, "%d.%02uK", vfoInfo->StepFrequency / 100, vfoInfo->StepFrequency % 100);
                 }
                 else
                 {
-                    snprintf(String, sizeof(String), "%dK", vfoInfo->StepFrequency / 100);               
+                    sprintf(String, "%dK", vfoInfo->StepFrequency / 100);               
                 }
                 UI_PrintStringSmallNormal(String, 46, 0, 6);
             }
@@ -1510,14 +1510,14 @@ void UI_DisplayMain(void)
         {
             if(gMonitor)
             {
-                snprintf(String, sizeof(String), "%s", "MONI");
+                sprintf(String, "%s", "MONI");
             }
             
             if (gSetting_set_gui)
             {
                 if(!gMonitor)
                 {
-                    snprintf(String, sizeof(String), "SQL%d", gEeprom.SQUELCH_LEVEL);
+                    sprintf(String, "SQL%d", gEeprom.SQUELCH_LEVEL);
                 }
                 UI_PrintStringSmallNormal(String, LCD_WIDTH + 98, 0, line + 1);
             }
@@ -1525,7 +1525,7 @@ void UI_DisplayMain(void)
             {
                 if(!gMonitor)
                 {
-                    snprintf(String, sizeof(String), "SQL%d", gEeprom.SQUELCH_LEVEL);
+                    sprintf(String, "SQL%d", gEeprom.SQUELCH_LEVEL);
                 }
                 GUI_DisplaySmallest(String, 110, line == 0 ? 17 : 49, false, true);
             }
@@ -1536,7 +1536,7 @@ void UI_DisplayMain(void)
              strncpy(String, "MONI", sizeof(String) - 1);
              String[sizeof(String) - 1] = '\0';
          } else {
-                snprintf(String, sizeof(String), "SQL%d", gEeprom.SQUELCH_LEVEL);
+                sprintf(String, "SQL%d", gEeprom.SQUELCH_LEVEL);
            }
 
            if (gSetting_set_gui) {
@@ -1581,7 +1581,7 @@ void UI_DisplayMain(void)
                 return;
 
             center_line = CENTER_LINE_AM_FIX_DATA;
-            AM_fix_print_data(gEeprom.RX_VFO, String, sizeof(String));
+            AM_fix_print_data(gEeprom.RX_VFO, String);
             UI_PrintStringSmallNormal(String, 2, 0, 3);
         }
         else
@@ -1611,7 +1611,7 @@ void UI_DisplayMain(void)
 
                     center_line = CENTER_LINE_DTMF_DEC;
 
-                    snprintf(String, sizeof(String), "DTMF %s", gDTMF_RX_live + idx);
+                    sprintf(String, "DTMF %s", gDTMF_RX_live + idx);
 #ifdef ENABLE_FEAT_N7SIX
                     if (isMainOnly())
                     {
@@ -1638,7 +1638,7 @@ void UI_DisplayMain(void)
 
                     center_line = CENTER_LINE_DTMF_DEC;
 
-                    snprintf(String, sizeof(String), "DTMF %s", gDTMF_RX_live + idx);
+                    sprintf(String, "DTMF %s", gDTMF_RX_live + idx);
                     UI_PrintStringSmallNormal(String, 2, 0, 3);
                 }
             #endif
@@ -1655,7 +1655,7 @@ void UI_DisplayMain(void)
 
                 center_line = CENTER_LINE_CHARGE_DATA;
 
-                snprintf(String, sizeof(String), "Charge %u.%02uV %u%%",
+                sprintf(String, "Charge %u.%02uV %u%%",
                     gBatteryVoltageAverage / 100, gBatteryVoltageAverage % 100,
                     BATTERY_VoltsToPercent(gBatteryVoltageAverage));
                 UI_PrintStringSmallNormal(String, 2, 0, 3);
@@ -1671,7 +1671,7 @@ void UI_DisplayMain(void)
     //#endif
     if (isMainOnly() && !gDTMF_InputMode)
     {
-        snprintf(String, sizeof(String), "%s", activeTxVFO ? "B" : "A");
+        sprintf(String, "%s", activeTxVFO ? "B" : "A");
 
         UI_PrintStringSmallBold(String, 92, 0, 6);
 

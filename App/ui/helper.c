@@ -15,6 +15,7 @@
  */
 
 #include <string.h>
+
 #include "driver/st7565.h"
 #include "external/printf/printf.h"
 #include "font.h"
@@ -32,7 +33,7 @@ void UI_GenerateChannelString(char *pString, const uint8_t Channel)
 
     if (gInputBoxIndex == 0)
     {
-        snprintf(pString, 8, "CH-%02u", Channel + 1);
+        sprintf(pString, "CH-%02u", Channel + 1);
         return;
     }
 
@@ -56,13 +57,13 @@ void UI_GenerateChannelStringEx(char *pString, const bool bShowPrefix, const uin
 
     if (bShowPrefix) {
         // BUG here? Prefixed NULLs are allowed
-        snprintf(pString, 8, "CH-%03u", ChannelNumber + 1);
+        sprintf(pString, "CH-%03u", ChannelNumber + 1);
     } else if (ChannelNumber == 0xFF) {
         // Always write 4 bytes: 'N','U','L','L' and null-terminate at pString[4]
         memcpy(pString, "NULL", 4);
         pString[4] = '\0';
     } else {
-        snprintf(pString, 4, "%03u", ChannelNumber + 1);
+        sprintf(pString, "%03u", ChannelNumber + 1);
     }
 }
 

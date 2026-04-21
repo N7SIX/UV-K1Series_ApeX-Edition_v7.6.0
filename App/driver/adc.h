@@ -20,10 +20,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 enum ADC_CH_MASK {
     ADC_CH0 = 0x0001U,
     ADC_CH1 = 0x0002U,
@@ -74,10 +70,6 @@ void ADC_Configure(ADC_Config_t *pAdc);
 void ADC_Start(void);
 bool ADC_CheckEndOfConversion(ADC_CH_MASK Mask);
 uint16_t ADC_GetValue(ADC_CH_MASK Mask);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
 

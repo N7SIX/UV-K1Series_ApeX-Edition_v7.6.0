@@ -1865,10 +1865,10 @@ static void DrawStatus()
 {
     static char String[32]; // static keeps this out of the stack "danger zone"
 #ifdef SPECTRUM_EXTRA_VALUES
-    snprintf(String, sizeof(String), "%d/%ddBm P:%d T:%d", settings.dbMin, settings.dbMax,
+    sprintf(String, "%d/%ddBm P:%d T:%d", settings.dbMin, settings.dbMax,
             Rssi2DBm(peak.rssi), Rssi2DBm(settings.rssiTriggerLevel));
 #else
-    snprintf(String, sizeof(String), "%d/%ddBm", settings.dbMin, settings.dbMax);
+    sprintf(String, "%d/%ddBm", settings.dbMin, settings.dbMax);
 #endif
     GUI_DisplaySmallest(String, 0, 1, true, true);
 
@@ -2111,12 +2111,12 @@ static void ShowChannelName(uint32_t f, uint8_t leftX, uint8_t rightX)
 
 static void DrawF(uint32_t f)
 {
-    snprintf(String, sizeof(String), "%u.%05u", f / 100000, f % 100000);
+    sprintf(String, "%u.%05u", f / 100000, f % 100000);
     UI_PrintStringSmallNormal(String, 8, 127, 0);
 
-    snprintf(String, sizeof(String), "%3s", gModulationStr[settings.modulationType]);
+    sprintf(String, "%3s", gModulationStr[settings.modulationType]);
     GUI_DisplaySmallest(String, 116, 0, false, true);
-    snprintf(String, sizeof(String), "%4sk", bwOptions[settings.listenBw]);
+    sprintf(String, "%4sk", bwOptions[settings.listenBw]);
     GUI_DisplaySmallest(String, 108, 6, false, true);
 
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
@@ -2133,36 +2133,36 @@ static void DrawNums()
         if (gScanRangeStart)
         {
             /* only show resolution; the raw count is redundant */
-            snprintf(String, sizeof(String), "%ux", 128 >> settings.stepsCount);
+            sprintf(String, "%ux", 128 >> settings.stepsCount);
         }
         else
 #endif
         {
-            snprintf(String, sizeof(String), "%ux", GetStepsCount());
+            sprintf(String, "%ux", GetStepsCount());
         }
         GUI_DisplaySmallest(String, 0, 0, false, true);
 
-        snprintf(String, sizeof(String), "%u.%02uk", GetScanStep() / 100, GetScanStep() % 100);
+        sprintf(String, "%u.%02uk", GetScanStep() / 100, GetScanStep() % 100);
         GUI_DisplaySmallest(String, 0, 6, false, true);
     }
 
     if (IsCenterMode())
     {
-        snprintf(String, sizeof(String), "%u.%05u \x7F%u.%02uk", currentFreq / 100000,
+        sprintf(String, "%u.%05u \x7F%u.%02uk", currentFreq / 100000,
                 currentFreq % 100000, settings.frequencyChangeStep / 100,
                 settings.frequencyChangeStep % 100);
         GUI_DisplaySmallest(String, 36, 34, false, true);
     }
     else
     {
-        snprintf(String, sizeof(String), "%u.%05u", GetFStart() / 100000, GetFStart() % 100000);
+        sprintf(String, "%u.%05u", GetFStart() / 100000, GetFStart() % 100000);
         GUI_DisplaySmallest(String, 0, 34, false, true);
 
-        snprintf(String, sizeof(String), "\x7F%u.%02uk", settings.frequencyChangeStep / 100,
+        sprintf(String, "\x7F%u.%02uk", settings.frequencyChangeStep / 100,
                 settings.frequencyChangeStep % 100);
         GUI_DisplaySmallest(String, 48, 34, false, true);
 
-        snprintf(String, sizeof(String), "%u.%05u", GetFEnd() / 100000, GetFEnd() % 100000);
+        sprintf(String, "%u.%05u", GetFEnd() / 100000, GetFEnd() % 100000);
         GUI_DisplaySmallest(String, 93, 34, false, true);
     }
 
@@ -2572,8 +2572,9 @@ void OnKeyDownStill(KEY_Code_t key)
         ToggleBacklight();
         break;
     case KEY_PTT:
-        // Transmit not supported in spectrum mode (intentional)
-        /* If transmit-on-spectrum is desired, implement here. */
+        // TODO: start transmit
+        /* BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
+        BK4819_ToggleGpioOut(BK4819_GPIO5_PIN1_RED, true); */
         break;
     case KEY_MENU:
         if (menuState == ARRAY_SIZE(registerSpecs) - 1)
@@ -2762,9 +2763,9 @@ static void RenderStill()
 
     int dbm = Rssi2DBm(displayRssi);
     uint8_t s = DBm2S(dbm);
-    snprintf(String, sizeof(String), "S: %u", s);
+    sprintf(String, "S: %u", s);
     GUI_DisplaySmallest(String, 4, 25, false, true);
-    snprintf(String, sizeof(String), "%d dBm", dbm);
+    sprintf(String, "%d dBm", dbm);
     GUI_DisplaySmallest(String, 28, 25, false, true);
 
     if (!monitorMode)
@@ -2794,29 +2795,29 @@ static void RenderStill()
                 gFrameBuffer[row + 1][j + offset] = 0xFF;
             }
         }
-        snprintf(String, sizeof(String), "%s", registerSpecs[idx].name);
+        sprintf(String, "%s", registerSpecs[idx].name);
         GUI_DisplaySmallest(String, offset + 2, row * 8 + 2, false,
                             menuState != idx);
 
 #ifdef ENABLE_FEAT_N7SIX_SPECTRUM
         if(idx == 1)
         {
-            snprintf(String, sizeof(String), "%ddB", LNAsOptions[GetRegMenuValue(idx)]);
+            sprintf(String, "%ddB", LNAsOptions[GetRegMenuValue(idx)]);
         }
         else if(idx == 2)
         {
-            snprintf(String, sizeof(String), "%ddB", LNAOptions[GetRegMenuValue(idx)]);
+            sprintf(String, "%ddB", LNAOptions[GetRegMenuValue(idx)]);
         }
         else if(idx == 3)
         {
-            snprintf(String, sizeof(String), "%ddB", VGAOptions[GetRegMenuValue(idx)]);
+            sprintf(String, "%ddB", VGAOptions[GetRegMenuValue(idx)]);
         }
         else if(idx == 4)
         {
-            snprintf(String, sizeof(String), "%skHz", BPFOptions[GetBpfOptionIndex()]);
+            sprintf(String, "%skHz", BPFOptions[GetBpfOptionIndex()]);
         }
 #else
-        snprintf(String, sizeof(String), "%u", GetRegMenuValue(idx));
+        sprintf(String, "%u", GetRegMenuValue(idx));
 #endif
         GUI_DisplaySmallest(String, offset + 2, (row + 1) * 8 + 1, false,
                             menuState != idx);

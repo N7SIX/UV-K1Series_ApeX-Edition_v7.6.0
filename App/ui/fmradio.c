@@ -37,7 +37,7 @@ void UI_DisplayFM(void)
 
     UI_PrintString("FM", 2, 0, 0, 8);
 
-    snprintf(String, sizeof(String), "%d%s-%dM", 
+    sprintf(String, "%d%s-%dM", 
         BK1080_GetFreqLoLimit(gEeprom.FM_Band)/10,
         gEeprom.FM_Band == 0 ? ".5" : "",
         BK1080_GetFreqHiLimit(gEeprom.FM_Band)/10
@@ -55,20 +55,20 @@ void UI_DisplayFM(void)
         pPrintStr = "DEL?";
     } else if (gFM_ScanState == FM_SCAN_OFF) {
         if (gEeprom.FM_IsMrMode) {
-            snprintf(String, sizeof(String), "MR(CH%02u)", gEeprom.FM_SelectedChannel + 1);
+            sprintf(String, "MR(CH%02u)", gEeprom.FM_SelectedChannel + 1);
             pPrintStr = String;
         } else {
             pPrintStr = "VFO";
             for (unsigned int i = 0; i < 20; i++) {
                 if (gEeprom.FM_FrequencyPlaying == gFM_Channels[i]) {
-                    snprintf(String, sizeof(String), "VFO(CH%02u)", i + 1);
+                    sprintf(String, "VFO(CH%02u)", i + 1);
                     pPrintStr = String;
                     break;
                 }
             }
         }
     } else if (gFM_AutoScan) {
-        snprintf(String, sizeof(String), "A-SCAN(%u)", gFM_ChannelPosition + 1);
+        sprintf(String, "A-SCAN(%u)", gFM_ChannelPosition + 1);
         pPrintStr = String;
     } else {
         pPrintStr = "M-SCAN";
@@ -80,13 +80,13 @@ void UI_DisplayFM(void)
     if (gAskToSave || (gEeprom.FM_IsMrMode && gInputBoxIndex > 0)) {
         UI_GenerateChannelString(String, gFM_ChannelPosition);
     } else if (gAskToDelete) {
-        snprintf(String, sizeof(String), "CH-%02u", gEeprom.FM_SelectedChannel + 1);
+        sprintf(String, "CH-%02u", gEeprom.FM_SelectedChannel + 1);
     } else {
         if (gInputBoxIndex == 0) {
-            snprintf(String, sizeof(String), "%3d.%d", gEeprom.FM_FrequencyPlaying / 10, gEeprom.FM_FrequencyPlaying % 10);
+            sprintf(String, "%3d.%d", gEeprom.FM_FrequencyPlaying / 10, gEeprom.FM_FrequencyPlaying % 10);
         } else {
             const char * ascii = INPUTBOX_GetAscii();
-            snprintf(String, sizeof(String), "%.3s.%.1s",ascii, ascii + 3);
+            sprintf(String, "%.3s.%.1s",ascii, ascii + 3);
         }
 
         UI_DisplayFrequency(String, 36, 1, gInputBoxIndex == 0);  // frequency

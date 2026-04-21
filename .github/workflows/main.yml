@@ -15,16 +15,7 @@ jobs:
     - name: Compile firmware
       run: |
         chmod +x compile-with-docker.sh
-        ./compile-with-docker.sh Custom
-
-    - name: Run host unit tests
-      run: |
-        docker run --rm -v "${{ github.workspace }}":/src uvk1-uvk5v3 bash -lc "cd /src && cmake -S tests -B build/tests && cmake --build build/tests --target unit_tests && ctest --test-dir build/tests --output-on-failure"
-
-    - name: Prepare artifact
-      run: |
-        mkdir -p compiled-firmware
-        cp build/Custom/N7SIX.custom.bin compiled-firmware/N7SIX.packed.bin
+        ./compile-with-docker.sh
 
     - name: Upload firmware artifact
       uses: actions/upload-artifact@v4

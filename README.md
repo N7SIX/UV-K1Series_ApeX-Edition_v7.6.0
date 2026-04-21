@@ -235,53 +235,77 @@ On the other hand, FM RX audio will/should be fine.
 
 But, they are nice toys for the price, fun to play with.
 
-## Compiling and Building (Docker & Native)
+## Compiling and Building from Docker
 
-This project provides two supported build methods:
-
-1. **Docker-based build (recommended, fully reproducible)**
-2. **Native (non-Docker) build (for advanced users)**
+This project provides a Docker-based build system to compile all firmware editions for the UV-K1 and UV-K5 V3. Everything is handled through the `compile-with-docker.sh` helper script.
 
 All build outputs are generated inside the `build/<Preset>` directory, according to the CMake presets defined in `CMakePresets.json`.
 
-### Prerequisites (Docker)
+### Prerequisites
 
 - Docker installed on your system
 - Bash environment (Linux, macOS, WSL, Git Bash on Windows)
 
-### Prerequisites (Native/Non-Docker)
+### Build Script Overview
 
-- ARM GNU Toolchain (arm-none-eabi-gcc, tested with 13.3.rel1)
-  - Download: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
-- CMake (>=3.20), Ninja or Make
-- Python 3.10+
-- Standard build tools: build-essential, curl, xz-utils, ca-certificates
-- (Linux) libusb-1.0-0-dev for some tools
+The script `compile-with-docker.sh` performs the following actions:
 
-**Example install (Ubuntu):**
-```bash
-sudo apt update
-sudo apt install build-essential cmake ninja-build python3 curl xz-utils ca-certificates libusb-1.0-0-dev
-# Download and extract ARM GNU Toolchain:
-wget https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi.tar.xz
-tar -xf arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi.tar.xz
-export PATH="$PWD/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi/bin:$PATH"
-```
+1. Builds the Docker image (`uvk1-uvk5v3`) if it does not already exist.
+2. Removes any previous `build` directory to ensure a clean configuration.
+3. Runs CMake using the selected preset inside the Docker container.
+4. Builds the firmware and outputs `.elf`, `.bin` and `.hex` files for the chosen edition.
 
-### Native Build Steps
+### Usage
 
 ```bash
-# Clean previous build
-rm -rf build
-# Configure (replace <Preset> with e.g. ApeX)
-cmake --preset <Preset>
-# Build
-cmake --build --preset <Preset> -j
+chmod +x ./compile-with-docker.sh
 ```
 
-All CMake presets and options are defined in `CMakePresets.json`.
+```bash
+./compile-with-docker.sh
+```
 
-**Note:** Native builds are only supported/tested with the pinned toolchain version. For best reproducibility, use the Docker method.
+
+### Available Presets
+
+- **Custom**
+- **ApeX** (all-in-one, recommended)
+
+### Examples
+
+
+
+Build the all-in-one ApeX edition:
+
+```bash
+./compile-with-docker.sh ApeX
+```
+
+
+**Clean build (recommended for troubleshooting):**
+
+```bash
+rm -rf build/* && ./compile-with-docker.sh ApeX
+```
+
+### Passing Additional CMake Options
+
+You can pass extra configuration options after the preset name.  
+These are forwarded directly to `cmake --preset` inside the container.
+
+Examples:
+
+```bash
+./compile-with-docker.sh Bandscope -DENABLE_SPECTRUM=ON
+./compile-with-docker.sh Broadcast -DENABLE_FEAT_N7SIX_GAME=ON -DENABLE_NOAA=ON
+./compile-with-docker.sh Bandscope -DSQL_TONE=600
+```
+
+### Notes
+
+- The first run may take a few minutes while Docker builds the base image.
+- Running with `All` will build every firmware variant in sequence.
+- Each build runs inside Docker, so your host environment remains clean.
 
 ## Flashing the Firmware with UVTools2
 

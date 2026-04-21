@@ -1,10 +1,3 @@
-# -------------------------------------------------------------
-# Toolchain version pinning:
-#   - ARM_GCC_VERSION is pinned below (update only after testing)
-#   - Base image is Python 3.10 on Debian Bookworm (update with caution)
-#   - For new ARM toolchain releases, see:
-#     https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
-# -------------------------------------------------------------
 FROM mcr.microsoft.com/devcontainers/python:3.10-bookworm
 
 # ---------------------------------------------
@@ -14,13 +7,12 @@ RUN apt-get update -o Acquire::AllowInsecureRepositories=true || true && \
     apt-get install -y --no-install-recommends \
     build-essential cmake ninja-build python3 curl xz-utils ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-# (Optional: Pin apt package versions for full reproducibility)
 
 # ---------------------------------------------
 # Install ARM GNU Toolchain (host autodetect)
 # Works with or without TARGETARCH/BuildKit
 # ---------------------------------------------
-ARG ARM_GCC_VERSION=13.3.rel1  # Pinned toolchain version (update only after validation)
+ARG ARM_GCC_VERSION=13.3.rel1
 ARG TARGETARCH  # may be unset under legacy builder
 
 RUN set -e; \

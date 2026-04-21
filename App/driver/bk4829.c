@@ -1278,7 +1278,8 @@ void BK4819_EnterDTMF_TX(bool bLocalLoopback)
         // BK4819_REG_70_MASK_ENABLE_TONE2                |
         // (DTMF_TONE2_GAIN << BK4819_REG_70_SHIFT_TONE2_TUNING_GAIN));
 
-    // BK4819_EnableTXLink(); // Legacy, not required for current DTMF TX
+    // TODO: Delete?
+    BK4819_EnableTXLink();
 }
 
 void BK4819_ExitDTMF_TX(bool bKeep)

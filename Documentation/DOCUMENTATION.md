@@ -250,7 +250,7 @@ See [Owner_Manual_ApeX_Edition.md#professional-spectrum-analyzer](Owner_Manual_A
 
 - [ ] Read "Safety & Regulatory Information" in Owner's Manual
 - [ ] Verify correct frequency bands for your region
-- [ ] Back up calibration data using **CHIRP**, **UVTools2**, **Multi-UVTools**, or **Quansheng Software** (see [Programming Tools Guide](PROGRAMMING_TOOLS_GUIDE.md))
+- [ ] Back up calibration data using uvtools2
 - [ ] Learn front panel controls (Quick Reference)
 - [ ] Practice frequency tuning ([UP]/[DOWN])
 - [ ] Activate spectrum analyzer ([F] + [5])

@@ -49,7 +49,7 @@ static void convertTime(uint8_t *line, uint8_t type)
     gStatusLine[0] = gStatusLine[7] = gStatusLine[14] = 0x00; // Quick fix on display (on scanning I, II, etc.)
 
     char str[6];
-    snprintf(str, sizeof(str), "%02u:%02u", m, s);
+    sprintf(str, "%02u:%02u", m, s);
     UI_PrintStringSmallBufferNormal(str, line);
 
     gUpdateStatus = true;
@@ -132,19 +132,19 @@ void UI_DisplayStatus()
         unsigned int ticks_lo = (unsigned int)(gScheduler_SysTickCount & 0xFFFF);
         unsigned int ev_lo = (unsigned int)(gScheduler_500msEvents & 0xFFFF);
 
-        snprintf(str, sizeof(str), "T%u", ticks_lo);
+        sprintf(str, "T%u", ticks_lo);
         UI_PrintStringSmallBufferNormal(str, line + x + 1);
         x += 20;
 
-        snprintf(str, sizeof(str), "E%u", ev_lo);
+        sprintf(str, "E%u", ev_lo);
         UI_PrintStringSmallBufferNormal(str, line + x + 1);
         x += 20;
 
-        snprintf(str, sizeof(str), "U%u", (unsigned int)(gDisplayUpdateRequestCount & 0xFFFF));
+        sprintf(str, "U%u", (unsigned int)(gDisplayUpdateRequestCount & 0xFFFF));
         UI_PrintStringSmallBufferNormal(str, line + x + 1);
         x += 20;
 
-        snprintf(str, sizeof(str), "R%u", (unsigned int)(gDisplayRenderCount & 0xFFFF));
+        sprintf(str, "R%u", (unsigned int)(gDisplayRenderCount & 0xFFFF));
         UI_PrintStringSmallBufferNormal(str, line + x + 1);
         x += 20;
     #else
@@ -284,12 +284,12 @@ void UI_DisplayStatus()
             // OLD CODE: sprintf(str, "%u.%01uv", voltage / 100, voltage % 100);
             
             // NEW CODE:
-            snprintf(str, sizeof(str), "%u.%01uv", voltage / 100, (voltage % 100) / 10);
+            sprintf(str, "%u.%01uv", voltage / 100, (voltage % 100) / 10);
             break;
 
         case 2:     // percentage
             //gBatteryVoltageAverage = 999;
-            snprintf(str, sizeof(str), "%01u%%", BATTERY_VoltsToPercent(gBatteryVoltageAverage));
+            sprintf(str, "%01u%%", BATTERY_VoltsToPercent(gBatteryVoltageAverage));
             break;
     }
 

@@ -56,7 +56,7 @@ void UI_DisplayAircopy(void)
 
     if (gInputBoxIndex == 0) {
         uint32_t frequency = gRxVfo->freq_config_RX.Frequency;
-        snprintf(String, sizeof(String), "%3u.%05u", frequency / 100000, frequency % 100000);
+        sprintf(String, "%3u.%05u", frequency / 100000, frequency % 100000);
         // show the remaining 2 small frequency digits
         UI_PrintStringSmallNormal(String + 7, 97, 0, 3);
         String[7] = 0;
@@ -64,7 +64,7 @@ void UI_DisplayAircopy(void)
         UI_DisplayFrequency(String, 16, 2, false);
     } else {
         const char *ascii = INPUTBOX_GetAscii();
-        snprintf(String, sizeof(String), "%.3s.%.3s", ascii, ascii + 3);
+        sprintf(String, "%.3s.%.3s", ascii, ascii + 3);
         UI_DisplayFrequency(String, 16, 2, false);
     }
 
@@ -73,9 +73,9 @@ void UI_DisplayAircopy(void)
     percent = (gAirCopyBlockNumber * 10000) / 120;
 
     if (gAirCopyIsSendMode == 0) {
-        snprintf(String, sizeof(String), "RCV:%02u.%02u%% E:%d", percent / 100, percent % 100, gErrorsDuringAirCopy);
+        sprintf(String, "RCV:%02u.%02u%% E:%d", percent / 100, percent % 100, gErrorsDuringAirCopy);
     } else if (gAirCopyIsSendMode == 1) {
-        snprintf(String, sizeof(String), "SND:%02u.%02u%%", percent / 100, percent % 100);
+        sprintf(String, "SND:%02u.%02u%%", percent / 100, percent % 100);
     }
 
     // Draw gauge

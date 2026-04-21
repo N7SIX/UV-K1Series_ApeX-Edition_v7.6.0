@@ -6,7 +6,7 @@ set(CMAKE_C_EXTENSIONS ON)
 
 
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+    set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
 set(CMAKE_PROJECT_NAME N7SIX)
@@ -30,7 +30,7 @@ if(ENABLE_FEAT_N7SIX)
         set(VERSION_STRING_1 "v0.22")
     endif()
     if(NOT VERSION_STRING_2)
-        set(VERSION_STRING_2 "v7.6.6")
+        set(VERSION_STRING_2 "v7.6.5br4")
     endif()
     if(NOT EDITION_STRING)
         set(EDITION_STRING "Custom")
@@ -58,9 +58,7 @@ endif()
 
 message("EXE_NAME = " ${EXE_NAME})
 
-add_executable(${EXE_NAME}
-    Core/Src/syscalls.c
-)
+add_executable(${EXE_NAME})
 
 add_subdirectory(Drivers)
 add_subdirectory(Middlewares)

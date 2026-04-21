@@ -34,7 +34,7 @@ void UI_DisplayScanner(void)
     UI_DisplayClear();
 
     if (gScanSingleFrequency || (gScanCssState != SCAN_CSS_STATE_OFF && gScanCssState != SCAN_CSS_STATE_FAILED)) {
-        snprintf(String, sizeof(String), "FREQ:%u.%05u", gScanFrequency / 100000, gScanFrequency % 100000);
+        sprintf(String, "FREQ:%u.%05u", gScanFrequency / 100000, gScanFrequency % 100000);
         pPrintStr = String;
     } else {
         pPrintStr = "FREQ:**.*****";
@@ -45,10 +45,10 @@ void UI_DisplayScanner(void)
     if (gScanCssState < SCAN_CSS_STATE_FOUND || !gScanUseCssResult) {
         pPrintStr = "CTC:******";
     } else if (gScanCssResultType == CODE_TYPE_CONTINUOUS_TONE) {
-        snprintf(String, sizeof(String), "CTC:%u.%uHz", CTCSS_Options[gScanCssResultCode] / 10, CTCSS_Options[gScanCssResultCode] % 10);
+        sprintf(String, "CTC:%u.%uHz", CTCSS_Options[gScanCssResultCode] / 10, CTCSS_Options[gScanCssResultCode] % 10);
         pPrintStr = String;
     } else {
-        snprintf(String, sizeof(String), "DCS:D%03oN", DCS_Options[gScanCssResultCode]);
+        sprintf(String, "DCS:D%03oN", DCS_Options[gScanCssResultCode]);
         pPrintStr = String;
     }
 

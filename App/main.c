@@ -409,15 +409,7 @@ void Main(void)
                     #endif
                     break;
                 default:
-                    // Invalid CURRENT_STATE value (e.g., 0, 6, 7, etc. after factory reset)
-                    // Default to safe no-resume state and ensure VFO is ready.
-                    gEeprom.CURRENT_STATE = 0;  // Don't resume scanning on boot
-                    gEeprom.VFO_OPEN = 1;       // Ensure KEY_3 handler is enabled
-                    gScreenToDisplay = DISPLAY_MAIN;
-                    gEeprom.SCAN_LIST_DEFAULT = gEeprom.CURRENT_LIST;
-                    RADIO_SelectVfos();
-                    UI_DisplayMain();
-                    SETTINGS_WriteCurrentState();  // Persist corrected state
+                    // No action for CURRENT_STATE == 0 or other unexpected values
                     break;
             }
 

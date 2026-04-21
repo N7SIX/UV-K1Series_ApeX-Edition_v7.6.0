@@ -79,7 +79,7 @@ void APP_InitializeEventHandlers(void)
     // Register SAVE_VFO handler (VFO/mode/power snapshot persistence)
     #include "../settings_event.h"
     APP_SubscribeEvent(APP_EVENT_SAVE_VFO, SETTINGS_OnSaveVfo);
-    // Future event handler registrations can be added here
+    // TODO: Future event handler registrations here
     // APP_SubscribeEvent(APP_EVENT_FREQUENCY_CHANGE, RADIO_OnFrequencyChange);
     // APP_SubscribeEvent(APP_EVENT_MODE_CHANGE, RADIO_OnModeChange);
     // APP_SubscribeEvent(APP_EVENT_POWER_CHANGE, RADIO_OnPowerChange);

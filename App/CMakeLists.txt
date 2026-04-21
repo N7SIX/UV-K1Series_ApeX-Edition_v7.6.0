@@ -40,7 +40,6 @@ target_sources(App INTERFACE
     radio.c
     scheduler.c
     settings.c
-    settings_migration.c
     ui/battery.c
     ui/helper.c
     ui/inputbox.c

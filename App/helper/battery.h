@@ -27,15 +27,7 @@ typedef struct {
     uint16_t BatChk;  // Check value (for verification)
 } BatteryCalib_t;
 
-typedef struct {
-    uint16_t factory_peak_10mV;  // Peak voltage at first boot (factory baseline)
-    uint16_t cycle_count;         // Power-on cycles for aging estimation
-    uint16_t reserved1;           // Reserved for future use
-    uint16_t reserved2;           // Reserved for future use
-} BatteryBaseline_t;
-
 extern BatteryCalib_t gBatteryCalib;
-extern BatteryBaseline_t gBatteryBaseline;
 extern uint16_t          gBatteryCurrentVoltage;
 extern uint16_t          gBatteryCurrent;
 extern uint16_t          gBatteryVoltages[4];
@@ -50,6 +42,9 @@ extern uint16_t          gBatteryCheckCounter;
 extern volatile uint16_t gPowerSave_10ms;
 
 typedef enum {
+    BATTERY_TYPE_1600_MAH,
+    BATTERY_TYPE_2200_MAH,
+    BATTERY_TYPE_3500_MAH,
     BATTERY_TYPE_1400_MAH,
     BATTERY_TYPE_2500_MAH,
     BATTERY_TYPE_UNKNOWN
@@ -59,11 +54,9 @@ typedef enum {
 unsigned int BATTERY_VoltsToPercent(unsigned int voltage_10mV);
 uint16_t BATTERY_AdcToVoltage10mV(uint16_t adc_value);
 uint8_t BATTERY_GetEstimatedHealthPercent(void);
-uint8_t BATTERY_GetTrueHealthPercent(void);
 uint16_t BATTERY_GetNominalCapacitymAh(void);
 uint16_t BATTERY_GetEstimatedRemainingmAh(void);
 uint16_t BATTERY_GetSessionPeakVoltage_10mV(void);
-void BATTERY_SetAndValidateCalibration(uint16_t cal_high, bool* pIsValid);
 void BATTERY_GetReadings(bool bDisplayBatteryLevel);
 void BATTERY_TimeSlice500ms(void);
 bool BATTERY_IsVoltageSafeForCriticalOps(void);

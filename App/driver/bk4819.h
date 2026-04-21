@@ -68,9 +68,6 @@ extern bool gRxIdleMode;
 
 void     BK4819_Init(void);
 uint16_t BK4819_ReadRegister(BK4819_REGISTER_t Register);
-// Writes a register and verifies by reading back. Returns 0 on success, -1 on mismatch.
-int      BK4819_WriteRegisterChecked(BK4819_REGISTER_t Register, uint16_t Data);
-// Legacy: direct write, no check
 void     BK4819_WriteRegister(BK4819_REGISTER_t Register, uint16_t Data);
 void     BK4819_SetRegValue(RegisterSpec s, uint16_t v);
 void     BK4819_WriteU8(uint8_t Data);

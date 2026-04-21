@@ -229,7 +229,7 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 
                     //SETTINGS_SaveChannel(channel, gEeprom.RX_VFO, gRxVfo, 1);
 
-                    APP_RequestSaveChannel(1);
+                    gRequestSaveChannel = 1;
                     gRequestSaveVFO = true;
                     gUpdateDisplay = true;
                 }
@@ -332,7 +332,8 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 
         case KEY_8:
             gTxVfo->FrequencyReverse = gTxVfo->FrequencyReverse == false;
-                APP_RequestSaveChannel(1);
+            gRequestSaveChannel = 1;
+            break;
 
         case KEY_9:
             if (RADIO_CheckValidChannel(gEeprom.CHAN_1_CALL, false, 0)) {
@@ -372,7 +373,7 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
             }
             if (IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE))
             {
-                APP_RequestSaveChannel(1);
+                gRequestSaveChannel = 1;
             }
             gVfoConfigureMode     = VFO_CONFIGURE;
             gWasFKeyPressed = false;
@@ -381,11 +382,11 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
             uint8_t b = FREQUENCY_GetSortedIdxFromStepIdx(gTxVfo->STEP_SETTING);
             if (b > 0)
             {
-                gTxVfo->STEP_SETTING = FREQUENCY_GetSortedIdxFromStepIdx(b - 1);
+                gTxVfo->STEP_SETTING = FREQUENCY_GetStepIdxFromSortedIdx(b - 1);
             }
             if (IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE))
             {
-                APP_RequestSaveChannel(1);
+                gRequestSaveChannel = 1;
             }
             gVfoConfigureMode     = VFO_CONFIGURE;
             gWasFKeyPressed = false;
@@ -615,7 +616,7 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 
             gTxVfo->freq_config_RX.Frequency = Frequency;
 
-            APP_RequestSaveChannel(1);
+            gRequestSaveChannel = 1;
             return;
 
         }
@@ -989,7 +990,7 @@ static void MAIN_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
                 gTxVfo->freq_config_RX.Frequency = frequency;
                 BK4819_SetFrequency(frequency);
                 BK4819_RX_TurnOn();
-                APP_RequestSaveChannel(1);
+                gRequestSaveChannel = 1;
                 return;
             }
 
@@ -1052,6 +1053,7 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         }
     }
 
+    // TODO: ???
     // CLARIFIED LOGIC (from original code analysis):
     // This commented block was previously used to remap extended key codes to standard keys.
     // ORIGINAL INTENT: Convert KEY_SIDE2 (value > KEY_PTT) to a standard key for uniform handling
@@ -1074,12 +1076,11 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 #endif
         case KEY_0...KEY_9:
             MAIN_Key_DIGITS(Key, bKeyPressed, bKeyHeld);
-            // If a VFO/mode/power change was requested, persist snapshot.
-            // Do not clear gRequestSaveChannel here: channel persistence is handled later
-            // by the application save state machine in app.c.
-            if (!bKeyHeld && !bKeyPressed && gRequestSaveVFO) {
+            // If a VFO/mode/power/channel change was requested, persist snapshot
+            if (!bKeyHeld && !bKeyPressed && (gRequestSaveVFO || gRequestSaveChannel)) {
                 APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
                 gRequestSaveVFO = 0;
+                gRequestSaveChannel = 0;
             }
             break;
         case KEY_MENU:
@@ -1091,9 +1092,10 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
             #else
                 MAIN_Key_UP_DOWN(bKeyPressed, bKeyHeld, 1);
             #endif
-            if (!bKeyHeld && !bKeyPressed && gRequestSaveVFO) {
+            if (!bKeyHeld && !bKeyPressed && (gRequestSaveVFO || gRequestSaveChannel)) {
                 APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
                 gRequestSaveVFO = 0;
+                gRequestSaveChannel = 0;
             }
             break;
         case KEY_DOWN:
@@ -1102,9 +1104,10 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
             #else
                 MAIN_Key_UP_DOWN(bKeyPressed, bKeyHeld, -1);
             #endif
-            if (!bKeyHeld && !bKeyPressed && gRequestSaveVFO) {
+            if (!bKeyHeld && !bKeyPressed && (gRequestSaveVFO || gRequestSaveChannel)) {
                 APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
                 gRequestSaveVFO = 0;
+                gRequestSaveChannel = 0;
             }
             break;
         case KEY_EXIT:

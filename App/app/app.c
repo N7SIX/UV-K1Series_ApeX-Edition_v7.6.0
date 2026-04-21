@@ -118,23 +118,11 @@ volatile uint32_t gDisplayRenderCount = 0;
     #include "screenshot.h"
 #endif
 
-static bool    flagSaveVfo;
-static bool    flagSaveSettings;
-static uint8_t flagSaveChannel;
-
-static bool    pendingSaveChannelPending;
-static uint8_t pendingSaveChannelVfo;
-static uint8_t pendingSaveChannelChannel;
+static bool flagSaveVfo;
+static bool flagSaveSettings;
+static bool flagSaveChannel;
 
 static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld);
-
-void APP_RequestSaveChannel(uint8_t mode)
-{
-    gRequestSaveChannel = mode;
-    pendingSaveChannelPending = true;
-    pendingSaveChannelVfo = gEeprom.TX_VFO;
-    pendingSaveChannelChannel = gTxVfo->CHANNEL_SAVE;
-}
 
 
 void (*ProcessKeysFunctions[])(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld) = {
@@ -1983,13 +1971,8 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 #endif
 
         if (flagSaveChannel) {
-            uint8_t saveVfo      = pendingSaveChannelPending ? pendingSaveChannelVfo : gEeprom.TX_VFO;
-            uint8_t saveChannel  = pendingSaveChannelPending ? pendingSaveChannelChannel : gTxVfo->CHANNEL_SAVE;
-
-            SETTINGS_SaveChannel(saveChannel, saveVfo, &gEeprom.VfoInfo[saveVfo], flagSaveChannel);
-            gRequestSaveChannel = 0;
-            flagSaveChannel = 0;
-            pendingSaveChannelPending = false;
+            SETTINGS_SaveChannel(gTxVfo->CHANNEL_SAVE, gEeprom.TX_VFO, gTxVfo, flagSaveChannel);
+            flagSaveChannel = false;
 
             if (!SCANNER_IsScanning() && gVfoConfigureMode == VFO_CONFIGURE_NONE)
                 // gVfoConfigureMode is so as we don't wipe out previously setting this variable elsewhere
@@ -2296,11 +2279,7 @@ Skip:
         }
         else if ((!bKeyHeld && !bKeyPressed) || UI_MENU_GetCurrentMenuId())
         {
-            uint8_t saveVfo      = pendingSaveChannelPending ? pendingSaveChannelVfo : gEeprom.TX_VFO;
-            uint8_t saveChannel  = pendingSaveChannelPending ? pendingSaveChannelChannel : gTxVfo->CHANNEL_SAVE;
-
-            SETTINGS_SaveChannel(saveChannel, saveVfo, &gEeprom.VfoInfo[saveVfo], gRequestSaveChannel);
-            pendingSaveChannelPending = false;
+            SETTINGS_SaveChannel(gTxVfo->CHANNEL_SAVE, gEeprom.TX_VFO, gTxVfo, gRequestSaveChannel);
 
             if (!SCANNER_IsScanning() && gVfoConfigureMode == VFO_CONFIGURE_NONE)
                 // gVfoConfigureMode is so as we don't wipe out previously setting this variable elsewhere

@@ -49,7 +49,6 @@
  *     limitations under the License.
  */
 
-#include <stddef.h>
 #include <string.h>
 
 #include "am_fix.h"
@@ -407,13 +406,12 @@ void AM_fix_10ms(const unsigned vfo)
 }
 
 #ifdef ENABLE_AM_FIX_SHOW_DATA
-void AM_fix_print_data(const unsigned vfo, char *s, size_t size) {
-    if (s == NULL || size == 0 || vfo >= ARRAY_SIZE(gain_table_index)) {
-        return;
+void AM_fix_print_data(const unsigned vfo, char *s) {
+    if (s != NULL && vfo < ARRAY_SIZE(gain_table_index)) {
+        const unsigned int index = gain_table_index[vfo];
+        sprintf(s, "%2u %4ddB %3u", index, gain_table[index].gain_dB, prev_rssi[vfo]);
+        counter = 0;
     }
-    const unsigned int index = gain_table_index[vfo];
-    snprintf(s, size, "%2u %4ddB %3u", index, gain_table[index].gain_dB, prev_rssi[vfo]);
-    counter = 0;
 }
 #endif
 

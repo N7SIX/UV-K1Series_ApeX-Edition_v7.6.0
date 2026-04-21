@@ -33,9 +33,8 @@ Manual revision: April 5, 2026
 13. Removed Or Deprecated Features
 14. Troubleshooting
 15. Build, Flashing, And Recovery
-16. Firmware Migration
-17. Technical Notes
-18. Revision History
+16. Technical Notes
+17. Revision History
 
 ---
 
@@ -402,40 +401,6 @@ Flashing:
 
 Recovery best practice:
 - Always keep calibration backup before testing firmware changes.
-
----
-
-## Firmware Migration
-
-ApeX Edition includes a professional multi-firmware migration system that automatically detects and imports settings and channels from previous firmware versions. This ensures a smooth transition without losing your radio configuration.
-
-### Supported Firmware Types
-- **F4HWN/Armel**: Full channel, name, and settings import (85-95% retention)
-- **Stock Quansheng**: Channel and basic settings import (40-50% retention)
-- **Egzumer**: Compatible with F4HWN structure (85-95% retention)
-- **Generic/Unknown**: Fuzzy matching for partial recovery (20-40% retention)
-
-### How Migration Works
-1. **Automatic Detection**: On first boot after flashing ApeX, the firmware scans EEPROM for legacy signatures.
-2. **Safe Import**: Valid data is imported with field validation; invalid data defaults to factory settings.
-3. **One-Time Process**: Migration runs once and saves an ApeX snapshot to prevent re-migration.
-4. **No Corruption Risk**: Atomic operations ensure flash integrity even during power loss.
-
-### Migration Process
-- Flash ApeX firmware using your preferred tool (CHIRP, UVTools2, Multi-UVTools, or Quansheng Software).
-- Power on the radio — migration happens automatically during boot.
-- Check SysInf or menu for imported channels/settings.
-- If needed, manually restore from backup using programming tools.
-
-### Safety Notes
-- Migration is a bonus feature; always back up with programming tools first.
-- Incompatible firmware may result in partial or no data retention.
-- Migration never causes bricking or data loss beyond what's already present.
-
-For detailed technical information, see:
-- [Migration Safety Analysis](MIGRATION_SAFETY_ANALYSIS.md)
-- [Multi-Firmware Migration Implementation](MULTI_FIRMWARE_MIGRATION_IMPLEMENTATION.md)
-- [Programming Tools Guide](PROGRAMMING_TOOLS_GUIDE.md)
 
 ---
 

@@ -50,7 +50,7 @@
 #endif
 
 #ifndef VERSION_STRING_2
-    #define VERSION_STRING_2 "v7.6.6"
+    #define VERSION_STRING_2 "v7.6.5br4"
 #endif
 
 
@@ -220,7 +220,7 @@ static void UI_MenuShiftRegionDown1Px(const uint8_t x1, const uint8_t x2, const 
 {
     for (uint8_t x = x1; x <= x2; x++)
     {
-            for (int y = y2; y >= y1; y--)
+        for (int y = y2; y > y1; y--)
         {
             UI_MenuSetFramePixel(x, (uint8_t)y, UI_MenuGetFramePixel(x, (uint8_t)(y - 1)));
         }
@@ -380,6 +380,9 @@ const char gSubMenu_BAT_TXT[][8] =
 
 const char gSubMenu_BATTYP[][12] =
 {
+    "1600mAh K5",
+    "2200mAh K5",
+    "3500mAh K5",
     "1400mAh K1",
     "2500mAh K1"
 };
@@ -579,7 +582,7 @@ void UI_DisplayMenu(void)
         memcpy(gFrameBuffer[0] + (8 * menu_list_width) + 1, BITMAP_CurrentIndicator, sizeof(BITMAP_CurrentIndicator));
 
     // draw the menu index number/count
-    snprintf(String, sizeof(String), "%2u.%u", 1 + gMenuCursor, gMenuListCount);
+    sprintf(String, "%2u.%u", 1 + gMenuCursor, gMenuListCount);
 
     UI_PrintStringSmallNormal(String, 2, 0, 6);
 
@@ -616,7 +619,7 @@ void UI_DisplayMenu(void)
 
             // draw the menu index number/count
 #ifndef ENABLE_FEAT_N7SIX
-            snprintf(String, sizeof(String), "%2u.%u", 1 + gMenuCursor, gMenuListCount);
+            sprintf(String, "%2u.%u", 1 + gMenuCursor, gMenuListCount);
             UI_PrintStringSmallNormal(String, 2, 0, 6);
 #endif
         }
@@ -628,7 +631,7 @@ void UI_DisplayMenu(void)
         }
 
 #ifdef ENABLE_FEAT_N7SIX
-        snprintf(String, sizeof(String), "%02u/%u", 1 + gMenuCursor, gMenuListCount);
+        sprintf(String, "%02u/%u", 1 + gMenuCursor, gMenuListCount);
         UI_PrintStringSmallNormal(String, 6, 0, 6);
 #endif
     }
@@ -655,13 +658,13 @@ void UI_DisplayMenu(void)
     switch (UI_MENU_GetCurrentMenuId())
     {
         case MENU_SQL:
-            snprintf(String, sizeof(String), "%d", gSubMenuSelection);
+            sprintf(String, "%d", gSubMenuSelection);
             break;
 
         case MENU_MIC:
             {   // display the mic gain in actual dB rather than just an index number
                 const uint8_t mic = gMicGain_dB2[gSubMenuSelection];
-                snprintf(String, sizeof(String), "+%u.%01udB", mic / 2, mic % 2);
+                sprintf(String, "+%u.%01udB", mic / 2, mic % 2);
             }
             break;
 
@@ -677,7 +680,7 @@ void UI_DisplayMenu(void)
 
         case MENU_STEP: {
             uint16_t step = gStepFrequencyTable[FREQUENCY_GetStepIdxFromSortedIdx(gSubMenuSelection)];
-            snprintf(String, sizeof(String), "%d.%02ukHz", step / 100, step % 100);
+            sprintf(String, "%d.%02ukHz", step / 100, step % 100);
             break;
         }
 
@@ -691,7 +694,7 @@ void UI_DisplayMenu(void)
             {
                 // N77SIX, In this fork, gSubMenu_TXP usually contains strings like "LOW", "MID", "HIGH"
     // or specific wattage like "0.5W", "1.0W", etc.
-    snprintf(String, sizeof(String), "Power\n%s", gSubMenu_TXP[gSubMenuSelection]);
+    sprintf(String, "Power\n%s", gSubMenu_TXP[gSubMenuSelection]);
             }
             break;
 
@@ -704,11 +707,11 @@ void UI_DisplayMenu(void)
             }
             else if (gSubMenuSelection < 105)
             {
-                snprintf(String, sizeof(String), "D%03oN", DCS_Options[gSubMenuSelection -   1]);
+                sprintf(String, "D%03oN", DCS_Options[gSubMenuSelection -   1]);
             }
             else
             {
-                snprintf(String, sizeof(String), "D%03oI", DCS_Options[gSubMenuSelection - 105]);
+                sprintf(String, "D%03oI", DCS_Options[gSubMenuSelection - 105]);
             }
             break;
 
@@ -722,7 +725,7 @@ void UI_DisplayMenu(void)
             }
             else
             {
-                snprintf(String, sizeof(String), "%u.%uHz", CTCSS_Options[gSubMenuSelection - 1] / 10, CTCSS_Options[gSubMenuSelection - 1] % 10);
+                sprintf(String, "%u.%uHz", CTCSS_Options[gSubMenuSelection - 1] / 10, CTCSS_Options[gSubMenuSelection - 1] % 10);
             }
             break;
         }
@@ -735,13 +738,13 @@ void UI_DisplayMenu(void)
         case MENU_OFFSET:
             if (!gIsInSubMenu || gInputBoxIndex == 0)
             {
-                snprintf(String, sizeof(String), "%3d.%05u", gSubMenuSelection / 100000, abs(gSubMenuSelection) % 100000);
+                sprintf(String, "%3d.%05u", gSubMenuSelection / 100000, abs(gSubMenuSelection) % 100000);
                 UI_PrintString(String, menu_item_x1, menu_item_x2, 1, 8);
             }
             else
             {
                 const char * ascii = INPUTBOX_GetAscii();
-                snprintf(String, sizeof(String), "%.3s.%.3s  ",ascii, ascii + 3);
+                sprintf(String, "%.3s.%.3s  ",ascii, ascii + 3);
                 UI_PrintString(String, menu_item_x1, menu_item_x2, 1, 8);
             }
 
@@ -770,7 +773,7 @@ void UI_DisplayMenu(void)
 
         case MENU_VOX:
             #ifdef ENABLE_VOX
-                snprintf(String, sizeof(String), gSubMenuSelection == 0 ? gSubMenu_OFF_ON[0] : "%u", gSubMenuSelection);
+                sprintf(String, gSubMenuSelection == 0 ? gSubMenu_OFF_ON[0] : "%u", gSubMenuSelection);
             #else
                 strncpy(String, gSubMenu_NA, sizeof(String) - 1);
                 String[sizeof(String) - 1] = '\0';
@@ -785,7 +788,7 @@ void UI_DisplayMenu(void)
             }
             else if(gSubMenuSelection < 61)
             {
-                snprintf(String, sizeof(String), "%02dm:%02ds", (((gSubMenuSelection) * 5) / 60), (((gSubMenuSelection) * 5) % 60));
+                sprintf(String, "%02dm:%02ds", (((gSubMenuSelection) * 5) / 60), (((gSubMenuSelection) * 5) % 60));
                 //#if !defined(ENABLE_SPECTRUM) || !defined(ENABLE_FMRADIO)
                 //ST7565_Gauge(4, 1, 60, gSubMenuSelection);
                 gaugeLine = 4;
@@ -806,7 +809,7 @@ void UI_DisplayMenu(void)
 
         case MENU_ABR_MIN:
         case MENU_ABR_MAX:
-            snprintf(String, sizeof(String), "%d", gSubMenuSelection);
+            sprintf(String, "%d", gSubMenuSelection);
             if(gIsInSubMenu)
                 BACKLIGHT_SetBrightness(gSubMenuSelection);
             // Obsolete ???
@@ -827,7 +830,7 @@ void UI_DisplayMenu(void)
             }
             else
             {
-                snprintf(String, sizeof(String), "%02dm:%02ds", ((gSubMenuSelection * 15) / 60), ((gSubMenuSelection * 15) % 60));
+                sprintf(String, "%02dm:%02ds", ((gSubMenuSelection * 15) / 60), ((gSubMenuSelection * 15) % 60));
                 //#if !defined(ENABLE_SPECTRUM) || !defined(ENABLE_FMRADIO)
                 //ST7565_Gauge(4, 1, 40, gSubMenuSelection);
                 gaugeLine = 4;
@@ -890,7 +893,7 @@ void UI_DisplayMenu(void)
             if (valid && !gAskForConfirmation)
             {   // show the frequency so that the user knows the channels frequency
                 const uint32_t frequency = SETTINGS_FetchChannelFrequency(gSubMenuSelection);
-                snprintf(String, sizeof(String), "%u.%05u", frequency / 100000, frequency % 100000);
+                sprintf(String, "%u.%05u", frequency / 100000, frequency % 100000);
                 UI_PrintString(String, menu_item_x1, menu_item_x2, 4, 8);
             }
 
@@ -931,7 +934,7 @@ void UI_DisplayMenu(void)
 
                 if (!gAskForConfirmation)
                 {   // show the frequency so that the user knows the channels frequency
-                    snprintf(String, sizeof(String), "%u.%05u", frequency / 100000, frequency % 100000);
+                    sprintf(String, "%u.%05u", frequency / 100000, frequency % 100000);
                     UI_PrintString(String, menu_item_x1, menu_item_x2, 4 + (gIsInSubMenu && edit_index >= 0), 8);
                 }
             }
@@ -941,7 +944,7 @@ void UI_DisplayMenu(void)
         }
 
         case MENU_SAVE:
-            snprintf(String, sizeof(String), gSubMenuSelection == 0 ? gSubMenu_OFF_ON[0] : "1:%u", gSubMenuSelection);
+            sprintf(String, gSubMenuSelection == 0 ? gSubMenu_OFF_ON[0] : "1:%u", gSubMenuSelection);
             break;
 
         case MENU_TDR:
@@ -950,7 +953,7 @@ void UI_DisplayMenu(void)
             break;
 
         case MENU_TOT:
-            snprintf(String, sizeof(String), "%02dm:%02ds", (((gSubMenuSelection + 1) * 5) / 60), (((gSubMenuSelection + 1) * 5) % 60));
+            sprintf(String, "%02dm:%02ds", (((gSubMenuSelection + 1) * 5) / 60), (((gSubMenuSelection + 1) * 5) % 60));
             //#if !defined(ENABLE_SPECTRUM) || !defined(ENABLE_FMRADIO)
             //ST7565_Gauge(4, 5, 179, gSubMenuSelection);
             gaugeLine = 4;
@@ -974,7 +977,7 @@ void UI_DisplayMenu(void)
             }
             else if(gSubMenuSelection < 81)
             {
-                snprintf(String, sizeof(String), "CARRIER\n%02ds:%03dms", ((gSubMenuSelection * 250) / 1000), ((gSubMenuSelection * 250) % 1000));
+                sprintf(String, "CARRIER\n%02ds:%03dms", ((gSubMenuSelection * 250) / 1000), ((gSubMenuSelection * 250) % 1000));
                 //#if !defined(ENABLE_SPECTRUM) || !defined(ENABLE_FMRADIO)
                 //ST7565_Gauge(5, 1, 80, gSubMenuSelection);
                 gaugeLine = 5;
@@ -984,7 +987,7 @@ void UI_DisplayMenu(void)
             }
             else
             {
-                snprintf(String, sizeof(String), "TIMEOUT\n%02dm:%02ds", (((gSubMenuSelection - 80) * 5) / 60), (((gSubMenuSelection - 80) * 5) % 60));
+                sprintf(String, "TIMEOUT\n%02dm:%02ds", (((gSubMenuSelection - 80) * 5) / 60), (((gSubMenuSelection - 80) * 5) % 60));
                 //#if !defined(ENABLE_SPECTRUM) || !defined(ENABLE_FMRADIO)
                 //ST7565_Gauge(5, 80, 104, gSubMenuSelection);
                 gaugeLine = 5;
@@ -1000,7 +1003,7 @@ void UI_DisplayMenu(void)
             break;
 
         case MENU_RP_STE:
-            snprintf(String, sizeof(String), gSubMenuSelection == 0 ? gSubMenu_OFF_ON[0] : "%u*100ms", gSubMenuSelection);
+            sprintf(String, gSubMenuSelection == 0 ? gSubMenu_OFF_ON[0] : "%u*100ms", gSubMenuSelection);
             break;
 
         case MENU_S_LIST:
@@ -1011,7 +1014,7 @@ void UI_DisplayMenu(void)
             }
             else if (gSubMenuSelection < 4)
             {
-                snprintf(String, sizeof(String), "LIST [%u]", gSubMenuSelection);
+                sprintf(String, "LIST [%u]", gSubMenuSelection);
             }
             else if (gSubMenuSelection == 4)
             {
@@ -1027,7 +1030,7 @@ void UI_DisplayMenu(void)
 
         #ifdef ENABLE_ALARM
             case MENU_AL_MOD:
-                snprintf(String, sizeof(String), gSubMenu_AL_MOD[gSubMenuSelection]);
+                sprintf(String, gSubMenu_AL_MOD[gSubMenuSelection]);
                 break;
         #endif
 
@@ -1038,11 +1041,11 @@ void UI_DisplayMenu(void)
             break;
 #endif
         case MENU_UPCODE:
-            snprintf(String, sizeof(String), "%.8s\n%.8s", gEeprom.DTMF_UP_CODE, gEeprom.DTMF_UP_CODE + 8);
+            sprintf(String, "%.8s\n%.8s", gEeprom.DTMF_UP_CODE, gEeprom.DTMF_UP_CODE + 8);
             break;
 
         case MENU_DWCODE:
-            snprintf(String, sizeof(String), "%.8s\n%.8s", gEeprom.DTMF_DOWN_CODE, gEeprom.DTMF_DOWN_CODE + 8);
+            sprintf(String, "%.8s\n%.8s", gEeprom.DTMF_DOWN_CODE, gEeprom.DTMF_DOWN_CODE + 8);
             break;
 
 #ifdef ENABLE_DTMF_CALLING
@@ -1052,11 +1055,11 @@ void UI_DisplayMenu(void)
             break;
 
         case MENU_D_HOLD:
-            snprintf(String, sizeof(String), "%ds", gSubMenuSelection);
+            sprintf(String, "%ds", gSubMenuSelection);
             break;
 #endif
         case MENU_D_PRE:
-            snprintf(String, sizeof(String), "%d*10ms", gSubMenuSelection);
+            sprintf(String, "%d*10ms", gSubMenuSelection);
             break;
 
         case MENU_PTT_ID:
@@ -1092,12 +1095,12 @@ void UI_DisplayMenu(void)
 
         case MENU_VOL:
 #ifdef ENABLE_FEAT_N7SIX
-            snprintf(String, sizeof(String), "%s\n%s",
+            sprintf(String, "%s\n%s",
                 AUTHOR_STRING_2,
                 VERSION_STRING_2
             );
 #else
-            snprintf(String, sizeof(String), "%u.%02uV\n%u%%",
+            sprintf(String, "%u.%02uV\n%u%%",
                 gBatteryVoltageAverage / 100, gBatteryVoltageAverage % 100,
                 BATTERY_VoltsToPercent(gBatteryVoltageAverage));
 #endif
@@ -1142,7 +1145,7 @@ void UI_DisplayMenu(void)
 
                     writeXtalFreqCal(gSubMenuSelection, false);
 
-                    snprintf(String, sizeof(String), "%d\n%u.%06u\nMHz",
+                    sprintf(String, "%d\n%u.%06u\nMHz",
                         gSubMenuSelection,
                         xtal_Hz / 1000000, xtal_Hz % 1000000);
                 }
@@ -1152,7 +1155,7 @@ void UI_DisplayMenu(void)
         case MENU_BATCAL:
         {
             const uint16_t vol = (uint32_t)gBatteryVoltageAverage * gBatteryCalib.BatHi / gSubMenuSelection;
-            snprintf(String, sizeof(String), "%u.%02uV\n%u", vol / 100, vol % 100, gSubMenuSelection);
+            sprintf(String, "%u.%02uV\n%u", vol / 100, vol % 100, gSubMenuSelection);
             break;
         }
 
@@ -1179,7 +1182,7 @@ void UI_DisplayMenu(void)
             }
             else if(gSubMenuSelection < 121)
             {
-                snprintf(String, sizeof(String), "%dh:%02dm", (gSubMenuSelection / 60), (gSubMenuSelection % 60));
+                sprintf(String, "%dh:%02dm", (gSubMenuSelection / 60), (gSubMenuSelection % 60));
                 //#if !defined(ENABLE_SPECTRUM) || !defined(ENABLE_FMRADIO)
                 //ST7565_Gauge(4, 1, 120, gSubMenuSelection);
                 gaugeLine = 4;
@@ -1192,7 +1195,7 @@ void UI_DisplayMenu(void)
 
 #ifdef ENABLE_FEAT_N7SIX
         case MENU_SET_PWR:
-            snprintf(String, sizeof(String), "%s\n%sW", gSubMenu_TXP[gSubMenuSelection + 1], gSubMenu_SET_PWR[gSubMenuSelection]);
+            sprintf(String, "%s\n%sW", gSubMenu_TXP[gSubMenuSelection + 1], gSubMenu_SET_PWR[gSubMenuSelection]);
             break;
     
         case MENU_SET_PTT:
@@ -1208,7 +1211,7 @@ void UI_DisplayMenu(void)
 
         case MENU_SET_CTR:
             #ifdef ENABLE_FEAT_N7SIX_CTR
-                snprintf(String, sizeof(String), "%d", gSubMenuSelection);
+                sprintf(String, "%d", gSubMenuSelection);
                 gSetting_set_ctr = gSubMenuSelection;
                 ST7565_ContrastAndInv();
             #else
@@ -1268,7 +1271,7 @@ void UI_DisplayMenu(void)
                 }
                 else if(gSubMenuSelection < 64)
                 {
-                    snprintf(String, sizeof(String), "%02u", gSubMenuSelection);
+                    sprintf(String, "%02u", gSubMenuSelection);
                     //#if !defined(ENABLE_SPECTRUM) || !defined(ENABLE_FMRADIO)
                     //ST7565_Gauge(4, 1, 63, gSubMenuSelection);
                     gaugeLine = 4;
@@ -1345,48 +1348,25 @@ void UI_DisplayMenu(void)
                 const uint8_t h_y = 10;
                 const uint8_t h_label_x = 52;
 
-
-                // Draw voltage and percent
-                snprintf(edit, sizeof(edit), "%u.%02uV %u%%",
+                sprintf(edit, "%u.%02uV %u%%",
                     gBatteryVoltageAverage / 100, gBatteryVoltageAverage % 100,
                     BATTERY_VoltsToPercent(gBatteryVoltageAverage)
                 );
+
                 UI_Draw5x5String(edit, 52, 2, true);
 
-                // Draw Health (H:x%)
-                // Clamp h_label_x to >=0 to avoid cutting off H at the left edge
-                uint8_t safe_h_label_x = h_label_x;
-                if (safe_h_label_x > 127) safe_h_label_x = 127;
-                // (not needed, but for completeness, if h_label_x < 0, set to 0)
-                if (safe_h_label_x > 127) safe_h_label_x = 0;
-                UI_Draw5x5Char('H', safe_h_label_x, h_y, true);
-                UI_Draw5x5Char(':', safe_h_label_x + 5, h_y, true); // colon shifted 1px left
-                snprintf(edit, sizeof(edit), "%u%%", BATTERY_GetTrueHealthPercent());
-                UI_Draw5x5String(edit, safe_h_label_x + 9, h_y, true); // value shifted 3px left
+                UI_Draw5x5Char('H', h_label_x, h_y, true);
+                UI_Draw5x5Char(':', h_label_x + 5, h_y, true); // colon shifted 1px left
 
-                // Calculate x-position of percent value in voltage string
-                char volt_str[16];
-                snprintf(volt_str, sizeof(volt_str), "%u.%02uV %u%%",
-                    gBatteryVoltageAverage / 100, gBatteryVoltageAverage % 100,
-                    BATTERY_VoltsToPercent(gBatteryVoltageAverage));
-                char *percent_ptr = strchr(volt_str, ' '); // find space before percent
-                uint8_t percent_left_x = 52; // start x
-                if (percent_ptr) {
-                    size_t percent_idx = percent_ptr - volt_str + 1; // +1 to get to percent
-                    percent_left_x += (uint8_t)(percent_idx * 6);
-                }
+                sprintf(edit, "%u%%", BATTERY_GetEstimatedHealthPercent());
+                UI_Draw5x5String(edit, h_label_x + 9, h_y, true); // value shifted 3px left
 
-                // Draw C:x.xAh so its left edge matches percent_left_x, but keep it on-screen and not too far from H:x%
-                // Always place C:x.xAh immediately after H:x% with 1px gap
-                uint16_t mah = BATTERY_GetEstimatedRemainingmAh();
-                char cstr[12];
-                snprintf(cstr, sizeof(cstr), "C:%u.%uA", mah / 1000, (mah % 1000) / 100);
-                uint8_t c_width = (uint8_t)strlen(cstr) * 6;
-                uint8_t max_x = 127 - c_width;
-                uint8_t h_end_x = safe_h_label_x + 9 + (uint8_t)strlen(edit) * 6;
-                uint8_t c_label_x = h_end_x + 7; // Add a 7px space between H:98% and C:2.3A
-                if (c_label_x > max_x) c_label_x = max_x;
-                UI_Draw5x5String(cstr, c_label_x, h_y, true);
+                const uint8_t r_label_x = h_label_x + 9 + (uint8_t)(strlen(edit) * 6) + 2;
+                UI_Draw5x5Char('C', r_label_x, h_y, true);
+                UI_Draw5x5Char(':', r_label_x + 5, h_y, true); // colon shifted 1px left
+
+                sprintf(edit, "%um", BATTERY_GetEstimatedRemainingmAh());
+                UI_Draw5x5String(edit, r_label_x + 9, h_y, true); // value shifted 3px left
 
                 #ifdef ENABLE_FEAT_N7SIX
                     // Draw full-size SysInf labels shifted up by ~7 pixels.
@@ -1455,12 +1435,12 @@ void UI_DisplayMenu(void)
             UI_PrintStringSmallNormal(pPrintStr, menu_item_x1, menu_item_x2, 2);
 
             if (IS_MR_CHANNEL(gEeprom.SCANLIST_PRIORITY_CH1[i])) {
-                snprintf(String, sizeof(String), "PRI%d:%u", 1, gEeprom.SCANLIST_PRIORITY_CH1[i] + 1);
+                sprintf(String, "PRI%d:%u", 1, gEeprom.SCANLIST_PRIORITY_CH1[i] + 1);
                 UI_PrintString(String, menu_item_x1, menu_item_x2, 3, 8);
             }
 
             if (IS_MR_CHANNEL(gEeprom.SCANLIST_PRIORITY_CH2[i])) {
-                snprintf(String, sizeof(String), "PRI%d:%u", 2, gEeprom.SCANLIST_PRIORITY_CH2[i] + 1);
+                sprintf(String, "PRI%d:%u", 2, gEeprom.SCANLIST_PRIORITY_CH2[i] + 1);
                 UI_PrintString(String, menu_item_x1, menu_item_x2, 5, 8);
             }
             */
@@ -1471,7 +1451,7 @@ void UI_DisplayMenu(void)
                 uint8_t channel = (pri == 1) ? gEeprom.SCANLIST_PRIORITY_CH1[i] : gEeprom.SCANLIST_PRIORITY_CH2[i];
 
                 if (IS_MR_CHANNEL(channel)) {
-                    snprintf(String, sizeof(String), "PRI%d:%u", pri, channel + 1);
+                    sprintf(String, "PRI%d:%u", pri, channel + 1);
                     UI_PrintString(String, menu_item_x1, menu_item_x2, pri * 2 + 1, 8);
                 }
             }
@@ -1486,7 +1466,7 @@ void UI_DisplayMenu(void)
     if (UI_MENU_GetCurrentMenuId() == MENU_D_LIST && gIsDtmfContactValid) {
         Contact[11] = 0;
         memcpy(&gDTMF_ID, Contact + 8, 4);
-        snprintf(String, sizeof(String), "ID:%4s", gDTMF_ID);
+        sprintf(String, "ID:%4s", gDTMF_ID);
         UI_PrintString(String, menu_item_x1, menu_item_x2, 4, 8);
     }
 #endif
@@ -1499,7 +1479,7 @@ void UI_DisplayMenu(void)
         || UI_MENU_GetCurrentMenuId() == MENU_D_LIST
 #endif
     ) {
-        snprintf(String, sizeof(String), "%2d", gSubMenuSelection);
+        sprintf(String, "%2d", gSubMenuSelection);
         UI_PrintStringSmallNormal(String, 105, 0, 0);
     }
 

@@ -76,7 +76,7 @@ void UI_DisplayWelcome(void)
         PY25Q16_ReadBuffer(0x007030, WelcomeString1, 16);
 
         // Prepare Voltage String
-        snprintf(WelcomeString2, sizeof(WelcomeString2), "%u.%02uV %u%%",
+        sprintf(WelcomeString2, "%u.%02uV %u%%",
                 gBatteryVoltageAverage / 100,
                 gBatteryVoltageAverage % 100,
                 BATTERY_VoltsToPercent(gBatteryVoltageAverage));
@@ -117,7 +117,7 @@ void UI_DisplayWelcome(void)
         }
 
         // ApeX Edition on Line 6
-        snprintf(WelcomeString3, sizeof(WelcomeString3), "%s Edition", Edition);
+        sprintf(WelcomeString3, "%s Edition", Edition);
         UI_PrintStringSmallNormal(WelcomeString3, 0, 127, 6);
 
         ST7565_BlitFullScreen();

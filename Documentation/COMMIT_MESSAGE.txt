@@ -37,9 +37,9 @@ Files:
 - Keep total message short; include only key technical points.
 - Add safety/compatibility notes when relevant.
 
-## Latest Example (v7.6.5br5)
+## Latest Example (v7.6.5br4 Patch)
 
-fix(battery-ui): harden calibration and merge BatInf into SysInf for v7.6.5br5
+fix(battery-ui): harden calibration and merge BatInf into SysInf for v7.6.5br4
 
 Why:
 - Battery voltage could become unrealistic when low/high calibration points were incoherent.
@@ -49,14 +49,14 @@ What:
 - Added guarded `BATTERY_AdcToVoltage10mV()` two-point conversion with one-point fallback.
 - Updated BATCAL save path to persist coherent low/high calibration pairs.
 - Removed `BatInf` menu entry and integrated H/C diagnostics into SysInf custom rendering.
-- Updated version strings and ApeX target to `v7.6.5br5`.
+- Updated version strings and ApeX target to `v7.6.5br4`.
 
 Impact:
 - Battery readouts are more stable and consistent across main battery and spectrum screens.
 - SysInf now provides consolidated battery diagnostics with cleaner UI behavior.
 
 Validation:
-- Build artifacts generated for `n7six.ApeX-k1.v7.6.5br5` (`.elf/.bin/.hex/.map`).
+- Build artifacts generated for `n7six.ApeX-k1.v7.6.5br4` (`.elf/.bin/.hex/.map`).
 - In-session checks confirmed realistic battery voltage and expected SysInf output.
 
 Files:
@@ -64,8 +64,8 @@ Files:
 - App/app/menu.c
 - App/ui/menu.c
 - App/app/spectrum.c
-- Documentation/release-notes/v7.6.5br5-apex.md
-- Documentation/v7.6.5br5_UPDATE_SUMMARY.md
+- Documentation/release-notes/v7.6.5br4-patch-apex.md
+- Documentation/v7.6.5br4_UPDATE_SUMMARY.md
 
 ## Related Standards
 - [Release notes index](RELEASE_NOTES.md)
