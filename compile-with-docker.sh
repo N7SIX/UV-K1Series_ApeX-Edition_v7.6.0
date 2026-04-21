@@ -2,6 +2,9 @@
 set -euo pipefail
 
 # ---------------------------------------------
+
+# Prevent OS: unbound variable error
+: "${OS:=}"
 # Usage:
 #   ./compile-with-docker.sh [Preset] [CMake options...]
 # Examples:
