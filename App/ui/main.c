@@ -365,7 +365,21 @@ void UI_DisplayAudioBar(void)
         uint8_t *p_line = gFrameBuffer[line];
         memset(p_line, 0, LCD_WIDTH);
 
-        DrawLevelBar(17, line, barsOld, 22);
+
+        // Reduce TX bar width from 22 to 16 bars to make space for VSWR icon
+        DrawLevelBar(17, line, barsOld, 16);
+
+        // Draw placeholder for VSWR icon (5x5 pixels) at the right of the bar
+        // Bar starts at x=17, width=16*5=80, so icon at x=17+80+2=99
+        // Adjust y as needed (line*8 for page addressing)
+        // Placeholder: fill 5x5 block with pixels
+        uint8_t vswr_x = 99;
+        uint8_t vswr_y = line * 8 + 1; // 1px down from top of line
+        for (uint8_t dx = 0; dx < 5; dx++) {
+            for (uint8_t dy = 0; dy < 5; dy++) {
+                UI_InvertPixelBuffer(vswr_x + dx, vswr_y + dy);
+            }
+        }
 
         // Draw antenna icon at the start of the TX bar meter
         int8_t txLevel = -1;
