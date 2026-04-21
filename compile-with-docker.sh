@@ -59,23 +59,15 @@ build_preset() {
     TTY_FLAG="-i"
   fi
 
-  # Detect environment and use correct path for Docker
-  local DOCKER_PATH
-  if [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then
-    # If running in Git Bash, try to detect if launched from Windows Terminal/PowerShell/CMD
-    if [ -n "$WT_SESSION" ] || [ -n "$TERM_PROGRAM" ] || [ ! -z "$ComSpec" ]; then
-      # Use Windows path for Docker
-      DOCKER_PATH="/c/Users/sebue/Documents/N7SIX/Software/Quansheng/httpsgithub.comN7SIXUV-K1Series_ApeX-Edition_v7.6.0/UV-K1Series_ApeX-Edition_v7.6.0"
+    # Robust Docker path handling for Windows and Git Bash
+    local DOCKER_PATH
+    if [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then
+      DOCKER_PATH=$(pwd -W)
     else
-      # Use Git Bash path conversion
-      DOCKER_PATH=$(pwd -W | sed 's|\\|/|g; s|^\([A-Za-z]\):|/\L\1|')
+      DOCKER_PATH=$(pwd)
     fi
-  elif [[ "$OS" == "Windows_NT" ]]; then
-    # PowerShell or CMD
-    DOCKER_PATH="$PWD"
-  else
-    DOCKER_PATH=$(pwd)
-  fi
+    # Debug: List /src contents before running CMake
+    docker run --rm $TTY_FLAG -v "$DOCKER_PATH":/src "$IMAGE" bash -c "ls -l /src"
   docker run --rm $TTY_FLAG -v "$DOCKER_PATH":/src "$IMAGE" \
     bash -c "which arm-none-eabi-gcc && arm-none-eabi-gcc --version && \
              cmake --preset ${preset} ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} && \
