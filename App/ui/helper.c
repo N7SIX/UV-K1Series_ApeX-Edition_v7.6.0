@@ -312,7 +312,8 @@ static void sort(int16_t *a, int16_t *b)
       }
     }
 
-    static const uint8_t gFont5x5[24][5] = {
+    // Added S (index 24) and W (index 25)
+    static const uint8_t gFont5x5[26][5] = {
         {0x04, 0x0A, 0x11, 0x1F, 0x11}, // A
         {0x1E, 0x11, 0x1E, 0x11, 0x1E}, // B
         {0x0E, 0x11, 0x10, 0x11, 0x0E}, // C
@@ -336,7 +337,9 @@ static void sort(int16_t *a, int16_t *b)
         {0x00, 0x04, 0x00, 0x04, 0x00}, // :
         {0x01, 0x02, 0x04, 0x08, 0x10}, // /
         {0x18, 0x19, 0x02, 0x13, 0x03}, // %
-        {0x00, 0x00, 0x00, 0x0C, 0x0C}  // .
+        {0x00, 0x00, 0x00, 0x0C, 0x0C},  // .
+        {0x0E, 0x10, 0x0E, 0x01, 0x1E}, // S (index 24)
+        {0x11, 0x11, 0x15, 0x1B, 0x11}  // W (index 25)
     };
 
     void UI_Draw5x5Char(char c, uint8_t x, uint8_t y, bool fill) {
@@ -358,6 +361,8 @@ static void sort(int16_t *a, int16_t *b)
         else if (c == '/') glyph = gFont5x5[21];
         else if (c == '%') glyph = gFont5x5[22];
         else if (c == '.') glyph = gFont5x5[23];
+        else if (c == 'S') glyph = gFont5x5[24];
+        else if (c == 'W') glyph = gFont5x5[25];
         else if (c == ' ') return;
         if (!glyph) return;
 

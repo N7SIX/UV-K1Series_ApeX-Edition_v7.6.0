@@ -112,7 +112,9 @@ volatile uint32_t gDisplayRenderCount = 0;
 #include "ui/main.h"
 #include "ui/menu.h"
 #include "ui/status.h"
+
 #include "ui/ui.h"
+#include "vswr.h"
 
 #ifdef ENABLE_FEAT_N7SIX_SCREENSHOT
     #include "screenshot.h"
@@ -1587,6 +1589,10 @@ void cancelUserInputModes(void)
 // this is called once every 500ms
 void APP_TimeSlice500ms(void)
 {
+    // Update VSWR idle voltage for accurate SWR display during TX
+    if (gCurrentFunction != FUNCTION_TRANSMIT) {
+        VSWR_SampleIdleVoltage();
+    }
     gNextTimeslice_500ms = false;
     bool exit_menu = false;
 
@@ -1764,6 +1770,7 @@ void APP_TimeSlice500ms(void)
             if (gBatteryVoltageIndex > 3)
                 gBatteryVoltageIndex = 0;
             BATTERY_GetReadings(true);
+            VSWR_SampleIdleVoltage();
         }
     }
 

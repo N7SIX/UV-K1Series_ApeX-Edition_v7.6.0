@@ -49,6 +49,7 @@ target_sources(App INTERFACE
     ui/status.c
     ui/ui.c
     ui/welcome.c
+    vswr.c
     "version.c"
     main.c
     external/printf/printf.c

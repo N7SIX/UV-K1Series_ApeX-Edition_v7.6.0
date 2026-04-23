@@ -60,6 +60,8 @@
 #include "ui/ui.h"
 #include "audio.h"
 
+#include "vswr.h"
+
 #include "audio.h"
 
 #ifdef ENABLE_AM_FIX
@@ -366,20 +368,31 @@ void UI_DisplayAudioBar(void)
         memset(p_line, 0, LCD_WIDTH);
 
 
-        // Reduce TX bar width from 22 to 16 bars to make space for VSWR icon
-        DrawLevelBar(17, line, barsOld, 16);
 
-        // Draw placeholder for VSWR icon (5x5 pixels) at the right of the bar
-        // Bar starts at x=17, width=16*5=80, so icon at x=17+80+2=99
-        // Adjust y as needed (line*8 for page addressing)
-        // Placeholder: fill 5x5 block with pixels
-        uint8_t vswr_x = 99;
-        uint8_t vswr_y = line * 8 + 1; // 1px down from top of line
-        for (uint8_t dx = 0; dx < 5; dx++) {
-            for (uint8_t dy = 0; dy < 5; dy++) {
-                UI_InvertPixelBuffer(vswr_x + dx, vswr_y + dy);
-            }
+        // Reduce TX bar width further to 13 bars to fit 'VSWR: 1.5/50Ω' (5x5 font, 13 chars ≈ 65px)
+        DrawLevelBar(17, line, barsOld, 13);
+
+        // Dynamically display SWR value using VSWR estimator
+        // Sample voltages for VSWR estimation
+        if (gCurrentFunction == FUNCTION_TRANSMIT) {
+            VSWR_SampleTxVoltage();
+        } else {
+            VSWR_SampleIdleVoltage();
         }
+
+
+        // Format SWR string and show raw voltages for diagnostics
+        char swr_str[16];
+        float swr_val = VSWR_GetEstimate();
+        snprintf(swr_str, sizeof(swr_str), "SWR:%.1f", swr_val);
+        uint8_t swr_text_x = 84;
+        uint8_t swr_text_y = line * 8 + 1; // 1px down from top of line
+        UI_Draw5x5String(swr_str, swr_text_x, swr_text_y, true);
+
+        // Diagnostic: show idle and TX voltages (10mV units)
+        char vstr[16];
+        snprintf(vstr, sizeof(vstr), "I:%u T:%u", VSWR_GetIdleVoltage(), VSWR_GetTxVoltage());
+        UI_Draw5x5String(vstr, swr_text_x, swr_text_y + 7, true);
 
         // Draw antenna icon at the start of the TX bar meter
         int8_t txLevel = -1;
