@@ -103,7 +103,7 @@ Changelog and prior authors preserved below.
 #4.3.0:
 #       add support for k1 & k5(v3)
 
-#4.4.0 (2026-04-23):
+#7.6.0 (2026-04-23):
 #       All French UI strings translated to English (e.g., firmware fallback message)
 #       Syntax errors fixed in set_settings (no stray elif/else)
 #       Defensive programming and logging improvements (N7SIX)
@@ -133,9 +133,9 @@ DEBUG_SHOW_OBFUSCATED_COMMANDS = False
 # might be useful for someone debugging some obscure memory issue
 DEBUG_SHOW_MEMORY_ACTIONS = False
 
-RADIO_MODEL = "UV-K1 Series - N7SIX"
+RADIO_MODEL = "Quansheng UV-K1/K5 (N7SIX) EN"
 CHIRP_MODEL = RADIO_MODEL
-DRIVER_VERSION = "UV-K1 Series - N7SIX driver ver: 2026/04/23 (c) Sean N7SIX v1.0.1"
+DRIVER_VERSION = "UV-K1 Series - N7SIX driver ver: 2026/04/23 (c) Sean N7SIX v7.6.0"
 FIRMWARE_VERSION_UPDATE = "https://github.com/armel/uv-k5-firmware-custom/releases"
 
 CHIRP_DRIVER_VERSION_UPDATE = "https://github.com/armel/uv-k5-chirp-driver/releases"
@@ -1705,7 +1705,6 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         val = RadioSettingValueString(1, 16, tmpval)
         val.set_charset(DTMF_CHARS_UPDOWN)
         up_code_setting = RadioSetting("dtmf_dtmf_up_code", "Code UP (1-16 chars 0-9 ABCD*#)  (UPCode)", val)
-        up_code_setting.set_doc('UPCode : Code DTMF qui sera envoyer en debut de transmission.')
 
         tmpval = str(_mem.dtmf.down_code).upper().strip(
                 "\x00\xff\x20")
