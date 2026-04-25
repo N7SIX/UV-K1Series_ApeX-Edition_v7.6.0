@@ -13,10 +13,14 @@
 #include <stdbool.h>
 #include "helper/battery.h"
 #include "radio.h"
+#include <stdio.h>
+#include "driver/uart.h"
 
 // Simple VSWR estimation state
 static uint16_t last_idle_voltage = 0;   // 10mV units
 static uint16_t last_tx_voltage = 0;     // 10mV units
+static float swr_samples[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+static uint8_t swr_sample_idx = 0;
 static float last_vswr = 1.0f;
 
 // Call this when radio is idle (not transmitting)
@@ -33,7 +37,19 @@ void VSWR_SampleTxVoltage(void) {
         float vswr = 1.0f + drop * 4.0f;
         if (vswr < 1.0f) vswr = 1.0f;
         if (vswr > 5.0f) vswr = 5.0f;
-        last_vswr = vswr;
+        // Store in moving average buffer
+        swr_samples[swr_sample_idx] = vswr;
+        swr_sample_idx = (swr_sample_idx + 1) % 4;
+        // Compute average
+        float sum = 0.0f;
+        for (int i = 0; i < 4; ++i) sum += swr_samples[i];
+        last_vswr = sum / 4.0f;
+
+#ifdef ENABLE_UART
+        char dbg[64];
+        int dbg_len = snprintf(dbg, sizeof(dbg), "[VSWR] idle:%u tx:%u swr:%.2f\r\n", last_idle_voltage, last_tx_voltage, last_vswr);
+        UART_Send((uint8_t*)dbg, dbg_len);
+#endif
     }
 }
 

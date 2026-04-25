@@ -58,9 +58,9 @@
 #include "ui/inputbox.h"
 #include "ui/main.h"
 #include "ui/ui.h"
+#include "driver/uart.h"
 #include "audio.h"
 
-#include "vswr.h"
 
 #include "audio.h"
 
@@ -370,29 +370,10 @@ void UI_DisplayAudioBar(void)
 
 
         // Reduce TX bar width further to 13 bars to fit 'VSWR: 1.5/50Ω' (5x5 font, 13 chars ≈ 65px)
-        DrawLevelBar(17, line, barsOld, 13);
-
-        // Dynamically display SWR value using VSWR estimator
-        // Sample voltages for VSWR estimation
-        if (gCurrentFunction == FUNCTION_TRANSMIT) {
-            VSWR_SampleTxVoltage();
-        } else {
-            VSWR_SampleIdleVoltage();
-        }
+        // N7SIX: Restore TX bar to full width for dynamic display
+        DrawLevelBar(17, line, barsOld, 25);
 
 
-        // Format SWR string and show raw voltages for diagnostics
-        char swr_str[16];
-        float swr_val = VSWR_GetEstimate();
-        snprintf(swr_str, sizeof(swr_str), "SWR:%.1f", swr_val);
-        uint8_t swr_text_x = 84;
-        uint8_t swr_text_y = line * 8 + 1; // 1px down from top of line
-        UI_Draw5x5String(swr_str, swr_text_x, swr_text_y, true);
-
-        // Diagnostic: show idle and TX voltages (10mV units)
-        char vstr[16];
-        snprintf(vstr, sizeof(vstr), "I:%u T:%u", VSWR_GetIdleVoltage(), VSWR_GetTxVoltage());
-        UI_Draw5x5String(vstr, swr_text_x, swr_text_y + 7, true);
 
         // Draw antenna icon at the start of the TX bar meter
         int8_t txLevel = -1;

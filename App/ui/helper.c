@@ -313,7 +313,8 @@ static void sort(int16_t *a, int16_t *b)
     }
 
     // Added S (index 24) and W (index 25)
-    static const uint8_t gFont5x5[26][5] = {
+    // N7SIX: Added 'I' glyph at index 26 (see below)
+    static const uint8_t gFont5x5[27][5] = {
         {0x04, 0x0A, 0x11, 0x1F, 0x11}, // A
         {0x1E, 0x11, 0x1E, 0x11, 0x1E}, // B
         {0x0E, 0x11, 0x10, 0x11, 0x0E}, // C
@@ -339,7 +340,8 @@ static void sort(int16_t *a, int16_t *b)
         {0x18, 0x19, 0x02, 0x13, 0x03}, // %
         {0x00, 0x00, 0x00, 0x0C, 0x0C},  // .
         {0x0E, 0x10, 0x0E, 0x01, 0x1E}, // S (index 24)
-        {0x11, 0x11, 0x15, 0x1B, 0x11}  // W (index 25)
+        {0x11, 0x11, 0x15, 0x1B, 0x11}, // W (index 25)
+        {0x0E, 0x04, 0x04, 0x04, 0x0E}   // I (index 26) N7SIX: vertical bar
     };
 
     void UI_Draw5x5Char(char c, uint8_t x, uint8_t y, bool fill) {
@@ -363,6 +365,7 @@ static void sort(int16_t *a, int16_t *b)
         else if (c == '.') glyph = gFont5x5[23];
         else if (c == 'S') glyph = gFont5x5[24];
         else if (c == 'W') glyph = gFont5x5[25];
+        else if (c == 'I') glyph = gFont5x5[26]; // N7SIX: Added support for 'I' (now at end)
         else if (c == ' ') return;
         if (!glyph) return;
 
@@ -377,6 +380,7 @@ static void sort(int16_t *a, int16_t *b)
     }
 
     void UI_Draw5x5String(const char *pString, uint8_t x, uint8_t y, bool fill) {
+        // N7SIX: LCD area is limited, so caller must ensure string fits horizontally (max ~7 chars at 6px each = 42px)
         while (*pString) {
             UI_Draw5x5Char(*pString, x, y, fill);
             x += 6; // 5 pixel char + 1 pixel spacing

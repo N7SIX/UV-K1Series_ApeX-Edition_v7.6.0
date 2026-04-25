@@ -1,3 +1,4 @@
+// ...existing code...
 /**
  * =====================================================================================
  * @file        generic.c
@@ -136,49 +137,37 @@ void GENERIC_Key_PTT(bool bKeyPressed)
 {
     gInputBoxIndex = 0;
 
-    if (!bKeyPressed || SerialConfigInProgress())
-    {   // PTT released
-        if (gCurrentFunction == FUNCTION_TRANSMIT) {    
+    if (!bKeyPressed || SerialConfigInProgress()) {
+        // PTT released
+        if (gCurrentFunction == FUNCTION_TRANSMIT) {
             // we are transmitting .. stop
             if (gFlagEndTransmission) {
                 FUNCTION_Select(FUNCTION_FOREGROUND);
-            }
-            else {
+            } else {
                 APP_EndTransmission();
-
                 if (gEeprom.REPEATER_TAIL_TONE_ELIMINATION == 0)
                     FUNCTION_Select(FUNCTION_FOREGROUND);
                 else
                     gRTTECountdown_10ms = gEeprom.REPEATER_TAIL_TONE_ELIMINATION * 10;
             }
-
-            gFlagEndTransmission = false;
-#ifdef ENABLE_VOX
-            gVOX_NoiseDetected = false;
-#endif
             RADIO_SetVfoState(VFO_STATE_NORMAL);
-
-            if (gScreenToDisplay != DISPLAY_MENU)     // 1of11 .. don't close the menu
+            if (gScreenToDisplay != DISPLAY_MENU)
                 gRequestDisplayScreen = DISPLAY_MAIN;
         }
-
         return;
     }
 
     // PTT pressed
 
-
-    if (SCANNER_IsScanning()) { 
+    if (SCANNER_IsScanning()) {
         SCANNER_Stop(); // CTCSS/CDCSS scanning .. stop
         goto cancel_tx;
     }
 
-    if (gScanStateDir != SCAN_OFF) {    
+    if (gScanStateDir != SCAN_OFF) {
         CHFRSCANNER_Stop(); // frequency/channel scanning . .stop
         goto cancel_tx;
     }
-
-
 
 #ifdef ENABLE_FMRADIO
     if (gFM_ScanState != FM_SCAN_OFF) { // FM radio is scanning .. stop
@@ -204,12 +193,10 @@ void GENERIC_Key_PTT(bool bKeyPressed)
     if (gScreenToDisplay != DISPLAY_MENU)     // 1of11 .. don't close the menu
         gRequestDisplayScreen = DISPLAY_MAIN;
 
-
     if (!gDTMF_InputMode && gDTMF_InputBox_Index == 0)
         goto start_tx;  // wasn't entering a DTMF code .. start TX'ing (maybe)
 
     // was entering a DTMF string
-
     if (gDTMF_InputBox_Index > 0 || gDTMF_PreviousIndex > 0) { // going to transmit a DTMF string
         if (gDTMF_InputBox_Index == 0 && gDTMF_PreviousIndex > 0)
             gDTMF_InputBox_Index = gDTMF_PreviousIndex;           // use the previous DTMF string
@@ -232,6 +219,8 @@ void GENERIC_Key_PTT(bool bKeyPressed)
         strncpy(gDTMF_String, gDTMF_InputBox, sizeof(gDTMF_String) - 1);
         gDTMF_String[sizeof(gDTMF_String) - 1] = '\0';
         gDTMF_ReplyState = DTMF_REPLY_ANI;
+        DTMF_clear_input_box();
+        goto start_tx;
     }
 
     DTMF_clear_input_box();
