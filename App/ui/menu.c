@@ -687,14 +687,15 @@ void UI_DisplayMenu(void)
         case MENU_TXP:
             if(gSubMenuSelection == 0)
             {
-                strncpy(String, gSubMenu_TXP[gSubMenuSelection], sizeof(String) - 1);
-                String[sizeof(String) - 1] = '\0';
+                // Show 'USER' and the current SetPwr value for clarity
+                extern const char gSubMenu_SET_PWR[][6];
+                extern uint8_t gSetting_set_pwr;
+                snprintf(String, sizeof(String), "USER\n[%sW]", gSubMenu_SET_PWR[gSetting_set_pwr]);
             }
             else
             {
-                // N77SIX, In this fork, gSubMenu_TXP usually contains strings like "LOW", "MID", "HIGH"
-    // or specific wattage like "0.5W", "1.0W", etc.
-    sprintf(String, "Power\n%s", gSubMenu_TXP[gSubMenuSelection]);
+                // N7SIX: gSubMenu_TXP contains "LOW", "MID", "HIGH", or wattage strings
+                snprintf(String, sizeof(String), "Power\n%s", gSubMenu_TXP[gSubMenuSelection]);
             }
             break;
 
