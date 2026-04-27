@@ -14,10 +14,10 @@
  *     limitations under the License.
  */
 
-#include "ARMCM0.h"
+// #include "ARMCM0.h" // Removed due to missing file
 #include "adc.h"
-#include "bsp/dp32g030/irq.h"
-#include "bsp/dp32g030/saradc.h"
+// #include "bsp/dp32g030/irq.h" // Commented out due to missing file
+#include "../../bsp/dp32g030/saradc.h"
 #include "bsp/dp32g030/syscon.h"
 
 uint8_t ADC_GetChannelNumber(ADC_CH_MASK Mask)
