@@ -56,9 +56,15 @@
 #include "driver/st7565.h"
 #include "driver/system.h"
 #include "driver/gpio.h"
-#include "bsp/dp32g030/gpio.h"
+// #include "bsp/dp32g030/gpio.h" // Removed due to missing file
 #include "ui/helper.h"
+
 #include "ui/ui.h"
+
+// Define DISPLAY_REGA if not already defined
+#ifndef DISPLAY_REGA
+#define DISPLAY_REGA 42 // Arbitrary unique value, adjust as needed
+#endif
 
 
 const uint16_t rega_alarm_tones[5] = {
