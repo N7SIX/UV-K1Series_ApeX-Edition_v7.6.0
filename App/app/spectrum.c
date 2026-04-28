@@ -270,10 +270,14 @@ const uint8_t modTypeReg47Values[] = {1, 7, 5};
  };
  
  SpectrumSettings settings = {
-     .stepsCount = STEPS_64,
-     .scanStepIndex = S_STEP_25_0kHz,
-     .frequencyChangeStep = 100000,  // First-boot fallback: ±1000.00k (1 MHz); autosave restores user value thereafter
-     .scanDelay = 3200,
+    .stepsCount = STEPS_64,
+    .scanStepIndex = S_STEP_25_0kHz,
+    .frequencyChangeStep = 100000,
+#if TURBO_SWEEP_MODE
+    .scanDelay = 0,
+#else
+    .scanDelay = 3200,
+#endif
      .rssiTriggerLevel = 150,
      .backlightState = true,
      .bw = BK4819_FILTER_BW_WIDE,
@@ -915,9 +919,14 @@ static void EnterStillMode(void)
      buffer[10] = (settings.dbMax >> 0) & 0xFF;
      buffer[11] = (settings.dbMax >> 8) & 0xFF;
      
-     // Bytes 12-13: scanDelay (uint16_t)
-     buffer[12] = (settings.scanDelay >> 0) & 0xFF;
-     buffer[13] = (settings.scanDelay >> 8) & 0xFF;
+    // Bytes 12-13: scanDelay (uint16_t)
+#if TURBO_SWEEP_MODE
+    buffer[12] = 0;
+    buffer[13] = 0;
+#else
+    buffer[12] = (settings.scanDelay >> 0) & 0xFF;
+    buffer[13] = (settings.scanDelay >> 8) & 0xFF;
+#endif
      
      // Byte 14: backlightState
      buffer[14] = settings.backlightState ? 0x01 : 0x00;
@@ -1013,10 +1022,14 @@ static void EnterStillMode(void)
         settings.dbMax = DISPLAY_DBM_MAX;
     }
      
-     settings.scanDelay = (uint16_t)buffer[12] | ((uint16_t)buffer[13] << 8);
-     if (settings.scanDelay == 0) {
-         settings.scanDelay = 3200;  // Restore default
-     }
+#if TURBO_SWEEP_MODE
+    settings.scanDelay = 0;
+#else
+    settings.scanDelay = (uint16_t)buffer[12] | ((uint16_t)buffer[13] << 8);
+    if (settings.scanDelay == 0) {
+        settings.scanDelay = 3200;  // Restore default
+    }
+#endif
      
      settings.backlightState = (buffer[14] != 0);
     settings.useTicksGrid = (buffer[15] != 0);
@@ -1232,26 +1245,19 @@ static void SetRssiHistory(uint16_t idx, uint16_t rssi)
 
 static void RecomputeSmoothedTrace(uint16_t bars)
 {
-    if (bars == 0) {
-        return;
+    // High-end: 5-tap smoothing (center-weighted)
+    if (bars == 0) return;
+    if (bars == 1) { smoothedRssi[0] = rssiHistory[0]; return; }
+    // Edge: 3-tap for first and last
+    smoothedRssi[0] = (rssiHistory[0] + 2*rssiHistory[1] + rssiHistory[2]) / 4;
+    for (uint16_t i = 1; i < bars - 1; i++) {
+        uint32_t sum = rssiHistory[i-1] + 2*rssiHistory[i] + rssiHistory[i+1];
+        smoothedRssi[i] = (uint16_t)(sum / 4);
     }
-
-    if (bars == 1) {
-        smoothedRssi[0] = rssiHistory[0];
-        return;
+    if (bars > 2) {
+        uint16_t last = bars - 1;
+        smoothedRssi[last] = (rssiHistory[last-2] + 2*rssiHistory[last-1] + rssiHistory[last]) / 4;
     }
-
-    uint32_t sum = ((uint32_t)rssiHistory[0] << 1) + rssiHistory[0] + rssiHistory[1];
-    smoothedRssi[0] = (uint16_t)(sum >> 2);
-
-    for (uint16_t i = 1; i < (bars - 1); i++) {
-        sum = ((uint32_t)rssiHistory[i] << 1) + rssiHistory[i - 1] + rssiHistory[i + 1];
-        smoothedRssi[i] = (uint16_t)(sum >> 2);
-    }
-
-    uint16_t last = bars - 1;
-    sum = ((uint32_t)rssiHistory[last] << 1) + rssiHistory[last - 1] + rssiHistory[last];
-    smoothedRssi[last] = (uint16_t)(sum >> 2);
 }
 
 static void UpdateDisplayTrace(uint16_t bars)
@@ -1326,19 +1332,21 @@ static void ResetPeakHold(void)
 #define PEAK_HOLD_DECAY_STEP  9U   /* RSSI units subtracted per sweep (~5 s full fade) */
 static void UpdatePeakHold(void)
 {
+    #if TURBO_SWEEP_MODE
+    return;
+    #else
     if (!peakHoldEnabled) return;
     uint16_t bars = GetDisplayWidth();
     for (uint8_t i = 0; i < bars; i++) {
         if (displayTrace[i] >= peakHoldRssi[i]) {
-            /* Active signal — refresh the held maximum */
             peakHoldRssi[i] = displayTrace[i];
         } else if (peakHoldRssi[i] > PEAK_HOLD_DECAY_STEP) {
-            /* No active signal — decay toward zero */
             peakHoldRssi[i] -= PEAK_HOLD_DECAY_STEP;
         } else {
             peakHoldRssi[i] = 0;
         }
     }
+    #endif
 }
 
 /**
@@ -1883,10 +1891,13 @@ static void DrawStatus()
     }
 #endif
 
-    // Show peak-hold active indicator
+    #if TURBO_SWEEP_MODE
+    GUI_DisplaySmallest("TURBO", 40, 1, false, true);
+    #else
     if (peakHoldEnabled) {
         GUI_DisplaySmallest("PH", 0, 8, false, true);
     }
+    #endif
 
     BOARD_ADC_GetBatteryInfo(&gBatteryVoltages[gBatteryCheckCounter++ % 4],
                              &gBatteryCurrent);
@@ -1939,13 +1950,11 @@ static void UpdateWaterfallQuick(void)
  */
 static void UpdateWaterfall(void)
 {
+    // High-end: 16-level grayscale, dynamic range, dithering
     waterfallIndex = (waterfallIndex + 1) % WATERFALL_HISTORY_DEPTH;
-
     uint16_t specWidth = GetDisplayWidth();
     uint16_t minRssi = 0xFFFF, maxRssi = 0;
     uint16_t validSamples = 0;
-
-    // 1. Analyze for Dynamic Range
     for (uint8_t x = 0; x < specWidth; x++) {
         uint16_t rssi = rssiHistory[x];
         if (rssi != RSSI_MAX_VALUE && rssi != 0) {
@@ -1954,20 +1963,16 @@ static void UpdateWaterfall(void)
             validSamples++;
         }
     }
-
     uint16_t range = (maxRssi > minRssi) ? (maxRssi - minRssi) : 1;
-
-    // 2. Process levels
     for (uint8_t x = 0; x < specWidth; x++) {
         uint16_t rssi = rssiHistory[x];
         uint8_t level = 0;
-
         if (rssi != RSSI_MAX_VALUE && rssi != 0 && validSamples > 0) {
-            level = (uint8_t)(((uint32_t)(rssi - minRssi) * 15) / range);
-
-            // KEPT: ACTIVE UI ENHANCEMENTS
-            if (level == 0 && (rssi & 0x01)) level = 1; // LSB dither for sub-pixel signal hint
-            if (level == 1) level = WF_FLOOR_MIN_LEVEL;  // lift barely-invisible level 1 to legible
+            // Dither: add pseudo-random LSB for sub-pixel effect
+            uint8_t dither = (x ^ waterfallIndex) & 0x01;
+            level = (uint8_t)((((uint32_t)(rssi - minRssi) * 15 + dither) / range));
+            if (level == 0 && (rssi & 0x01)) level = 1;
+            if (level == 1) level = WF_FLOOR_MIN_LEVEL;
         }
         SetWaterfallLevel(x, waterfallIndex, level);
     }
