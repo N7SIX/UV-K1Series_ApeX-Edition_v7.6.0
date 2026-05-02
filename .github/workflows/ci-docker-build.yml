@@ -31,7 +31,4 @@ jobs:
 
       - name: Run cppcheck static analysis
         run: |
-          cppcheck --enable=all --inconclusive --error-exitcode=1 --force \
-            --suppress=missingReturn \
-            -i App/external \
-            App/
+          cppcheck --enable=all --inconclusive --error-exitcode=1 --force App/
