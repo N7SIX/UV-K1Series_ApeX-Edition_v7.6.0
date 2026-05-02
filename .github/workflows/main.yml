@@ -15,10 +15,14 @@ jobs:
     - name: Compile firmware
       run: |
         chmod +x compile-with-docker.sh
-        ./compile-with-docker.sh
+        ./compile-with-docker.sh ApeX
 
     - name: Upload firmware artifact
       uses: actions/upload-artifact@v4
       with:
         name: firmware-artifact
-        path: compiled-firmware/N7SIX.packed.bin
+        path: |
+          build/ApeX/*.bin
+          build/ApeX/*.elf
+          build/ApeX/*.hex
+          build/ApeX/*.map
