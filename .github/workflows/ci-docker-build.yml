@@ -21,14 +21,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
-        run: docker build -t uvk1-uvk5v3 .
-
       - name: Build all firmware presets
         run: |
-          for preset in Custom Bandscope Broadcast Basic RescueOps Game ApeX; do
-            docker run --rm -v $(pwd):/src uvk1-uvk5v3 bash -c "cmake --preset $preset && cmake --build --preset $preset -j"
-          done
+          chmod +x compile-with-docker.sh
+          ./compile-with-docker.sh All
 
       - name: Install cppcheck
         run: sudo apt-get update && sudo apt-get install -y cppcheck
