@@ -1,0 +1,5 @@
+Delete these files to fully remove SWR/VSWR code:
+- App/vswr.c
+- App/vswr.h
+- App/vswr_delay.c
+- App/vswr_delay.h

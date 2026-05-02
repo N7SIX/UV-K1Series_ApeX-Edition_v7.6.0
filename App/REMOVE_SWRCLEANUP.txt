@@ -1,0 +1,7 @@
+SWR/VSWR code, includes, and build targets have been removed from all main application files. The following files are now orphaned and can be deleted:
+- App/vswr.c
+- App/vswr.h
+- App/vswr_delay.c
+- App/vswr_delay.h
+
+You may delete these files manually if you wish to fully clean the source tree.

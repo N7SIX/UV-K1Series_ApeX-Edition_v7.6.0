@@ -166,10 +166,56 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 {
     uint8_t Vfo = gEeprom.TX_VFO;
 
+#include "ui/inputbox.h"
+
+    // --- Fix: Always commit frequency entry and save VFO state before switching VFOs ---
+    // If user is in the middle of frequency entry, finalize it before switching
+    if (gInputBoxIndex > 0 && IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE)) {
+        // Simulate frequency entry commit (copy from frequency entry handler)
+        uint8_t totalDigits = 6;
+        if (gTxVfo->pRX->Frequency >= _1GHz_in_KHz) {
+            totalDigits = 7;
+        }
+        const char *inputStr = INPUTBOX_GetAscii();
+        uint8_t inputLength = gInputBoxIndex;
+        uint32_t inputFreq = StrToUL(inputStr);
+        uint8_t zerosToAdd = totalDigits - inputLength;
+        for (uint8_t i = 0; i < zerosToAdd; i++) {
+            inputFreq *= 10;
+        }
+        uint32_t Frequency = inputFreq * 100;
+        if (Frequency < frequencyBandTable[0].lower) {
+            Frequency = frequencyBandTable[0].lower;
+        } else if (Frequency >= BX4819_band1.upper && Frequency < BX4819_band2.lower) {
+            const uint32_t center = (BX4819_band1.upper + BX4819_band2.lower) / 2;
+            Frequency = (Frequency < center) ? BX4819_band1.upper : BX4819_band2.lower;
+        } else if (Frequency > frequencyBandTable[BAND_N_ELEM - 1].upper) {
+            Frequency = frequencyBandTable[BAND_N_ELEM - 1].upper;
+        }
+        const FREQUENCY_Band_t band = FREQUENCY_GetBand(Frequency);
+        if (gTxVfo->Band != band) {
+            gTxVfo->Band = band;
+            gEeprom.ScreenChannel[Vfo] = band + FREQ_CHANNEL_FIRST;
+            gEeprom.FreqChannel[Vfo] = band + FREQ_CHANNEL_FIRST;
+            SETTINGS_SaveVfoIndices();
+            RADIO_ConfigureChannel(Vfo, VFO_CONFIGURE_RELOAD);
+        }
+        Frequency = FREQUENCY_RoundToStep(Frequency, gTxVfo->StepFrequency);
+        if (Frequency >= BX4819_band1.upper && Frequency < BX4819_band2.lower) {
+            const uint32_t center = (BX4819_band1.upper + BX4819_band2.lower) / 2;
+            Frequency = (Frequency < center) ? BX4819_band1.upper - gTxVfo->StepFrequency : BX4819_band2.lower;
+        }
+        gTxVfo->freq_config_RX.Frequency = Frequency;
+        gInputBoxIndex = 0;
+    }
 #ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
     if(gEeprom.MENU_LOCK == true) {
         if(Key == 2) { // Enable A/B only
-            gVfoConfigureMode     = VFO_CONFIGURE;
+            // Save current VFO state to gEeprom.VfoInfo[] and EEPROM before switching
+            gEeprom.VfoInfo[Vfo] = *gTxVfo;
+            SETTINGS_SaveChannel(gEeprom.ScreenChannel[Vfo], Vfo, &gEeprom.VfoInfo[Vfo], 2); // force EEPROM write
+            gRequestSaveVFO = true;
+            gVfoConfigureMode = VFO_CONFIGURE;
             COMMON_SwitchVFOs();
             if (beep)
                 gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
@@ -268,7 +314,11 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 
         case KEY_2:
             #ifdef ENABLE_FEAT_N7SIX
-                gVfoConfigureMode     = VFO_CONFIGURE;
+            // Save current VFO state to gEeprom.VfoInfo[] and EEPROM before switching
+            gEeprom.VfoInfo[Vfo] = *gTxVfo;
+            SETTINGS_SaveChannel(gEeprom.ScreenChannel[Vfo], Vfo, &gEeprom.VfoInfo[Vfo], 2); // force EEPROM write
+            gRequestSaveVFO = true;
+            gVfoConfigureMode = VFO_CONFIGURE;
             #endif
             COMMON_SwitchVFOs();
             if (beep)

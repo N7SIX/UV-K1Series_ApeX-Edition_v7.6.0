@@ -58,7 +58,9 @@
 #include "ui/inputbox.h"
 #include "ui/main.h"
 #include "ui/ui.h"
+#include "driver/uart.h"
 #include "audio.h"
+
 
 #include "audio.h"
 
@@ -365,7 +367,13 @@ void UI_DisplayAudioBar(void)
         uint8_t *p_line = gFrameBuffer[line];
         memset(p_line, 0, LCD_WIDTH);
 
-        DrawLevelBar(17, line, barsOld, 22);
+
+
+        // Reduce TX bar width further to 13 bars to fit 'VSWR: 1.5/50Ω' (5x5 font, 13 chars ≈ 65px)
+        // N7SIX: Restore TX bar to full width for dynamic display
+        DrawLevelBar(17, line, barsOld, 25);
+
+
 
         // Draw antenna icon at the start of the TX bar meter
         int8_t txLevel = -1;

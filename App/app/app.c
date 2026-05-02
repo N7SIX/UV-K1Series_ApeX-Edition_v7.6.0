@@ -112,6 +112,7 @@ volatile uint32_t gDisplayRenderCount = 0;
 #include "ui/main.h"
 #include "ui/menu.h"
 #include "ui/status.h"
+
 #include "ui/ui.h"
 
 #ifdef ENABLE_FEAT_N7SIX_SCREENSHOT

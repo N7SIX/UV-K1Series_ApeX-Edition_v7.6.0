@@ -1,0 +1,5 @@
+SWR/VSWR code, includes, and build targets have been removed. All main code is now clean. You may delete the following files for a fully clean source tree:
+App/vswr.c
+App/vswr.h
+App/vswr_delay.c
+App/vswr_delay.h

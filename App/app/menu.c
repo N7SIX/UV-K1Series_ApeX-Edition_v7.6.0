@@ -620,13 +620,15 @@ void MENU_AcceptSetting(void)
         }
 
         case MENU_MEM_CH: {
-            gTxVfo->CHANNEL_SAVE = gSubMenuSelection;
-            // Raise event for TX channel save (event-driven)
-            uint16_t channel_idx = gSubMenuSelection;
-            APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
-            gVfoConfigureMode   = VFO_CONFIGURE_RELOAD;
-            gFlagResetVfos      = true;
-            return;
+              gTxVfo->CHANNEL_SAVE = gSubMenuSelection;
+              // Save current VFO state to selected memory channel
+              SETTINGS_SaveChannel(gSubMenuSelection, gEeprom.TX_VFO, gTxVfo, 2);
+              // Raise event for TX channel save (event-driven)
+              uint16_t channel_idx = gSubMenuSelection;
+              APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
+              gVfoConfigureMode   = VFO_CONFIGURE_RELOAD;
+              gFlagResetVfos      = true;
+              return;
         }
 
         case MENU_MEM_NAME:
