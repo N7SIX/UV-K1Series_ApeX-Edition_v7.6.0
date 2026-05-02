@@ -296,15 +296,15 @@ These are forwarded directly to `cmake --preset` inside the container.
 Examples:
 
 ```bash
-./compile-with-docker.sh Bandscope -DENABLE_SPECTRUM=ON
-./compile-with-docker.sh Broadcast -DENABLE_FEAT_N7SIX_GAME=ON -DENABLE_NOAA=ON
-./compile-with-docker.sh Bandscope -DSQL_TONE=600
+./compile-with-docker.sh ApeX -DENABLE_SPECTRUM=ON
+./compile-with-docker.sh ApeX -DENABLE_FEAT_N7SIX_GAME=ON -DENABLE_NOAA=ON
+./compile-with-docker.sh ApeX -DSQL_TONE=600
 ```
 
 ### Notes
 
 - The first run may take a few minutes while Docker builds the base image.
-- Running with `All` will build every firmware variant in sequence.
+- Running with `All` will build every build preset currently declared in `CMakePresets.json`.
 - Each build runs inside Docker, so your host environment remains clean.
 
 ## Flashing the Firmware with UVTools2
