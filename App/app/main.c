@@ -420,6 +420,7 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
             if (a < STEP_N_ELEM - 1)
             {
                 gTxVfo->STEP_SETTING = FREQUENCY_GetStepIdxFromSortedIdx(a + 1);
+                gTxVfo->StepFrequency = gStepFrequencyTable[gTxVfo->STEP_SETTING];
             }
             if (IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE))
             {
@@ -433,6 +434,7 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
             if (b > 0)
             {
                 gTxVfo->STEP_SETTING = FREQUENCY_GetStepIdxFromSortedIdx(b - 1);
+                gTxVfo->StepFrequency = gStepFrequencyTable[gTxVfo->STEP_SETTING];
             }
             if (IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE))
             {

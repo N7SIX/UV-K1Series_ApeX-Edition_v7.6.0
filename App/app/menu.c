@@ -519,7 +519,9 @@ void MENU_AcceptSetting(void)
 
 
         case MENU_STEP: {
-            gTxVfo->STEP_SETTING = FREQUENCY_GetStepIdxFromSortedIdx(gSubMenuSelection);
+            const uint8_t step_idx = FREQUENCY_GetStepIdxFromSortedIdx(gSubMenuSelection);
+            gTxVfo->STEP_SETTING = step_idx;
+            gTxVfo->StepFrequency = gStepFrequencyTable[step_idx];
             if (IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE)) {
                 uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
                 APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
