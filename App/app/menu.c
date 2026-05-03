@@ -220,6 +220,11 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
             *pMax = ARRAY_SIZE(gSubMenu_ROGER) - 1;
             break;
 
+        case MENU_VOL:
+            // SysInf uses submenu selection as page index.
+            *pMax = 2;
+            break;
+
         case MENU_PONMSG:
             //*pMin = 0;
             *pMax = ARRAY_SIZE(gSubMenu_PONMSG) - 1;
@@ -300,7 +305,10 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
             break;
         case MENU_AM:
             //*pMin = 0;
-            *pMax = ARRAY_SIZE(gModulationStr) - 1;
+            // CW is only selectable in MAIN ONLY RX mode (no dual-watch, no cross-band)
+            *pMax = (gEeprom.DUAL_WATCH == DUAL_WATCH_OFF && gEeprom.CROSS_BAND_RX_TX == CROSS_BAND_OFF)
+                ? ARRAY_SIZE(gModulationStr) - 1
+                : MODULATION_USB;
             break;
 
 #ifndef ENABLE_FEAT_N7SIX
@@ -854,7 +862,11 @@ void MENU_AcceptSetting(void)
             break;
 
         case MENU_AM: {
-            gTxVfo->Modulation     = gSubMenuSelection;
+            ModulationMode_t selected_mod = gSubMenuSelection;
+            if ((gEeprom.DUAL_WATCH != DUAL_WATCH_OFF || gEeprom.CROSS_BAND_RX_TX != CROSS_BAND_OFF) && selected_mod > MODULATION_USB)
+                selected_mod = MODULATION_USB;
+
+            gTxVfo->Modulation     = selected_mod;
             uint16_t channel_idx = gTxVfo->CHANNEL_SAVE;
             APP_RaiseEvent(APP_EVENT_SAVE_CHANNEL, &channel_idx);
             return;
@@ -1345,8 +1357,15 @@ void MENU_ShowCurrentSetting(void)
             gSubMenuSelection = gEeprom.ROGER;
             break;
 
+        case MENU_VOL:
+            // Always enter SysInf on the first page.
+            gSubMenuSelection = 0;
+            break;
+
         case MENU_AM:
             gSubMenuSelection = gTxVfo->Modulation;
+            if ((gEeprom.DUAL_WATCH != DUAL_WATCH_OFF || gEeprom.CROSS_BAND_RX_TX != CROSS_BAND_OFF) && gSubMenuSelection > MODULATION_USB)
+                gSubMenuSelection = MODULATION_USB;
             break;
 
 #ifndef ENABLE_FEAT_N7SIX

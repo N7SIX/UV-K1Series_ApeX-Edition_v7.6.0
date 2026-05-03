@@ -72,6 +72,7 @@ typedef enum {
     MODULATION_FM,
     MODULATION_AM,
     MODULATION_USB,
+    MODULATION_CW,       // CW: available only in MAIN ONLY RX mode
 
 #ifdef ENABLE_BYP_RAW_DEMODULATORS
     MODULATION_BYP,

@@ -53,7 +53,6 @@
     #define VERSION_STRING_2 "v7.6.6"
 #endif
 
-
 const t_menu_item MenuList[] =
 {
 //   text,          menu ID
@@ -201,32 +200,6 @@ const t_menu_item MenuList[] =
 };
 
 const uint8_t FIRST_HIDDEN_MENU_ITEM = MENU_F_LOCK;
-
-static bool UI_MenuGetFramePixel(const uint8_t x, const uint8_t y)
-{
-    return (gFrameBuffer[y / 8][x] & (uint8_t)(1u << (y % 8))) != 0;
-}
-
-static void UI_MenuSetFramePixel(const uint8_t x, const uint8_t y, const bool on)
-{
-    const uint8_t mask = (uint8_t)(1u << (y % 8));
-    if (on)
-        gFrameBuffer[y / 8][x] |= mask;
-    else
-        gFrameBuffer[y / 8][x] &= (uint8_t)~mask;
-}
-
-static void UI_MenuShiftRegionDown1Px(const uint8_t x1, const uint8_t x2, const uint8_t y1, const uint8_t y2)
-{
-    for (uint8_t x = x1; x <= x2; x++)
-    {
-        for (int y = y2; y > y1; y--)
-        {
-            UI_MenuSetFramePixel(x, (uint8_t)y, UI_MenuGetFramePixel(x, (uint8_t)(y - 1)));
-        }
-        UI_MenuSetFramePixel(x, y1, false);
-    }
-}
 
 const char gSubMenu_TXP[][6] =
 {
@@ -534,6 +507,36 @@ int32_t gSubMenuSelection;
 char    edit_original[17]; // a copy of the text before editing so that we can easily test for changes/difference
 char    edit[17];
 int     edit_index;
+
+static void UI_MenuShiftAreaDownPixels(const uint8_t x1, const uint8_t x2, const uint8_t topPixel, const uint8_t bottomPixel, const uint8_t shift)
+{
+    uint8_t x;
+    uint8_t p;
+
+    if (shift == 0 || topPixel >= 64 || bottomPixel >= 64 || topPixel > bottomPixel)
+        return;
+
+    for (x = x1; x <= x2 && x < LCD_WIDTH; x++)
+    {
+        uint64_t column = 0;
+        uint64_t mask;
+        uint64_t moved;
+
+        for (p = 0; p < FRAME_LINES; p++)
+            column |= ((uint64_t)gFrameBuffer[p][x] << (8u * p));
+
+        mask = (((bottomPixel == 63) ? 0xffffffffffffffffULL : ((1ULL << (bottomPixel + 1u)) - 1ULL)) &
+                ~((topPixel == 0) ? 0ULL : ((1ULL << topPixel) - 1ULL)));
+
+        moved = (column & mask) << shift;
+        moved &= mask;
+
+        column = (column & ~mask) | moved;
+
+        for (p = 0; p < FRAME_LINES; p++)
+            gFrameBuffer[p][x] = (uint8_t)((column >> (8u * p)) & 0xffu);
+    }
+}
 
 void UI_DisplayMenu(void)
 {
@@ -1346,40 +1349,64 @@ void UI_DisplayMenu(void)
             // only for SysInf
             if(UI_MENU_GetCurrentMenuId() == MENU_VOL)
             {
-                const uint8_t h_y = 10;
-                const uint8_t h_label_x = 52;
+                const uint8_t page = (gSubMenuSelection <= 0) ? 0 : (gSubMenuSelection >= 2 ? 2 : 1);
+                const uint8_t pane_x1 = menu_item_x1;
+                const uint8_t pane_x2 = menu_item_x2;
+                const uint8_t nav_line = 3;
+                const uint8_t nav_left_x = pane_x1 + 1;
+                const uint8_t nav_right_x = (pane_x2 > 6) ? (pane_x2 - 6) : pane_x2;
 
-                sprintf(edit, "%u.%02uV %u%%",
-                    gBatteryVoltageAverage / 100, gBatteryVoltageAverage % 100,
-                    BATTERY_VoltsToPercent(gBatteryVoltageAverage)
-                );
+                if (page == 0)
+                {
+                    // Page 1: firmware identity details.
+                    UI_PrintString(AUTHOR_STRING_2, pane_x1, pane_x2, 1, 8);
+                    UI_PrintString(VERSION_STRING_2, pane_x1, pane_x2, 3, 8);
+                    UI_PrintStringSmallNormal(Edition, pane_x1, pane_x2, 5);
+                }
+                else if (page == 1)
+                {
+                    // Page 2: battery voltage and battery percentage.
+                    const uint16_t voltage = (gBatteryVoltageAverage <= 999) ? gBatteryVoltageAverage : 999;
+                    const uint8_t battery_percent = BATTERY_VoltsToPercent(gBatteryVoltageAverage);
 
-                UI_Draw5x5String(edit, 52, 2, true);
+                    sprintf(edit, "%1u.%02uV",
+                        voltage / 100,
+                        voltage % 100);
+                    UI_PrintString(edit, pane_x1, pane_x2, 1, 8);
 
-                UI_Draw5x5Char('H', h_label_x, h_y, true);
-                UI_Draw5x5Char(':', h_label_x + 5, h_y, true); // colon shifted 1px left
+                    UI_PrintStringSmallNormal("VOLTAGE", pane_x1, pane_x2, 0);
 
-                sprintf(edit, "%u%%", BATTERY_GetEstimatedHealthPercent());
-                UI_Draw5x5String(edit, h_label_x + 9, h_y, true); // value shifted 3px left
+                    // Keep the top pair tight while nudging both lines down by 2px.
+                    UI_MenuShiftAreaDownPixels(pane_x1, pane_x2, 0, 25, 2);
 
-                const uint8_t r_label_x = h_label_x + 9 + (uint8_t)(strlen(edit) * 6) + 2;
-                UI_Draw5x5Char('C', r_label_x, h_y, true);
-                UI_Draw5x5Char(':', r_label_x + 5, h_y, true); // colon shifted 1px left
+                    UI_PrintStringSmallNormal("BATTERY", pane_x1, pane_x2, 4);
+                    sprintf(edit, "%3u%%", battery_percent);
+                    UI_PrintString(edit, pane_x1, pane_x2, 5, 8);
+                }
+                else
+                {
+                    // Page 3: battery health and battery capacity.
+                    const uint8_t health = BATTERY_GetEstimatedHealthPercent();
+                    const uint16_t capacity_mah = BATTERY_GetEstimatedRemainingmAh();
 
-                sprintf(edit, "%um", BATTERY_GetEstimatedRemainingmAh());
-                UI_Draw5x5String(edit, r_label_x + 9, h_y, true); // value shifted 3px left
+                    sprintf(edit, "%3u%%", health);
+                    UI_PrintString(edit, pane_x1, pane_x2, 1, 8);
 
-                #ifdef ENABLE_FEAT_N7SIX
-                    // Draw full-size SysInf labels shifted up by ~7 pixels.
-                    UI_PrintString(AUTHOR_STRING_2, 52, 127, 2, 8);
-                    UI_PrintString(VERSION_STRING_2, 52, 127, 4, 8);
+                    UI_PrintStringSmallNormal("HEALTH", pane_x1, pane_x2, 0);
 
-                    // Move the big author/version block down by 1 pixel without changing size.
-                    UI_MenuShiftRegionDown1Px(52, 127, 16, 47);
+                    // Keep the top pair tight while nudging both lines down by 2px.
+                    UI_MenuShiftAreaDownPixels(pane_x1, pane_x2, 0, 25, 2);
 
-                    // Keep edition tag visible at the bottom area.
-                    UI_PrintStringSmallNormal(Edition, 54, 127, 6);
-                #endif
+                    UI_PrintStringSmallNormal("CAPACITY", pane_x1, pane_x2, 4);
+                    sprintf(edit, "%4umAh", capacity_mah);
+                    UI_PrintString(edit, pane_x1, pane_x2, 5, 8);
+                }
+
+                // Navigation hint in middle area: left arrow on left side, right arrow on right side.
+                if (page > 0)
+                    UI_PrintStringSmallNormal("<", nav_left_x, 0, nav_line);
+                if (page < 2)
+                    UI_PrintStringSmallNormal(">", nav_right_x, 0, nav_line);
 
                 already_printed = true;
                 y = 3;
@@ -1495,3 +1522,5 @@ void UI_DisplayMenu(void)
 
     ST7565_BlitFullScreen();
 }
+
+

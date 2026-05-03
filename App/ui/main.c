@@ -84,6 +84,8 @@
 #define BANDWIDTH_LINE_OFFSET           1        /**< Offset for bandwidth indicator */
 #define SMALL_FREQ_LINE_OFFSET          1        /**< Offset for small frequency display */
 #define SCANRNG_FREQ_LINE_OFFSET        1        /**< Offset for scan range frequency */
+#define CW_DECODED_BUFFER_LEN           18       /**< Decoded text history length for CW monitor */
+#define CW_MORSE_TOKEN_LEN              8        /**< Max Morse symbols per character token */
 
 // ============================================================================
 // SECTION: Global State and Variables
@@ -113,6 +115,122 @@ const char *VfoStateStr[] = {
     [VFO_STATE_ALARM]          = "ALARM",
     [VFO_STATE_VOLTAGE_HIGH]   = "VOLT HIGH"
 };
+
+typedef struct {
+    const char *pattern;
+    char        decoded;
+} CwMorseEntry_t;
+
+static const CwMorseEntry_t gCwMorseTable[] = {
+    {".-", 'A'}, {"-...", 'B'}, {"-.-.", 'C'}, {"-..", 'D'}, {".", 'E'},
+    {"..-.", 'F'}, {"--.", 'G'}, {"....", 'H'}, {"..", 'I'}, {".---", 'J'},
+    {"-.-", 'K'}, {".-..", 'L'}, {"--", 'M'}, {"-.", 'N'}, {"---", 'O'},
+    {".--.", 'P'}, {"--.-", 'Q'}, {".-.", 'R'}, {"...", 'S'}, {"-", 'T'},
+    {"..-", 'U'}, {"...-", 'V'}, {".--", 'W'}, {"-..-", 'X'}, {"-.--", 'Y'},
+    {"--..", 'Z'},
+    {"-----", '0'}, {".----", '1'}, {"..---", '2'}, {"...--", '3'}, {"....-", '4'},
+    {".....", '5'}, {"-....", '6'}, {"--...", '7'}, {"---..", '8'}, {"----.", '9'}
+};
+
+static char    gCwDecodedText[CW_DECODED_BUFFER_LEN + 1] = "";
+static uint8_t gCwDecodedLen = 0;
+static char    gCwMorseToken[CW_MORSE_TOKEN_LEN + 1] = "";
+static uint8_t gCwTokenLen = 0;
+static bool    gCwTonePrev = false;
+static uint8_t gCwToneTicks = 0;
+static uint8_t gCwGapTicks = 0;
+
+static void UI_MAIN_AppendDecodedChar(char decoded)
+{
+    if (gCwDecodedLen >= CW_DECODED_BUFFER_LEN) {
+        memmove(gCwDecodedText, gCwDecodedText + 1, CW_DECODED_BUFFER_LEN - 1);
+        gCwDecodedLen = CW_DECODED_BUFFER_LEN - 1;
+    }
+
+    gCwDecodedText[gCwDecodedLen++] = decoded;
+    gCwDecodedText[gCwDecodedLen] = '\0';
+}
+
+static void UI_MAIN_ResetCwSymbolStream(void)
+{
+    gCwDecodedText[0] = '\0';
+    gCwDecodedLen = 0;
+    gCwMorseToken[0] = '\0';
+    gCwTokenLen = 0;
+    gCwTonePrev = false;
+    gCwToneTicks = 0;
+    gCwGapTicks = 0;
+}
+
+static char UI_MAIN_DecodeMorseToken(void)
+{
+    if (gCwTokenLen == 0)
+        return '\0';
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(gCwMorseTable); i++) {
+        if (strcmp(gCwMorseToken, gCwMorseTable[i].pattern) == 0)
+            return gCwMorseTable[i].decoded;
+    }
+
+    return '?';
+}
+
+static void UI_MAIN_FlushMorseToken(bool addWordSpace)
+{
+    if (gCwTokenLen > 0) {
+        UI_MAIN_AppendDecodedChar(UI_MAIN_DecodeMorseToken());
+        gCwMorseToken[0] = '\0';
+        gCwTokenLen = 0;
+    }
+
+    if (addWordSpace && gCwDecodedLen > 0 && gCwDecodedText[gCwDecodedLen - 1] != ' ')
+        UI_MAIN_AppendDecodedChar(' ');
+}
+
+static void UI_MAIN_UpdateCwSymbolStream(bool toneOn)
+{
+    const uint8_t dotDashThreshold = 3;
+    const uint8_t letterGapThreshold = 5;
+    const uint8_t wordGapThreshold = 12;
+
+    if (toneOn) {
+        gCwToneTicks = (gCwTonePrev && gCwToneTicks < 250) ? gCwToneTicks + 1 : 1;
+        gCwGapTicks = 0;
+    } else {
+        if (gCwTonePrev) {
+            if (gCwTokenLen < CW_MORSE_TOKEN_LEN) {
+                gCwMorseToken[gCwTokenLen++] = (gCwToneTicks >= dotDashThreshold) ? '-' : '.';
+                gCwMorseToken[gCwTokenLen] = '\0';
+            }
+            gCwToneTicks = 0;
+        }
+
+        if (gCwGapTicks < 250)
+            gCwGapTicks++;
+
+        if (gCwGapTicks == letterGapThreshold)
+            UI_MAIN_FlushMorseToken(false);
+        else if (gCwGapTicks == wordGapThreshold)
+            UI_MAIN_FlushMorseToken(true);
+    }
+
+    gCwTonePrev = toneOn;
+}
+
+static void UI_MAIN_DrawCwDecoderPanel(uint8_t activeTxVFO, char *String)
+{
+    const bool toneOn = FUNCTION_IsRx() && (gEeprom.RX_VFO == activeTxVFO) && (gVFO_RSSI_bar_level[activeTxVFO] > 0);
+
+    UI_MAIN_UpdateCwSymbolStream(toneOn);
+
+    if (gCwDecodedText[0] == '\0')
+        snprintf(String, 22, "CW: WAITING%s", toneOn ? "*" : "");
+    else
+        snprintf(String, 22, "CW: %.17s", gCwDecodedText);
+
+    // Reserve only the very bottom row for CW decode output.
+    UI_PrintStringSmallNormal(String, 2, 0, 7);
+}
 
 // N7SIX Feature: Single VFO Mode Support
 #ifdef ENABLE_FEAT_N7SIX
@@ -1570,6 +1688,17 @@ void UI_DisplayMain(void)
 
         const bool rx = FUNCTION_IsRx();
 
+#ifdef ENABLE_FEAT_N7SIX
+        if (isMainOnly() && !gDTMF_InputMode && gEeprom.VfoInfo[activeTxVFO].Modulation == MODULATION_CW)
+        {
+            center_line = CENTER_LINE_IN_USE;
+            UI_MAIN_DrawCwDecoderPanel(activeTxVFO, String);
+        }
+        else
+        {
+            UI_MAIN_ResetCwSymbolStream();
+#endif
+
 #ifdef ENABLE_AUDIO_BAR
         if (gSetting_mic_bar && gCurrentFunction == FUNCTION_TRANSMIT) {
             center_line = CENTER_LINE_AUDIO_BAR;
@@ -1670,6 +1799,9 @@ void UI_DisplayMain(void)
             }
 #endif
         }
+#ifdef ENABLE_FEAT_N7SIX
+    }
+#endif
     }
 
 #ifdef ENABLE_FEAT_N7SIX
