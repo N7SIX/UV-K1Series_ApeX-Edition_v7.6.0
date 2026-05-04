@@ -83,6 +83,7 @@ const char gModulationStr[MODULATION_UKNOWN][4] = {
     [MODULATION_FM]="FM",
     [MODULATION_AM]="AM",
     [MODULATION_USB]="USB",
+    [MODULATION_CW]="CW",
 
 #ifdef ENABLE_BYP_RAW_DEMODULATORS
     [MODULATION_BYP]="BYP",
@@ -738,6 +739,8 @@ void RADIO_SetupRegisters(bool switchToForeground)
 
     if (gRxVfo->Modulation == MODULATION_AM)
         BK4819_SetFilterBandwidth(BK4819_FILTER_BW_AM, true);
+    else if (gRxVfo->Modulation == MODULATION_CW)
+        BK4819_SetFilterBandwidth(BK4819_FILTER_BW_NARROWER, true);
     else
     {
         switch (Bandwidth)
@@ -1046,6 +1049,9 @@ void RADIO_SetModulation(ModulationMode_t modulation)
         case MODULATION_USB:
             mod = BK4819_AF_BASEBAND2;
             break;
+        case MODULATION_CW:
+            mod = BK4819_AF_BASEBAND2;
+            break;
 
 #ifdef ENABLE_BYP_RAW_DEMODULATORS
         case MODULATION_BYP:
@@ -1125,8 +1131,12 @@ void RADIO_SetModulation(ModulationMode_t modulation)
     }
     
     BK4819_SetRegValue(afDacGainRegSpec, 0xF);
-    BK4819_WriteRegister(BK4819_REG_3D, modulation == MODULATION_USB ? 0 : 0x2AAB);
+    BK4819_WriteRegister(BK4819_REG_3D, (modulation == MODULATION_USB || modulation == MODULATION_CW) ? 0 : 0x2AAB);
     BK4819_SetRegValue(afcDisableRegSpec, modulation != MODULATION_FM);
+
+    // CW: force narrowest filter bandwidth for best SNR on narrow CW signals
+    if (modulation == MODULATION_CW)
+        BK4819_SetFilterBandwidth(BK4819_FILTER_BW_NARROWER, true);
 
     RADIO_SetupAGC(modulation == MODULATION_AM, false);
 }

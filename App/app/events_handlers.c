@@ -41,6 +41,7 @@
  *   - Total handler registration overhead: ~56 bytes (7 * 8 bytes/callback)
  */
 
+
 #include "events_handlers.h"
 #include "events.h"
 #include "../settings_event.h"
@@ -77,7 +78,6 @@ void APP_InitializeEventHandlers(void)
     APP_SubscribeEvent(APP_EVENT_SAVE_CHANNEL, UI_OnChannelChange);
 
     // Register SAVE_VFO handler (VFO/mode/power snapshot persistence)
-    #include "../settings_event.h"
     APP_SubscribeEvent(APP_EVENT_SAVE_VFO, SETTINGS_OnSaveVfo);
     // TODO: Future event handler registrations here
     // APP_SubscribeEvent(APP_EVENT_FREQUENCY_CHANGE, RADIO_OnFrequencyChange);

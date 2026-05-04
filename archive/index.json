@@ -1,0 +1,12 @@
+{
+  "archiveFormatVersion": 1,
+  "description": "Published firmware archive catalog. Keep binaries in GitHub Releases; keep metadata and integrity records here.",
+  "releases": [
+    {
+      "version": "v7.6.6",
+      "edition": "ApeX",
+      "manifestPath": "archive/releases/v7.6.6/manifest.json",
+      "publishedDate": "2026-05-02"
+    }
+  ]
+}

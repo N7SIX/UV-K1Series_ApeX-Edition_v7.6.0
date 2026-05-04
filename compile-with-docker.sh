@@ -2,6 +2,9 @@
 set -euo pipefail
 
 # ---------------------------------------------
+
+# Prevent OS: unbound variable error
+: "${OS:=}"
 # Usage:
 #   ./compile-with-docker.sh [Preset] [CMake options...]
 # Examples:
@@ -99,7 +102,16 @@ build_preset() {
     TTY_FLAG="-i"
   fi
 
-  docker run --rm $TTY_FLAG -v "$PWD":/src -w /src "$IMAGE" \
+    # Robust Docker path handling for Windows and Git Bash
+    local DOCKER_PATH
+    if [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then
+      DOCKER_PATH=$(pwd -W)
+    else
+      DOCKER_PATH=$(pwd)
+    fi
+    # Debug: List /src contents before running CMake
+    docker run --rm $TTY_FLAG -v "$DOCKER_PATH":/src "$IMAGE" bash -c "ls -l /src"
+  docker run --rm $TTY_FLAG -v "$DOCKER_PATH":/src "$IMAGE" \
     bash -c "which arm-none-eabi-gcc && arm-none-eabi-gcc --version && \
              cmake --preset ${preset} ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} && \
              cmake --build --preset ${preset} -j"

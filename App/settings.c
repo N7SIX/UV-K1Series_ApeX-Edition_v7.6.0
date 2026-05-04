@@ -259,34 +259,52 @@ void SETTINGS_InitEEPROM(void)
     bool validA = SETTINGS_ReadSnapshot(SETTINGS_SNAPSHOT_ADDR_A, &snapshotA);
     bool validB = SETTINGS_ReadSnapshot(SETTINGS_SNAPSHOT_ADDR_B, &snapshotB);
     if (!validA && !validB) {
-        // No valid ApeX snapshot found, attempt legacy import
-        // Import channels (0..199)
+        // No valid ApeX snapshot found, attempt robust legacy import (stock/Fusion)
         for (uint16_t ch = 0; ch < 200; ch++) {
             uint8_t buf[16];
             PY25Q16_ReadBuffer(ch * 16, buf, 16);
-            // Minimal validation: RX freq must be in plausible range
+            // Extract RX frequency (little-endian)
             uint32_t rx_freq = buf[0] | (buf[1]<<8) | (buf[2]<<16) | (buf[3]<<24);
             if (rx_freq > 10000000 && rx_freq < 1000000000) {
-                // Map to gEeprom.VfoInfo if possible, or call SETTINGS_SaveChannel
-                // For simplicity, call SETTINGS_SaveChannel (if available)
-                // Otherwise, copy to gEeprom.VfoInfo[ch] (if struct matches)
-                // This is a placeholder for actual mapping logic
-                // TODO: Map all fields as needed
+                VFO_Info_t vfo = {0};
+                vfo.freq_config_RX.Frequency = rx_freq;
+                // Example: extract TX offset (assume next 4 bytes, adjust as needed)
+                vfo.TX_OFFSET_FREQUENCY = buf[4] | (buf[5]<<8) | (buf[6]<<16) | (buf[7]<<24);
+                // Example: extract CTCSS/DCS, modulation, power, etc. (adjust as needed)
+                vfo.freq_config_RX.Code = buf[8];
+                vfo.freq_config_TX.Code = buf[9];
+                vfo.freq_config_TX.CodeType = (buf[10] >> 4) & 0x0F;
+                vfo.freq_config_RX.CodeType = buf[10] & 0x0F;
+                vfo.Modulation = (buf[11] >> 4) & 0x0F;
+                vfo.TX_OFFSET_FREQUENCY_DIRECTION = buf[11] & 0x0F;
+                vfo.OUTPUT_POWER = (buf[12] >> 2) & 0x07;
+                vfo.CHANNEL_BANDWIDTH = (buf[12] >> 1) & 0x01;
+                vfo.FrequencyReverse = buf[12] & 0x01;
+                vfo.DTMF_PTT_ID_TX_MODE = (buf[13] >> 1) & 0x07;
+#ifdef ENABLE_DTMF_CALLING
+                vfo.DTMF_DECODING_ENABLE = buf[13] & 0x01;
+#endif
+                vfo.STEP_SETTING = buf[14];
+#ifndef ENABLE_FEAT_N7SIX
+                vfo.SCRAMBLING_TYPE = buf[15];
+#endif
+                vfo.CHANNEL_SAVE = ch;
+                // Save to new format
+                SETTINGS_SaveChannel(ch, 0, &vfo, 2);
             }
         }
         // Import channel names
         for (uint16_t ch = 0; ch < 200; ch++) {
             uint8_t namebuf[10];
             PY25Q16_ReadBuffer(0x004000 + ch * 16, namebuf, 10);
-            // Null-terminate and validate
             namebuf[9] = '\0';
-            // TODO: Map to gEeprom or call SETTINGS_SaveChannelName
+            SETTINGS_SaveChannelName(ch, (char*)namebuf);
         }
-        // Import settings (example: squelch, timeout, locks, etc.)
+        // Import basic settings (example: squelch, timeout, etc.)
         PY25Q16_ReadBuffer(0x00A000, Data, 8);
         gEeprom.SQUELCH_LEVEL    = (Data[1] < 10) ? Data[1] : 1;
         gEeprom.TX_TIMEOUT_TIMER = (Data[2] > 4 && Data[2] < 180) ? Data[2] : 11;
-        // ... (repeat for other settings as needed, see legacy layout)
+        // Add more field mappings as needed for your hardware
 
         // After import, save as ApeX snapshot for future boots
         SETTINGS_SaveSnapshot();

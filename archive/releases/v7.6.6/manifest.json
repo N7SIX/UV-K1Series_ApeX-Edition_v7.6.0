@@ -1,0 +1,38 @@
+{
+  "manifestVersion": 1,
+  "version": "v7.6.6",
+  "edition": "ApeX",
+  "target": "n7six.ApeX-k1.v7.6.6",
+  "sourceCommit": "fa01710d2aae2f11e3d5f55dd4baca562323a3ed",
+  "buildPreset": "ApeX",
+  "toolchain": "Docker image uvk1-uvk5v3",
+  "publishedDate": "2026-05-02",
+  "releaseTag": "v7.6.6",
+  "releaseUrl": "",
+  "artifacts": [
+    {
+      "fileName": "n7six.ApeX-k1.v7.6.6.bin",
+      "relativePath": "build/ApeX/n7six.ApeX-k1.v7.6.6.bin",
+      "sizeBytes": 89308,
+      "sha256": "d5432b3b03141770a44c254d937b22da12a53defe0daf990e5a61e9b0be53730"
+    },
+    {
+      "fileName": "n7six.ApeX-k1.v7.6.6.elf",
+      "relativePath": "build/ApeX/n7six.ApeX-k1.v7.6.6.elf",
+      "sizeBytes": 157304,
+      "sha256": "e1960e35379353ed44e2f7ed9c53d9409f6bddd0e2e0f60001ac9eb686cdae29"
+    },
+    {
+      "fileName": "n7six.ApeX-k1.v7.6.6.hex",
+      "relativePath": "build/ApeX/n7six.ApeX-k1.v7.6.6.hex",
+      "sizeBytes": 251276,
+      "sha256": "95030ef8550d4d9e33ea95e50c54412a9319ecff7cc8ea097028ff0568047d68"
+    },
+    {
+      "fileName": "n7six.ApeX-k1.v7.6.6.map",
+      "relativePath": "build/ApeX/n7six.ApeX-k1.v7.6.6.map",
+      "sizeBytes": 301704,
+      "sha256": "edc68ab1b7cdee9850bad41169cc1d9df87fbc363813c454a5ffba74932dc954"
+    }
+  ]
+}

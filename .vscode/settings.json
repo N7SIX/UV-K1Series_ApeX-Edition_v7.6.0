@@ -1,9 +1,25 @@
 {
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingImports": "none"
+  },
   "github.copilot-chat.enabled": false,
   "github.copilot-chat.experimental.enable": false,
   "github.copilot.enabled": false,
   "problems.autoReveal": false,
-  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "cmake.enabled": false,
+  "cmake.configureOnOpen": false,
+  "cmake.autoSelectActiveFolder": false,
+  "cmake.ignoreCMakeListsMissing": true,
+  "cmake.showOptionsMovedNotification": false,
+  "cmake.statusbar.advanced": {
+    "build": "hidden",
+    "configure": "hidden",
+    "ctest": "hidden",
+    "debug": "hidden",
+    "launch": "hidden",
+    "buildTarget": "hidden",
+    "kit": "hidden"
+  },
   "C_Cpp.default.compileCommands": "${workspaceFolder}/build/ApeX/compile_commands.json",
   "C_Cpp.default.configuration": "UV-K1-PY32"
 }
