@@ -311,12 +311,12 @@ void SETTINGS_InitEEPROM(void)
     }
     // 0E70..0E77
     PY25Q16_ReadBuffer(0x004000, Data, 8);
-    gEeprom.CHAN_1_CALL          = IS_MR_CHANNEL(Data[0]) ? Data[0] : MR_CHANNEL_FIRST;
+    gEeprom.CHAN_1_CALL = IS_MR_CHANNEL(Data[0]) ? Data[0] : MR_CHANNEL_FIRST;
     {
-        // Guard SQL=0: erased/corrupted flash stores 0x00, which programs all
-        // BK4819 squelch thresholds to fully-open → radio immediately triggers
-        // SQUELCH_LOST on boot and enters RX. Valid range is 1-9; 0 is "squelch off"
-        // but should never come from flash corruption. Default to 5 and self-repair.
+        // SQUELCH (SQL) default logic:
+        // The SQUELCH_LEVEL is stored at EEPROM 0x004000, byte 1.
+        // Valid range: 1-9. If out of range or corrupted, default to 5.
+        // This matches the firmware's safe default and prevents open squelch on boot.
         uint8_t sqRaw = Data[1];
         gEeprom.SQUELCH_LEVEL = (sqRaw >= 1 && sqRaw < 10) ? sqRaw : 5;
         if (sqRaw == 0 || sqRaw >= 10) {
@@ -325,6 +325,7 @@ void SETTINGS_InitEEPROM(void)
             // 0x4008 settings block (BACKLIGHT etc.) that shares this sector.
             PY25Q16_WriteBuffer(0x004000, Data, 8, false);
         }
+        // Maintainer note: If you want to change the default SQUELCH, update the value '5' above.
     }
     gEeprom.TX_TIMEOUT_TIMER     = (Data[2] > 4 && Data[2] < 180) ? Data[2] : 11;
     #ifdef ENABLE_NOAA
