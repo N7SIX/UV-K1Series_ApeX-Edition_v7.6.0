@@ -23,6 +23,9 @@
 #include "dcs.h"
 #include "frequencies.h"
 
+// Default squelch tone (QS's 55Hz method, used for SQL_TONE fallback)
+#define SQL_TONE 550
+
 // =============================================================================
 // SAFETY MACROS FOR VFO POINTER ACCESS
 // =============================================================================
