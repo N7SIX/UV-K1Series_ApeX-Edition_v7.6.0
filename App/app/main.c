@@ -74,14 +74,13 @@
 #include "audio.h"
 #include "board.h"
 #include "driver/bk4819.h"
-#include "dtmf.h"
+#include "app/dtmf.h"
 #include "frequencies.h"
 #include "misc.h"
 #include "radio.h"
 #include "settings.h"
 #include "ui/inputbox.h"
 #include "ui/ui.h"
-#include "app/events.h"
 #include <stdlib.h>
 
 static void toggle_chan_scanlist(void)
@@ -92,22 +91,8 @@ static void toggle_chan_scanlist(void)
 
     if(!IS_MR_CHANNEL(gTxVfo->CHANNEL_SAVE)) {
 #ifdef ENABLE_SCAN_RANGES
-        uint32_t vfo1_freq = gTxVfo->pRX->Frequency;
-        uint32_t vfo2_freq = gEeprom.VfoInfo[!gEeprom.TX_VFO].freq_config_RX.Frequency;
-        // Define valid frequency range (adjust as needed for your radio)
-        const uint32_t FREQ_MIN = 10000000; // 10 MHz
-        const uint32_t FREQ_MAX = 600000000; // 600 MHz
-        bool vfo1_valid = (vfo1_freq >= FREQ_MIN && vfo1_freq <= FREQ_MAX);
-        bool vfo2_valid = (vfo2_freq >= FREQ_MIN && vfo2_freq <= FREQ_MAX);
-        if (!vfo1_valid || !vfo2_valid) {
-            // Invalid frequency(s), do not enter scan range mode
-            gScanRangeStart = 0;
-            gScanRangeStop = 0;
-            gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
-            return;
-        }
-        gScanRangeStart = gScanRangeStart ? 0 : vfo1_freq;
-        gScanRangeStop = vfo2_freq;
+        gScanRangeStart = gScanRangeStart ? 0 : gTxVfo->pRX->Frequency;
+        gScanRangeStop = gEeprom.VfoInfo[!gEeprom.TX_VFO].freq_config_RX.Frequency;
         if(gScanRangeStart > gScanRangeStop)
             SWAP(gScanRangeStart, gScanRangeStop);
 #endif
@@ -135,87 +120,14 @@ static void toggle_chan_scanlist(void)
     gFlagResetVfos    = true;
 }
 
-#ifdef ENABLE_NOAA
-static void toggle_noaa_channel(void)
-{
-    const uint8_t vfo = gEeprom.TX_VFO;
-    uint8_t target = gEeprom.ScreenChannel[vfo];
-
-    if (IS_NOAA_CHANNEL(target)) {
-        uint8_t fallback = gEeprom.MrChannel[vfo];
-        if (!IS_MR_CHANNEL(fallback)) {
-            fallback = gEeprom.FreqChannel[vfo];
-        }
-        target = fallback;
-    } else {
-        target = gEeprom.NoaaChannel[vfo];
-        if (!IS_NOAA_CHANNEL(target)) {
-            target = NOAA_CHANNEL_FIRST;
-            gEeprom.NoaaChannel[vfo] = target;
-        }
-    }
-
-    gEeprom.ScreenChannel[vfo] = target;
-    gRequestSaveVFO            = true;
-    gVfoConfigureMode          = VFO_CONFIGURE_RELOAD;
-    gRequestDisplayScreen      = DISPLAY_MAIN;
-}
-#endif
-
 static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 {
     uint8_t Vfo = gEeprom.TX_VFO;
 
-#include "ui/inputbox.h"
-
-    // --- Fix: Always commit frequency entry and save VFO state before switching VFOs ---
-    // If user is in the middle of frequency entry, finalize it before switching
-    if (gInputBoxIndex > 0 && IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE)) {
-        // Simulate frequency entry commit (copy from frequency entry handler)
-        uint8_t totalDigits = 6;
-        if (gTxVfo->pRX->Frequency >= _1GHz_in_KHz) {
-            totalDigits = 7;
-        }
-        const char *inputStr = INPUTBOX_GetAscii();
-        uint8_t inputLength = gInputBoxIndex;
-        uint32_t inputFreq = StrToUL(inputStr);
-        uint8_t zerosToAdd = totalDigits - inputLength;
-        for (uint8_t i = 0; i < zerosToAdd; i++) {
-            inputFreq *= 10;
-        }
-        uint32_t Frequency = inputFreq * 100;
-        if (Frequency < frequencyBandTable[0].lower) {
-            Frequency = frequencyBandTable[0].lower;
-        } else if (Frequency >= BX4819_band1.upper && Frequency < BX4819_band2.lower) {
-            const uint32_t center = (BX4819_band1.upper + BX4819_band2.lower) / 2;
-            Frequency = (Frequency < center) ? BX4819_band1.upper : BX4819_band2.lower;
-        } else if (Frequency > frequencyBandTable[BAND_N_ELEM - 1].upper) {
-            Frequency = frequencyBandTable[BAND_N_ELEM - 1].upper;
-        }
-        const FREQUENCY_Band_t band = FREQUENCY_GetBand(Frequency);
-        if (gTxVfo->Band != band) {
-            gTxVfo->Band = band;
-            gEeprom.ScreenChannel[Vfo] = band + FREQ_CHANNEL_FIRST;
-            gEeprom.FreqChannel[Vfo] = band + FREQ_CHANNEL_FIRST;
-            SETTINGS_SaveVfoIndices();
-            RADIO_ConfigureChannel(Vfo, VFO_CONFIGURE_RELOAD);
-        }
-        Frequency = FREQUENCY_RoundToStep(Frequency, gTxVfo->StepFrequency);
-        if (Frequency >= BX4819_band1.upper && Frequency < BX4819_band2.lower) {
-            const uint32_t center = (BX4819_band1.upper + BX4819_band2.lower) / 2;
-            Frequency = (Frequency < center) ? BX4819_band1.upper - gTxVfo->StepFrequency : BX4819_band2.lower;
-        }
-        gTxVfo->freq_config_RX.Frequency = Frequency;
-        gInputBoxIndex = 0;
-    }
 #ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
     if(gEeprom.MENU_LOCK == true) {
         if(Key == 2) { // Enable A/B only
-            // Save current VFO state to gEeprom.VfoInfo[] and EEPROM before switching
-            gEeprom.VfoInfo[Vfo] = *gTxVfo;
-            SETTINGS_SaveChannel(gEeprom.ScreenChannel[Vfo], Vfo, &gEeprom.VfoInfo[Vfo], 2); // force EEPROM write
-            gRequestSaveVFO = true;
-            gVfoConfigureMode = VFO_CONFIGURE;
+            gVfoConfigureMode     = VFO_CONFIGURE;
             COMMON_SwitchVFOs();
             if (beep)
                 gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
@@ -299,6 +211,11 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
                 gTxVfo->Band = BAND1_50MHz;
             }
 
+            // Ensure band index is always valid
+            if (gTxVfo->Band >= BAND_N_ELEM) {
+                gTxVfo->Band = BAND1_50MHz;
+            }
+
             gEeprom.ScreenChannel[Vfo] = FREQ_CHANNEL_FIRST + gTxVfo->Band;
             gEeprom.FreqChannel[Vfo]   = FREQ_CHANNEL_FIRST + gTxVfo->Band;
 
@@ -314,11 +231,7 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 
         case KEY_2:
             #ifdef ENABLE_FEAT_N7SIX
-            // Save current VFO state to gEeprom.VfoInfo[] and EEPROM before switching
-            gEeprom.VfoInfo[Vfo] = *gTxVfo;
-            SETTINGS_SaveChannel(gEeprom.ScreenChannel[Vfo], Vfo, &gEeprom.VfoInfo[Vfo], 2); // force EEPROM write
-            gRequestSaveVFO = true;
-            gVfoConfigureMode = VFO_CONFIGURE;
+                gVfoConfigureMode     = VFO_CONFIGURE;
             #endif
             COMMON_SwitchVFOs();
             if (beep)
@@ -350,19 +263,25 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 
         case KEY_5:
             if(beep) {
-                // F+5 short press: Spectrum analyzer
-#ifdef ENABLE_SPECTRUM
+#ifdef ENABLE_NOAA
+                if (!IS_NOAA_CHANNEL(gTxVfo->CHANNEL_SAVE)) {
+                    gEeprom.ScreenChannel[Vfo] = gEeprom.NoaaChannel[gEeprom.TX_VFO];
+                }
+                else {
+                    gEeprom.ScreenChannel[Vfo] = gEeprom.MrChannel[gEeprom.TX_VFO];
+#ifdef ENABLE_VOICE
+                        gAnotherVoiceID = VOICE_ID_CHANNEL_MODE;
+#endif
+                }
+                gRequestSaveVFO   = true;
+                gVfoConfigureMode = VFO_CONFIGURE_RELOAD;
+#elif defined(ENABLE_SPECTRUM)
                 APP_RunSpectrum();
                 gRequestDisplayScreen = DISPLAY_MAIN;
 #endif
             }
             else {
-                // F+5 held: NOAA quick toggle
-#ifdef ENABLE_NOAA
-                toggle_noaa_channel();
-#else
-                gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
-#endif
+                toggle_chan_scanlist();
             }
 
             break;
@@ -372,12 +291,11 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
             break;
 
         case KEY_7:
-            if (!beep) {
-                // F+7 held: Scan Range
-                toggle_chan_scanlist();
-            } else {
-                gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
-            }
+#ifdef ENABLE_VOX
+            ACTION_Vox();
+//#else
+//          toggle_chan_scanlist();
+#endif
             break;
 
         case KEY_8:
@@ -420,7 +338,6 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
             if (a < STEP_N_ELEM - 1)
             {
                 gTxVfo->STEP_SETTING = FREQUENCY_GetStepIdxFromSortedIdx(a + 1);
-                gTxVfo->StepFrequency = gStepFrequencyTable[gTxVfo->STEP_SETTING];
             }
             if (IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE))
             {
@@ -434,7 +351,6 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
             if (b > 0)
             {
                 gTxVfo->STEP_SETTING = FREQUENCY_GetStepIdxFromSortedIdx(b - 1);
-                gTxVfo->StepFrequency = gStepFrequencyTable[gTxVfo->STEP_SETTING];
             }
             if (IS_FREQ_CHANNEL(gTxVfo->CHANNEL_SAVE))
             {
@@ -531,6 +447,23 @@ void channelMoveSwitch(void) {
 
 static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 {
+
+    // Long press KEY_5: Enable NOAA
+    if (bKeyHeld && Key == KEY_5 && bKeyPressed) {
+        #ifdef ENABLE_NOAA
+        processFKeyFunction(KEY_5, false);
+        #endif
+        return;
+    }
+
+    // Long press KEY_7: Enable Scan Range
+    if (bKeyHeld && Key == KEY_7 && bKeyPressed) {
+        #ifdef ENABLE_SCAN_RANGES
+        toggle_chan_scanlist();
+        #endif
+        return;
+    }
+
     if (bKeyHeld) { // key held down
         if (bKeyPressed) {
             if (gScreenToDisplay == DISPLAY_MAIN) {
@@ -561,15 +494,7 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
                 case KEY_0...KEY_5:
                     gEeprom.SCAN_LIST_DEFAULT = Key;
                     #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
-                        gEeprom.CURRENT_STATE = 2; // 2 = Memory mode (or scan)
-                        SETTINGS_SaveSnapshot();
-                        char dbg[24];
-                        snprintf(dbg, sizeof(dbg), "SAVE: %d", gEeprom.CURRENT_STATE);
-                        UI_DisplayClear();
-                        UI_PrintStringSmallNormal(dbg, 0, 127, 0);
-                        ST7565_BlitFullScreen();
-                        SYSTEM_DelayMs(500);
-                        APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
+                        SETTINGS_WriteCurrentState();
                     #endif
                     break;
                 default:
@@ -624,14 +549,26 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
             // convert to int
             uint32_t inputFreq = StrToUL(inputStr);
 
+            // Pre-validation: reject values that will overflow during scaling
+            if (inputFreq > 999999) {
+                gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+                return;
+            }
+
             // how many zero to add
             uint8_t zerosToAdd = totalDigits - inputLength;
 
-            // add missing zero
+            // add missing zero with overflow check
             for (uint8_t i = 0; i < zerosToAdd; i++) {
+                // Check for overflow before multiplying (UINT32_MAX / 10 = 429496729)
+                if (inputFreq > 99999999U) {
+                    gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+                    return;
+                }
                 inputFreq *= 10;
             }
 
+            // Final frequency in Hz with overflow check
             uint32_t Frequency = inputFreq * 100;
 
             // clamp the frequency entered to some valid value
@@ -719,6 +656,13 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         ACTION_BackLight();
         return;
     }
+    #ifdef ENABLE_FEAT_N7SIX_GAME
+    else if(Key == 7)
+    {
+        APP_RunBreakout();
+        return;
+    }
+    #endif
 
     processFKeyFunction(Key, true);
 }
@@ -726,16 +670,6 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 static void MAIN_Key_EXIT(bool bKeyPressed, bool bKeyHeld)
 {
     if (!bKeyHeld && bKeyPressed) { // exit key pressed
-        // if a scan range is active, treat EXIT as “cancel range” first
-#ifdef ENABLE_SCAN_RANGES
-        if (gScanRangeStart) {
-            gScanRangeStart = 0;
-            gScanRangeStop  = 0;
-            gBeepToPlay     = BEEP_1KHZ_60MS_OPTIONAL;
-            gUpdateStatus   = true; // update status bar so user sees range cleared
-            return;
-        }
-#endif
         gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
 
 #ifdef ENABLE_DTMF_CALLING
@@ -751,6 +685,17 @@ static void MAIN_Key_EXIT(bool bKeyPressed, bool bKeyHeld)
         if (!gFmRadioMode)
 #endif
         {
+#ifdef ENABLE_SCAN_RANGES
+            // Allow EXIT to clear an active scan range (same outcome as KEY_7 toggle-off).
+            if (gScanStateDir == SCAN_OFF && gScanRangeStart != 0 && gInputBoxIndex == 0) {
+                gScanRangeStart       = 0;
+                gScanRangeStop        = 0;
+                gUpdateStatus         = true;
+                gRequestDisplayScreen = DISPLAY_MAIN;
+                return;
+            }
+#endif
+
             if (gScanStateDir == SCAN_OFF) {
                 if (gInputBoxIndex == 0)
                     return;
@@ -893,31 +838,19 @@ static void MAIN_Key_STAR(bool bKeyPressed, bool bKeyHeld)
         if (!bKeyPressed) // released
             return; 
 
+        /*
         #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
         if(gScanRangeStart == 0) // No ScanRange
         {
-            gEeprom.CURRENT_STATE = 1; // 1 = VFO mode
-            SETTINGS_SaveSnapshot();
-            char dbg[24];
-            snprintf(dbg, sizeof(dbg), "SAVE: %d", gEeprom.CURRENT_STATE);
-            UI_DisplayClear();
-            UI_PrintStringSmallNormal(dbg, 0, 127, 0);
-            ST7565_BlitFullScreen();
-            SYSTEM_DelayMs(500);
+            gEeprom.CURRENT_STATE = 1;
         }
         else // ScanRange
         {
-            gEeprom.CURRENT_STATE = 2; // 2 = Memory mode (or scan)
-            SETTINGS_SaveSnapshot();
-            char dbg[24];
-            snprintf(dbg, sizeof(dbg), "SAVE: %d", gEeprom.CURRENT_STATE);
-            UI_DisplayClear();
-            UI_PrintStringSmallNormal(dbg, 0, 127, 0);
-            ST7565_BlitFullScreen();
-            SYSTEM_DelayMs(500);
+            gEeprom.CURRENT_STATE = 2;
         }
-        APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
+        SETTINGS_WriteCurrentState();
         #endif
+        */
         ACTION_Scan(false);// toggle scanning
 
         gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
@@ -971,10 +904,7 @@ static void MAIN_Key_STAR(bool bKeyPressed, bool bKeyHeld)
         gRequestDisplayScreen = DISPLAY_SCANNER;
     }
     
-    // Ensure PTT state is properly released when exiting scanner menu
-    // Previous comment: "Fixed issue #138" - this guard prevents PTT hang when scanner menu is accessed
-    // Re-enabled for stability: Guarantees gPttWasReleased flag is set when transitioning to scanner UI
-    gPttWasReleased = true;
+    //gPttWasReleased = true; Fixed issue #138
     gUpdateStatus   = true;
 }
 
@@ -1106,21 +1036,11 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
     }
 
     // TODO: ???
-    // CLARIFIED LOGIC (from original code analysis):
-    // This commented block was previously used to remap extended key codes to standard keys.
-    // ORIGINAL INTENT: Convert KEY_SIDE2 (value > KEY_PTT) to a standard key for uniform handling
-    // CURRENT STATUS: No longer needed because:
-    //   1. KEY_SIDE1/KEY_SIDE2 are now handled directly in switch statement below (See KEY_SIDE1/KEY_SIDE2 cases)
-    //   2. Modern code structure supports these keys natively without remapping
-    //   3. Keeping this commented-out serves as historical reference if legacy behavior needed
-    // SAFE TO REMOVE: This code can be safely deleted if minimal firmware space is needed
-    // 
-    // Commented original:
-    // if (Key > KEY_PTT) { Key = KEY_SIDE2; }
-    //
-    // The current switch statement (below) properly handles KEY_SIDE1 and KEY_SIDE2
-    // directly as independent cases, making this remap unnecessary.
-    
+//  if (Key > KEY_PTT)
+//  {
+//      Key = KEY_SIDE2;      // what's this doing ???
+//  }
+
     switch (Key) {
 #ifdef ENABLE_FEAT_N7SIX
         case KEY_SIDE1:
@@ -1128,39 +1048,15 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 #endif
         case KEY_0...KEY_9:
             MAIN_Key_DIGITS(Key, bKeyPressed, bKeyHeld);
-            // If a VFO/mode/power/channel change was requested, persist snapshot
-            if (!bKeyHeld && !bKeyPressed && (gRequestSaveVFO || gRequestSaveChannel)) {
-                APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
-                gRequestSaveVFO = 0;
-                gRequestSaveChannel = 0;
-            }
             break;
         case KEY_MENU:
             MAIN_Key_MENU(bKeyPressed, bKeyHeld);
             break;
         case KEY_UP:
-            #ifdef ENABLE_NAVIG_LEFT_RIGHT
-                MAIN_Key_UP_DOWN(bKeyPressed, bKeyHeld, -1);            
-            #else
-                MAIN_Key_UP_DOWN(bKeyPressed, bKeyHeld, 1);
-            #endif
-            if (!bKeyHeld && !bKeyPressed && (gRequestSaveVFO || gRequestSaveChannel)) {
-                APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
-                gRequestSaveVFO = 0;
-                gRequestSaveChannel = 0;
-            }
+            MAIN_Key_UP_DOWN(bKeyPressed, bKeyHeld, 1);
             break;
         case KEY_DOWN:
-            #ifdef ENABLE_NAVIG_LEFT_RIGHT
-                MAIN_Key_UP_DOWN(bKeyPressed, bKeyHeld, 1);
-            #else
-                MAIN_Key_UP_DOWN(bKeyPressed, bKeyHeld, -1);
-            #endif
-            if (!bKeyHeld && !bKeyPressed && (gRequestSaveVFO || gRequestSaveChannel)) {
-                APP_RaiseEvent(APP_EVENT_SAVE_VFO, NULL);
-                gRequestSaveVFO = 0;
-                gRequestSaveChannel = 0;
-            }
+            MAIN_Key_UP_DOWN(bKeyPressed, bKeyHeld, -1);
             break;
         case KEY_EXIT:
             MAIN_Key_EXIT(bKeyPressed, bKeyHeld);

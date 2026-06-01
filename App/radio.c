@@ -63,7 +63,7 @@
 #include "audio.h"
 #include "dcs.h"
 #include "driver/bk4819.h"
-#include "driver/py25q16.h"
+#include "driver/eeprom.h"
 #include "driver/gpio.h"
 #include "driver/system.h"
 #include "frequencies.h"
@@ -74,23 +74,122 @@
 #include "settings.h"
 #include "ui/menu.h"
 
+#ifndef SQL_TONE
+    // Keep IntelliSense and non-CMake builds aligned with App/CMakeLists default.
+    #define SQL_TONE 550u
+#endif
+
 VFO_Info_t    *gTxVfo;
 VFO_Info_t    *gRxVfo;
 VFO_Info_t    *gCurrentVfo;
 DCS_CodeType_t gCurrentCodeType;
 VfoState_t     VfoState[2];
 
+typedef struct {
+    uint8_t openRssi;
+    uint8_t closeRssi;
+    uint8_t openNoise;
+    uint8_t closeNoise;
+    uint8_t closeGlitch;
+    uint8_t openGlitch;
+} RadioSquelchThresholds_t;
+
+static void RADIO_ReadSquelchThresholds(const uint16_t base, const uint8_t level, RadioSquelchThresholds_t *t)
+{
+    const uint16_t addr = base + level;
+
+    EEPROM_ReadBuffer(addr + 0x00, &t->openRssi,    1);
+    EEPROM_ReadBuffer(addr + 0x10, &t->closeRssi,   1);
+    EEPROM_ReadBuffer(addr + 0x20, &t->openNoise,   1);
+    EEPROM_ReadBuffer(addr + 0x30, &t->closeNoise,  1);
+    EEPROM_ReadBuffer(addr + 0x40, &t->closeGlitch, 1);
+    EEPROM_ReadBuffer(addr + 0x50, &t->openGlitch,  1);
+}
+
+static bool RADIO_IsSquelchThresholdsValid(const RadioSquelchThresholds_t *t)
+{
+    if (t == NULL)
+        return false;
+
+    // A few radios ship sparse/corrupt entries in this table. Reject obviously bad rows.
+    if (t->openNoise > 127 || t->closeNoise > 127)
+        return false;
+
+    if (t->openRssi == 0xFF || t->closeRssi == 0xFF ||
+        t->openNoise == 0xFF || t->closeNoise == 0xFF ||
+        t->openGlitch == 0xFF || t->closeGlitch == 0xFF)
+        return false;
+
+    if (t->openRssi <= t->closeRssi)
+        return false;
+
+    if (t->openNoise >= t->closeNoise)
+        return false;
+
+    if (t->openGlitch <= t->closeGlitch)
+        return false;
+
+    return true;
+}
+
+static void RADIO_LoadSquelchThresholds(const uint16_t base, const uint8_t level, RadioSquelchThresholds_t *out)
+{
+    RadioSquelchThresholds_t candidate;
+
+    RADIO_ReadSquelchThresholds(base, level, &candidate);
+    if (RADIO_IsSquelchThresholdsValid(&candidate)) {
+        *out = candidate;
+        return;
+    }
+
+    for (uint8_t delta = 1; delta < 9; delta++) {
+        if (level > delta) {
+            RADIO_ReadSquelchThresholds(base, level - delta, &candidate);
+            if (RADIO_IsSquelchThresholdsValid(&candidate)) {
+                *out = candidate;
+                return;
+            }
+        }
+
+        if ((level + delta) <= 9) {
+            RADIO_ReadSquelchThresholds(base, level + delta, &candidate);
+            if (RADIO_IsSquelchThresholdsValid(&candidate)) {
+                *out = candidate;
+                return;
+            }
+        }
+    }
+
+    // Last-resort profile: permissive but stable so RX is never blocked by a bad table.
+    out->openRssi = 28;
+    out->closeRssi = 24;
+    out->openNoise = 60;
+    out->closeNoise = 72;
+    out->closeGlitch = 90;
+    out->openGlitch = 100;
+}
+
 const char gModulationStr[MODULATION_UKNOWN][4] = {
     [MODULATION_FM]="FM",
     [MODULATION_AM]="AM",
     [MODULATION_USB]="USB",
-    [MODULATION_CW]="CW",
 
 #ifdef ENABLE_BYP_RAW_DEMODULATORS
     [MODULATION_BYP]="BYP",
     [MODULATION_RAW]="RAW"
 #endif
 };
+
+bool RADIO_IsAirbandFrequency(uint32_t frequency)
+{
+    return frequency >= frequencyBandTable[BAND2_108MHz].lower
+        && frequency < frequencyBandTable[BAND2_108MHz].upper;
+}
+
+ModulationMode_t RADIO_GetModulationForFrequency(uint32_t frequency, ModulationMode_t modulation)
+{
+    return RADIO_IsAirbandFrequency(frequency) ? MODULATION_AM : modulation;
+}
 
 bool RADIO_CheckValidChannel(uint16_t channel, bool checkScanList, uint8_t scanList)
 {
@@ -108,29 +207,6 @@ bool RADIO_CheckValidChannel(uint16_t channel, bool checkScanList, uint8_t scanL
 
     if (!checkScanList || scanList > 4)
         return true;
-
-    /*
-    if(scanList == 0 && (att.scanlist1 == 1 || att.scanlist2 == 1 || att.scanlist3 == 1))
-    {
-        return false;
-    }
-    else if(scanList == 1 && att.scanlist1 != 1)
-    {
-        return false;
-    }
-    else if(scanList == 2 && att.scanlist2 != 1)
-    {
-        return false;
-    }
-    else if(scanList == 3 && att.scanlist3 != 1)
-    {
-        return false;
-    }
-    else if(scanList == 4 && (att.scanlist1 == 0 && att.scanlist2 == 0 && att.scanlist3 == 0))
-    {
-        return false;
-    }
-    */
 
     if ((scanList == 0 && (att.scanlist1 == 1 || att.scanlist2 == 1 || att.scanlist3 == 1)) ||
         (scanList == 1 && att.scanlist1 != 1) ||
@@ -187,10 +263,7 @@ void RADIO_InitInfo(VFO_Info_t *pInfo, const uint8_t ChannelSave, const uint32_t
     pInfo->pTX                      = &pInfo->freq_config_TX;
     pInfo->Compander                = 0;  // off
 
-    if (ChannelSave == (FREQ_CHANNEL_FIRST + BAND2_108MHz))
-        pInfo->Modulation = MODULATION_AM;
-    else
-        pInfo->Modulation = MODULATION_FM;
+    pInfo->Modulation = RADIO_GetModulationForFrequency(Frequency, MODULATION_FM);
 
     RADIO_ConfigureSquelchAndOutputPower(pInfo);
 }
@@ -279,11 +352,11 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
     pVfo->SCANLIST3_PARTICIPATION = bParticipation3;
     pVfo->CHANNEL_SAVE            = channel;
 
-    uint32_t base;
+    uint16_t base;
     if (IS_MR_CHANNEL(channel))
         base = channel * 16;
     else
-        base = 0x001000 + ((channel - FREQ_CHANNEL_FIRST) * 32) + (VFO * 16);
+        base = 0x0C80 + ((channel - FREQ_CHANNEL_FIRST) * 32) + (VFO * 16);
 
     if (configure == VFO_CONFIGURE_RELOAD || IS_FREQ_CHANNEL(channel))
     {
@@ -292,7 +365,7 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
         
         // ***************
 
-        PY25Q16_ReadBuffer(base + 8, data, sizeof(data));
+        EEPROM_ReadBuffer(base + 8, data, sizeof(data));
 
         tmp = data[3] & 0x0F;
         if (tmp > TX_OFFSET_FREQUENCY_DIRECTION_SUB)
@@ -301,7 +374,7 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
         tmp = data[3] >> 4;
         if (tmp >= MODULATION_UKNOWN)
             tmp = MODULATION_FM;
-        pVfo->Modulation = tmp;
+        pVfo->Modulation = RADIO_GetModulationForFrequency(pVfo->freq_config_RX.Frequency, tmp);
 
         tmp = data[6];
         if (tmp >= STEP_N_ELEM)
@@ -405,7 +478,7 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
             uint32_t Frequency;
             uint32_t Offset;
         } __attribute__((packed)) info;
-        PY25Q16_ReadBuffer(base, &info, sizeof(info));
+        EEPROM_ReadBuffer(base, &info, sizeof(info));
         if(info.Frequency==0xFFFFFFFF)
             pVfo->freq_config_RX.Frequency = frequencyBandTable[band].lower;
         else
@@ -433,10 +506,12 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
 
     pVfo->freq_config_RX.Frequency = frequency;
 
-    if (frequency >= frequencyBandTable[BAND2_108MHz].upper && frequency < frequencyBandTable[BAND2_108MHz].upper)
+    if (RADIO_IsAirbandFrequency(frequency))
         pVfo->TX_OFFSET_FREQUENCY_DIRECTION = TX_OFFSET_FREQUENCY_DIRECTION_OFF;
     else if (!IS_MR_CHANNEL(channel))
         pVfo->TX_OFFSET_FREQUENCY = FREQUENCY_RoundToStep(pVfo->TX_OFFSET_FREQUENCY, pVfo->StepFrequency);
+
+    pVfo->Modulation = RADIO_GetModulationForFrequency(frequency, pVfo->Modulation);
 
     RADIO_ApplyOffset(pVfo);
 
@@ -488,8 +563,7 @@ void RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo)
     // squelch
 
     FREQUENCY_Band_t Band = FREQUENCY_GetBand(pInfo->pRX->Frequency);
-    // 0x1E60 : 0x1E00
-    uint32_t Base = (Band < BAND4_174MHz) ? 0x010060 : 0x010000;
+    uint16_t Base = (Band < BAND4_174MHz) ? 0x1E60 : 0x1E00;
 
     if (gEeprom.SQUELCH_LEVEL == 0)
     {   // squelch == 0 (off)
@@ -503,16 +577,17 @@ void RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo)
     }
     else
     {   // squelch >= 1
-        Base += gEeprom.SQUELCH_LEVEL;                                        // my eeprom squelch-1
-                                                                              // VHF   UHF
-        PY25Q16_ReadBuffer(Base + 0x00, &pInfo->SquelchOpenRSSIThresh,    1);  //  50    10
-        PY25Q16_ReadBuffer(Base + 0x10, &pInfo->SquelchCloseRSSIThresh,   1);  //  40     5
+        const uint8_t level = (gEeprom.SQUELCH_LEVEL > 9) ? 9 : gEeprom.SQUELCH_LEVEL;
+        RadioSquelchThresholds_t t;
+        Base += level;
+        RADIO_LoadSquelchThresholds(Base - level, level, &t);
 
-        PY25Q16_ReadBuffer(Base + 0x20, &pInfo->SquelchOpenNoiseThresh,   1);  //  65    90
-        PY25Q16_ReadBuffer(Base + 0x30, &pInfo->SquelchCloseNoiseThresh,  1);  //  70   100
-
-        PY25Q16_ReadBuffer(Base + 0x40, &pInfo->SquelchCloseGlitchThresh, 1);  //  90    90
-        PY25Q16_ReadBuffer(Base + 0x50, &pInfo->SquelchOpenGlitchThresh,  1);  // 100   100
+        pInfo->SquelchOpenRSSIThresh    = t.openRssi;
+        pInfo->SquelchCloseRSSIThresh   = t.closeRssi;
+        pInfo->SquelchOpenNoiseThresh   = t.openNoise;
+        pInfo->SquelchCloseNoiseThresh  = t.closeNoise;
+        pInfo->SquelchCloseGlitchThresh = t.closeGlitch;
+        pInfo->SquelchOpenGlitchThresh  = t.openGlitch;
 
 
         uint16_t noise_open   = pInfo->SquelchOpenNoiseThresh;
@@ -529,13 +604,24 @@ void RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo)
         noise_open  = (noise_open  * 2) / 1;
         glitch_open = (glitch_open * 2) / 1;
 
-        // ensure the 'close' threshold is lower than the 'open' threshold
-        if (rssi_close == rssi_open && rssi_close >= 2)
-            rssi_close -= 2;
-        if (noise_close == noise_open && noise_close  <= 125)
-            noise_close += 2;
-        if (glitch_close == glitch_open && glitch_close <= 253)
-            glitch_close += 2;
+        // Enforce valid hysteresis relationships even when EEPROM entries are marginal.
+        if (rssi_open <= rssi_close) {
+            if (rssi_open < 2)
+                rssi_open = 2;
+            rssi_close = rssi_open - 2;
+        }
+
+        if (noise_open >= noise_close) {
+            if (noise_open >= 126)
+                noise_open = 125;
+            noise_close = noise_open + 2;
+        }
+
+        if (glitch_open <= glitch_close) {
+            if (glitch_close >= 253)
+                glitch_close = 253;
+            glitch_open = glitch_close + 2;
+        }
 
         pInfo->SquelchOpenRSSIThresh    = (rssi_open    > 255) ? 255 : rssi_open;
         pInfo->SquelchCloseRSSIThresh   = (rssi_close   > 255) ? 255 : rssi_close;
@@ -591,7 +677,7 @@ void RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo)
         currentPower--;
     }
 
-    PY25Q16_ReadBuffer(0x100D0 + (Band * 16) + (Op * 3), Txp, 3);
+    EEPROM_ReadBuffer(0x1ED0 + (Band * 16) + (Op * 3), Txp, 3);
 
 #ifdef ENABLE_FEAT_N7SIX
     // make low and mid even lower
@@ -738,28 +824,21 @@ void RADIO_SetupRegisters(bool switchToForeground)
 
     BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
 
-    if (gRxVfo->Modulation == MODULATION_AM)
-        BK4819_SetFilterBandwidth(BK4819_FILTER_BW_AM, true);
-    else if (gRxVfo->Modulation == MODULATION_CW)
-        BK4819_SetFilterBandwidth(BK4819_FILTER_BW_NARROWER, true);
-    else
+    switch (Bandwidth)
     {
-        switch (Bandwidth)
-        {
-            default:
-                Bandwidth = BK4819_FILTER_BW_WIDE;
-                [[fallthrough]];
-            case BK4819_FILTER_BW_WIDE:
-            case BK4819_FILTER_BW_NARROW:
-            case BK4819_FILTER_BW_NARROWER:
-                #ifdef ENABLE_AM_FIX
-    //              BK4819_SetFilterBandwidth(Bandwidth, gRxVfo->Modulation == MODULATION_AM && gSetting_AM_fix);
-                    BK4819_SetFilterBandwidth(Bandwidth, true);
-                #else
-                    BK4819_SetFilterBandwidth(Bandwidth, false);
-                #endif
-                break;
-        }
+        default:
+            Bandwidth = BK4819_FILTER_BW_WIDE;
+            [[fallthrough]];
+        case BK4819_FILTER_BW_WIDE:
+        case BK4819_FILTER_BW_NARROW:
+        case BK4819_FILTER_BW_NARROWER:
+            #ifdef ENABLE_AM_FIX
+//              BK4819_SetFilterBandwidth(Bandwidth, gRxVfo->Modulation == MODULATION_AM && gSetting_AM_fix);
+                BK4819_SetFilterBandwidth(Bandwidth, true);
+            #else
+                BK4819_SetFilterBandwidth(Bandwidth, false);
+            #endif
+            break;
     }
 
     BK4819_ToggleGpioOut(BK4819_GPIO5_PIN1_RED, false);
@@ -1036,6 +1115,19 @@ void RADIO_SetTxParameters(void)
     }
 }
 
+void RADIO_OnSaveChannel(APP_EventType_t event, const void *data)
+{
+    (void)event;
+    (void)data;
+
+    // Keep active RX config in sync after channel updates from menus/events.
+    if (gCurrentFunction == FUNCTION_TRANSMIT)
+        return;
+
+    RADIO_SelectVfos();
+    RADIO_SetupRegisters(false);
+}
+
 void RADIO_SetModulation(ModulationMode_t modulation)
 {
     BK4819_AF_Type_t mod;
@@ -1045,12 +1137,9 @@ void RADIO_SetModulation(ModulationMode_t modulation)
             mod = BK4819_AF_FM;
             break;
         case MODULATION_AM:
-            mod = BK4819_AF_FM; // AM no longer needs special AF setting
+            mod = BK4819_AF_AM;
             break;
         case MODULATION_USB:
-            mod = BK4819_AF_BASEBAND2;
-            break;
-        case MODULATION_CW:
             mod = BK4819_AF_BASEBAND2;
             break;
 
@@ -1066,78 +1155,9 @@ void RADIO_SetModulation(ModulationMode_t modulation)
 
     BK4819_SetAF(mod);
 
-    // REGA (Registers for Envelope / Gain Alignment) Configuration:
-    // Original firmware uses undocumented BK4819 register writes to switch between 
-    // AM and FM/SSB demodulation modes. These registers control low-level demodulation,
-    // gain alignment, and envelope processing in the BK4819 RF chipset.
-    //
-    // Based on reverse-engineering of the BK4819 firmware and comparing AM vs. FM modes,
-    // these registers appear to control:
-    // 
-    // REG_0x31: Bit 0 = AM Enable (0 = disable AM, 1 = enable AM)
-    //   When transitioning FROM AM (modulation != MODULATION_AM):
-    //     - Bit 0 = 0 (disables AM demod, enables FM/SSB)
-    //   When transitioning TO AM (modulation == MODULATION_AM):
-    //     - Bit 0 = 1 (enables AM demod)
-    //
-    // REG_0x42: Demodulation/Gain configuration for AM/FM transition
-    //   FM/SSB mode:  0x6b5a
-    //   AM mode:      0x6f5c (slightly different gain/envelope settings)
-    //
-    // REG_0x2a: IF/Baseband filter bandwidth and gain control
-    //   FM/SSB mode:  0x7400 (standard FM bandwidth)
-    //   AM mode:      0x7434 (broader bandwidth for AM detection)
-    //
-    // REG_0x2b: Secondary gain/filter control (AM/FM dependent)
-    //   FM/SSB mode:  0x0000 (disabled/default)
-    //   AM mode:      0x0300 (enabled for AM envelope processing)
-    //
-    // REG_0x2f: Demodulation low-pass filter and de-emphasis
-    //   FM/SSB mode:  0x9890 (standard FM de-emphasis curve)
-    //   AM mode:      0x9990 (modified de-emphasis for AM linearity)
-    //
-    // REG_0x54: TX/RX Gain and Envelope Processing (part 1)
-    //   FM/SSB mode:  0x9009 (RX envelope processing)
-    //   AM mode:      0x9775 (modified envelope for AM carrier)
-    //
-    // REG_0x55: TX/RX Gain and Envelope Processing (part 2)
-    //   FM/SSB mode:  0x31a9 (standard gain alignment)
-    //   AM mode:      0x32c6 (adjusted gain for AM linear operation)
-    //
-    // Note: These values appear to be hand-tuned from the original UV-K1 firmware.
-    // Changing these values may result in degraded RX sensitivity or AM demodulation issues.
-    //
-    if (modulation != MODULATION_AM)
-    {
-        uint16_t uVar1 = BK4819_ReadRegister(BK4819_REG_31);
-        BK4819_WriteRegister(BK4819_REG_31, uVar1 & 0xfffffffe);  // Clear bit 0: Disable AM
-        BK4819_WriteRegister(BK4819_REG_42, 0x6b5a);              // FM/SSB demod config
-        BK4819_WriteRegister(BK4819_REG_2A, 0x7400);              // FM/SSB bandwidth
-        BK4819_WriteRegister(BK4819_REG_2B, 0x0000);              // FM/SSB gain (disabled)
-        BK4819_WriteRegister(BK4819_REG_2F, 0x9890);              // FM/SSB de-emphasis
-        BK4819_WriteRegister(BK4819_REG_54, 0x9009);              // FM/SSB envelope (1)
-        BK4819_WriteRegister(BK4819_REG_55, 0x31a9);              // FM/SSB envelope (2)
-    }
-    else
-    {
-        uint16_t uVar1 = BK4819_ReadRegister(BK4819_REG_31);
-        BK4819_WriteRegister(BK4819_REG_31, uVar1 | 1);           // Set bit 0: Enable AM
-        BK4819_WriteRegister(BK4819_REG_42, 0x6f5c);              // AM demod config
-        BK4819_WriteRegister(BK4819_REG_2A, 0x7434);              // AM bandwidth (broader)
-        BK4819_WriteRegister(BK4819_REG_2B, 0x0300);              // AM gain (enabled)
-        BK4819_WriteRegister(BK4819_REG_2F, 0x9990);              // AM de-emphasis
-        BK4819_WriteRegister(BK4819_REG_54, 0x9775);              // AM envelope (1)
-        BK4819_WriteRegister(BK4819_REG_55, 0x32c6);              // AM envelope (2)
-        BK4819_SetFilterBandwidth(BK4819_FILTER_BW_AM, true);
-    }
-    
     BK4819_SetRegValue(afDacGainRegSpec, 0xF);
-    BK4819_WriteRegister(BK4819_REG_3D, (modulation == MODULATION_USB || modulation == MODULATION_CW) ? 0 : 0x2AAB);
+    BK4819_WriteRegister(BK4819_REG_3D, modulation == MODULATION_USB ? 0 : 0x2AAB);
     BK4819_SetRegValue(afcDisableRegSpec, modulation != MODULATION_FM);
-
-    // CW: force narrowest filter bandwidth for best SNR on narrow CW signals
-    if (modulation == MODULATION_CW)
-        BK4819_SetFilterBandwidth(BK4819_FILTER_BW_NARROWER, true);
 
     RADIO_SetupAGC(modulation == MODULATION_AM, false);
 }
@@ -1234,9 +1254,6 @@ void RADIO_PrepareTX(void)
     } else if (gCurrentVfo->BUSY_CHANNEL_LOCK && gCurrentFunction == FUNCTION_RECEIVE) {
         // busy RX'ing a station
         State = VFO_STATE_BUSY;
-    } else if (!BATTERY_IsVoltageSafeForCriticalOps()) {
-        // block TX below calibrated minimum threshold to avoid brownout-induced faults
-        State = VFO_STATE_BAT_LOW;
     } else if (gBatteryDisplayLevel == 0) {
         // charge your battery !git co
         State = VFO_STATE_BAT_LOW;
@@ -1356,39 +1373,4 @@ void RADIO_PrepareCssTX(void)
     if(gEeprom.TAIL_TONE_ELIMINATION)
         RADIO_SendCssTail();
     RADIO_SetupRegisters(true);
-}
-
-// =============================================================================
-// EVENT HANDLERS (Phase 2 Integration)
-// =============================================================================
-
-/**
- * @brief Event handler for APP_EVENT_SAVE_CHANNEL
- *
- * Called when a channel is selected or modified. Updates the BK4819 radio IC
- * with the new TX frequency, power, modulation, and CSS settings derived from
- * the gEeprom global structure.
- *
- * @param event  APP_EVENT_SAVE_CHANNEL
- * @param data   Pointer to channel index (uint8_t *) - may be NULL
- *
- * EXECUTION TIME: ~10-20ms (multiple BK4819 register writes)
- * BLOCKING: Yes - blocks on SPI radio IC writes
- * REENTRANT: Not reentrant - do not call from ISR or nested event handlers
- *
- * OPERATION:
- * 1. Extract channel data from gEeprom (frequency, power, modulation, CSS info)
- * 2. Call BK4819_SetFrequency() to tune radio to TX center frequency
- * 3. Call BK4819_SetRF() to set TX output power and impedance matching
- * 4. Call BK4819_SetModulation() to configure modulation (AM/FM/LSB/USB)
- * 5. Configure CTCSS/DCS encoding if enabled for this channel
- */
-void RADIO_OnSaveChannel(APP_EventType_t event, const void *data)
-{
-    (void)event;   // Unused parameter
-    (void)data;    // Unused parameter (could be channel index if needed)
-    
-    // Update radio IC with current gEeprom configuration
-    // This re-applies all radio settings after channel change
-    RADIO_SetupRegisters(false);
 }
