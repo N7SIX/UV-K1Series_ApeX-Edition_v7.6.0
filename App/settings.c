@@ -1546,13 +1546,13 @@ void SETTINGS_ResetTxLock(void)
 // =============================================================================
 
 /**
- * @brief Event handler for AP P_EVENT_SAVE_CHANNEL
+ * @brief Event handler for APP_EVENT_SAVE_CHANNEL
  *
- * Called when a channel is selected or modified. Persists the channel
- * configuration to EEPROM by saving the gEeprom global struct.
+ * Called when a channel is selected or modified. Persists the active VFO
+ * configuration to the channel record (MR or FREQ channel EEPROM region).
  *
  * @param event  APP_EVENT_SAVE_CHANNEL
- * @param data   Pointer to channel index (uint8_t *) - may be NULL
+ * @param data   Pointer to channel index (uint16_t *) - may be NULL
  *
  * EXECUTION TIME: ~5-10ms (flash write overhead)
  * BLOCKING: Yes - blocks on SPI EEPROM writes
@@ -1560,9 +1560,21 @@ void SETTINGS_ResetTxLock(void)
  */
 void SETTINGS_OnSaveChannel(APP_EventType_t event, const void *data)
 {
-    (void)event;  // Unused parameter
-    
-    // Save current settings to EEPROM
-    // This persists any changes made to gEeprom structure
-    SETTINGS_SaveSettings();
+    (void)event;
+
+    if (gTxVfo == NULL) {
+        return;
+    }
+
+    // Default to active channel if caller did not provide an explicit index.
+    uint16_t channel = gTxVfo->CHANNEL_SAVE;
+    if (data != NULL) {
+        channel = *(const uint16_t *)data;
+    }
+
+    if (!IS_VALID_CHANNEL(channel)) {
+        channel = gTxVfo->CHANNEL_SAVE;
+    }
+
+    SETTINGS_SaveChannel((uint8_t)channel, gEeprom.TX_VFO, gTxVfo, 2);
 }
