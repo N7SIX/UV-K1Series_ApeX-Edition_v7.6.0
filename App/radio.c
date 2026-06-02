@@ -85,90 +85,6 @@ VFO_Info_t    *gCurrentVfo;
 DCS_CodeType_t gCurrentCodeType;
 VfoState_t     VfoState[2];
 
-typedef struct {
-    uint8_t openRssi;
-    uint8_t closeRssi;
-    uint8_t openNoise;
-    uint8_t closeNoise;
-    uint8_t closeGlitch;
-    uint8_t openGlitch;
-} RadioSquelchThresholds_t;
-
-static void RADIO_ReadSquelchThresholds(const uint16_t base, const uint8_t level, RadioSquelchThresholds_t *t)
-{
-    const uint16_t addr = base + level;
-
-    EEPROM_ReadBuffer(addr + 0x00, &t->openRssi,    1);
-    EEPROM_ReadBuffer(addr + 0x10, &t->closeRssi,   1);
-    EEPROM_ReadBuffer(addr + 0x20, &t->openNoise,   1);
-    EEPROM_ReadBuffer(addr + 0x30, &t->closeNoise,  1);
-    EEPROM_ReadBuffer(addr + 0x40, &t->closeGlitch, 1);
-    EEPROM_ReadBuffer(addr + 0x50, &t->openGlitch,  1);
-}
-
-static bool RADIO_IsSquelchThresholdsValid(const RadioSquelchThresholds_t *t)
-{
-    if (t == NULL)
-        return false;
-
-    // A few radios ship sparse/corrupt entries in this table. Reject obviously bad rows.
-    if (t->openNoise > 127 || t->closeNoise > 127)
-        return false;
-
-    if (t->openRssi == 0xFF || t->closeRssi == 0xFF ||
-        t->openNoise == 0xFF || t->closeNoise == 0xFF ||
-        t->openGlitch == 0xFF || t->closeGlitch == 0xFF)
-        return false;
-
-    if (t->openRssi <= t->closeRssi)
-        return false;
-
-    if (t->openNoise >= t->closeNoise)
-        return false;
-
-    if (t->openGlitch <= t->closeGlitch)
-        return false;
-
-    return true;
-}
-
-static void RADIO_LoadSquelchThresholds(const uint16_t base, const uint8_t level, RadioSquelchThresholds_t *out)
-{
-    RadioSquelchThresholds_t candidate;
-
-    RADIO_ReadSquelchThresholds(base, level, &candidate);
-    if (RADIO_IsSquelchThresholdsValid(&candidate)) {
-        *out = candidate;
-        return;
-    }
-
-    for (uint8_t delta = 1; delta < 9; delta++) {
-        if (level > delta) {
-            RADIO_ReadSquelchThresholds(base, level - delta, &candidate);
-            if (RADIO_IsSquelchThresholdsValid(&candidate)) {
-                *out = candidate;
-                return;
-            }
-        }
-
-        if ((level + delta) <= 9) {
-            RADIO_ReadSquelchThresholds(base, level + delta, &candidate);
-            if (RADIO_IsSquelchThresholdsValid(&candidate)) {
-                *out = candidate;
-                return;
-            }
-        }
-    }
-
-    // Last-resort profile: permissive but stable so RX is never blocked by a bad table.
-    out->openRssi = 28;
-    out->closeRssi = 24;
-    out->openNoise = 60;
-    out->closeNoise = 72;
-    out->closeGlitch = 90;
-    out->openGlitch = 100;
-}
-
 const char gModulationStr[MODULATION_UKNOWN][4] = {
     [MODULATION_FM]="FM",
     [MODULATION_AM]="AM",
@@ -578,16 +494,27 @@ void RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo)
     else
     {   // squelch >= 1
         const uint8_t level = (gEeprom.SQUELCH_LEVEL > 9) ? 9 : gEeprom.SQUELCH_LEVEL;
-        RadioSquelchThresholds_t t;
         Base += level;
-        RADIO_LoadSquelchThresholds(Base - level, level, &t);
 
-        pInfo->SquelchOpenRSSIThresh    = t.openRssi;
-        pInfo->SquelchCloseRSSIThresh   = t.closeRssi;
-        pInfo->SquelchOpenNoiseThresh   = t.openNoise;
-        pInfo->SquelchCloseNoiseThresh  = t.closeNoise;
-        pInfo->SquelchCloseGlitchThresh = t.closeGlitch;
-        pInfo->SquelchOpenGlitchThresh  = t.openGlitch;
+        EEPROM_ReadBuffer(Base + 0x00, &pInfo->SquelchOpenRSSIThresh,    1);
+        EEPROM_ReadBuffer(Base + 0x10, &pInfo->SquelchCloseRSSIThresh,   1);
+        EEPROM_ReadBuffer(Base + 0x20, &pInfo->SquelchOpenNoiseThresh,   1);
+        EEPROM_ReadBuffer(Base + 0x30, &pInfo->SquelchCloseNoiseThresh,  1);
+        EEPROM_ReadBuffer(Base + 0x40, &pInfo->SquelchCloseGlitchThresh, 1);
+        EEPROM_ReadBuffer(Base + 0x50, &pInfo->SquelchOpenGlitchThresh,  1);
+
+        // If this row is erased/invalid, use SQL 5 as a known-safe fallback row.
+        if (pInfo->SquelchOpenRSSIThresh == 0xFF || pInfo->SquelchCloseRSSIThresh == 0xFF ||
+            pInfo->SquelchOpenNoiseThresh == 0xFF || pInfo->SquelchCloseNoiseThresh == 0xFF ||
+            pInfo->SquelchCloseGlitchThresh == 0xFF || pInfo->SquelchOpenGlitchThresh == 0xFF) {
+            const uint16_t fallbackBase = ((Band < BAND4_174MHz) ? 0x1E60 : 0x1E00) + 5;
+            EEPROM_ReadBuffer(fallbackBase + 0x00, &pInfo->SquelchOpenRSSIThresh,    1);
+            EEPROM_ReadBuffer(fallbackBase + 0x10, &pInfo->SquelchCloseRSSIThresh,   1);
+            EEPROM_ReadBuffer(fallbackBase + 0x20, &pInfo->SquelchOpenNoiseThresh,   1);
+            EEPROM_ReadBuffer(fallbackBase + 0x30, &pInfo->SquelchCloseNoiseThresh,  1);
+            EEPROM_ReadBuffer(fallbackBase + 0x40, &pInfo->SquelchCloseGlitchThresh, 1);
+            EEPROM_ReadBuffer(fallbackBase + 0x50, &pInfo->SquelchOpenGlitchThresh,  1);
+        }
 
 
         uint16_t noise_open   = pInfo->SquelchOpenNoiseThresh;
@@ -604,24 +531,13 @@ void RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo)
         noise_open  = (noise_open  * 2) / 1;
         glitch_open = (glitch_open * 2) / 1;
 
-        // Enforce valid hysteresis relationships even when EEPROM entries are marginal.
-        if (rssi_open <= rssi_close) {
-            if (rssi_open < 2)
-                rssi_open = 2;
-            rssi_close = rssi_open - 2;
-        }
-
-        if (noise_open >= noise_close) {
-            if (noise_open >= 126)
-                noise_open = 125;
-            noise_close = noise_open + 2;
-        }
-
-        if (glitch_open <= glitch_close) {
-            if (glitch_close >= 253)
-                glitch_close = 253;
-            glitch_open = glitch_close + 2;
-        }
+        // Keep Fusion-style soft guards only when values collapse to equal.
+        if (rssi_close == rssi_open && rssi_close >= 2)
+            rssi_close -= 2;
+        if (noise_close == noise_open && noise_close <= 125)
+            noise_close += 2;
+        if (glitch_close == glitch_open && glitch_close <= 253)
+            glitch_close += 2;
 
         pInfo->SquelchOpenRSSIThresh    = (rssi_open    > 255) ? 255 : rssi_open;
         pInfo->SquelchCloseRSSIThresh   = (rssi_close   > 255) ? 255 : rssi_close;
