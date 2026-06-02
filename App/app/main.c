@@ -263,7 +263,10 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 
         case KEY_5:
             if(beep) {
-#ifdef ENABLE_NOAA
+#ifdef ENABLE_SPECTRUM
+                APP_RunSpectrum();
+                gRequestDisplayScreen = DISPLAY_MAIN;
+#elif defined(ENABLE_NOAA)
                 if (!IS_NOAA_CHANNEL(gTxVfo->CHANNEL_SAVE)) {
                     gEeprom.ScreenChannel[Vfo] = gEeprom.NoaaChannel[gEeprom.TX_VFO];
                 }
@@ -275,13 +278,22 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
                 }
                 gRequestSaveVFO   = true;
                 gVfoConfigureMode = VFO_CONFIGURE_RELOAD;
-#elif defined(ENABLE_SPECTRUM)
-                APP_RunSpectrum();
-                gRequestDisplayScreen = DISPLAY_MAIN;
 #endif
             }
             else {
-                toggle_chan_scanlist();
+#ifdef ENABLE_NOAA
+                if (!IS_NOAA_CHANNEL(gTxVfo->CHANNEL_SAVE)) {
+                    gEeprom.ScreenChannel[Vfo] = gEeprom.NoaaChannel[gEeprom.TX_VFO];
+                }
+                else {
+                    gEeprom.ScreenChannel[Vfo] = gEeprom.MrChannel[gEeprom.TX_VFO];
+#ifdef ENABLE_VOICE
+                    gAnotherVoiceID = VOICE_ID_CHANNEL_MODE;
+#endif
+                }
+                gRequestSaveVFO   = true;
+                gVfoConfigureMode = VFO_CONFIGURE_RELOAD;
+#endif
             }
 
             break;
@@ -448,7 +460,7 @@ void channelMoveSwitch(void) {
 static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 {
 
-    // Long press KEY_5: Enable NOAA
+    // Long press KEY_5: Toggle NOAA mode
     if (bKeyHeld && Key == KEY_5 && bKeyPressed) {
         #ifdef ENABLE_NOAA
         processFKeyFunction(KEY_5, false);
