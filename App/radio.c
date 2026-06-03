@@ -493,7 +493,7 @@ void RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo)
     }
     else
     {   // squelch >= 1
-        const uint8_t level = (gEeprom.SQUELCH_LEVEL > 9) ? 9 : gEeprom.SQUELCH_LEVEL;
+        const uint8_t level = gEeprom.SQUELCH_LEVEL;
         Base += level;
 
         EEPROM_ReadBuffer(Base + 0x00, &pInfo->SquelchOpenRSSIThresh,    1);
@@ -502,19 +502,6 @@ void RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo)
         EEPROM_ReadBuffer(Base + 0x30, &pInfo->SquelchCloseNoiseThresh,  1);
         EEPROM_ReadBuffer(Base + 0x40, &pInfo->SquelchCloseGlitchThresh, 1);
         EEPROM_ReadBuffer(Base + 0x50, &pInfo->SquelchOpenGlitchThresh,  1);
-
-        // If this row is erased/invalid, use SQL 5 as a known-safe fallback row.
-        if (pInfo->SquelchOpenRSSIThresh == 0xFF || pInfo->SquelchCloseRSSIThresh == 0xFF ||
-            pInfo->SquelchOpenNoiseThresh == 0xFF || pInfo->SquelchCloseNoiseThresh == 0xFF ||
-            pInfo->SquelchCloseGlitchThresh == 0xFF || pInfo->SquelchOpenGlitchThresh == 0xFF) {
-            const uint16_t fallbackBase = ((Band < BAND4_174MHz) ? 0x1E60 : 0x1E00) + 5;
-            EEPROM_ReadBuffer(fallbackBase + 0x00, &pInfo->SquelchOpenRSSIThresh,    1);
-            EEPROM_ReadBuffer(fallbackBase + 0x10, &pInfo->SquelchCloseRSSIThresh,   1);
-            EEPROM_ReadBuffer(fallbackBase + 0x20, &pInfo->SquelchOpenNoiseThresh,   1);
-            EEPROM_ReadBuffer(fallbackBase + 0x30, &pInfo->SquelchCloseNoiseThresh,  1);
-            EEPROM_ReadBuffer(fallbackBase + 0x40, &pInfo->SquelchCloseGlitchThresh, 1);
-            EEPROM_ReadBuffer(fallbackBase + 0x50, &pInfo->SquelchOpenGlitchThresh,  1);
-        }
 
 
         uint16_t noise_open   = pInfo->SquelchOpenNoiseThresh;
@@ -530,14 +517,6 @@ void RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo)
         rssi_open   = (rssi_open   * 1) / 2;
         noise_open  = (noise_open  * 2) / 1;
         glitch_open = (glitch_open * 2) / 1;
-
-        // Keep Fusion-style soft guards only when values collapse to equal.
-        if (rssi_close == rssi_open && rssi_close >= 2)
-            rssi_close -= 2;
-        if (noise_close == noise_open && noise_close <= 125)
-            noise_close += 2;
-        if (glitch_close == glitch_open && glitch_close <= 253)
-            glitch_close += 2;
 
         pInfo->SquelchOpenRSSIThresh    = (rssi_open    > 255) ? 255 : rssi_open;
         pInfo->SquelchCloseRSSIThresh   = (rssi_close   > 255) ? 255 : rssi_close;
