@@ -69,6 +69,7 @@
 #include "frequencies.h"
 #include "functions.h"
 #include "helper/battery.h"
+#include "radio_calibration_blob.h"
 #include "misc.h"
 #include "radio.h"
 #include "settings.h"
@@ -84,6 +85,22 @@ VFO_Info_t    *gRxVfo;
 VFO_Info_t    *gCurrentVfo;
 DCS_CodeType_t gCurrentCodeType;
 VfoState_t     VfoState[2];
+
+static void RADIO_LoadTxPowerCalibration(FREQUENCY_Band_t band, uint8_t profile, uint8_t outTxp[3])
+{
+    EEPROM_ReadBuffer(0x1ED0 + (band * 16) + (profile * 3), outTxp, 3);
+
+    if (outTxp[0] == 0xFF || outTxp[1] == 0xFF || outTxp[2] == 0xFF ||
+        (outTxp[0] == 0x00 && outTxp[1] == 0x00 && outTxp[2] == 0x00)) {
+        const uint32_t blobOffset = 0xD0u + ((uint32_t)band * 16u) + ((uint32_t)profile * 3u);
+
+        if (blobOffset + 3u <= sizeof(gRadioCalibrationBlob)) {
+            outTxp[0] = gRadioCalibrationBlob[blobOffset + 0u];
+            outTxp[1] = gRadioCalibrationBlob[blobOffset + 1u];
+            outTxp[2] = gRadioCalibrationBlob[blobOffset + 2u];
+        }
+    }
+}
 
 const char gModulationStr[MODULATION_UKNOWN][4] = {
     [MODULATION_FM]="FM",
@@ -572,7 +589,7 @@ void RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo)
         currentPower--;
     }
 
-    EEPROM_ReadBuffer(0x1ED0 + (Band * 16) + (Op * 3), Txp, 3);
+    RADIO_LoadTxPowerCalibration(Band, Op, Txp);
 
 #ifdef ENABLE_FEAT_N7SIX
     // make low and mid even lower

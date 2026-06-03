@@ -64,6 +64,7 @@
 #include "driver/py25q16.h"
 #include "helper/battery.h"
 #include "misc.h"
+#include "radio_calibration_blob.h"
 #include "settings.h"
 #include "ui/menu.h"
 
@@ -164,6 +165,21 @@ static void SETTINGS_ApplySnapshot(const SETTINGS_SnapshotPayload_t *payload)
             vfo->pTX = &vfo->freq_config_RX;
         }
     }
+}
+
+#define SETTINGS_CALIBRATION_FLASH_ADDR   (0x010000u + 0x1E00u)
+
+static void SETTINGS_SeedCalibrationFromBlob(void)
+{
+    uint8_t buffer[sizeof(gRadioCalibrationBlob)];
+
+    PY25Q16_ReadBuffer(SETTINGS_CALIBRATION_FLASH_ADDR, buffer, sizeof(buffer));
+
+    if (memcmp(buffer, gRadioCalibrationBlob, sizeof(buffer)) == 0) {
+        return;
+    }
+
+    PY25Q16_WriteBuffer(SETTINGS_CALIBRATION_FLASH_ADDR, gRadioCalibrationBlob, sizeof(gRadioCalibrationBlob), false);
 }
 
 static void SETTINGS_LoadSnapshotIfAvailable(void)
@@ -683,6 +699,8 @@ void SETTINGS_InitEEPROM(void)
 void SETTINGS_LoadCalibration(void)
 {
 //  uint8_t Mic;
+
+    SETTINGS_SeedCalibrationFromBlob();
 
     // 0x1EC0
     PY25Q16_ReadBuffer(0x010000 + 0xc0, gEEPROM_RSSI_CALIB[3], 8);
