@@ -3,7 +3,8 @@ FROM mcr.microsoft.com/devcontainers/python:3.10-bookworm
 # ---------------------------------------------
 # Base build tools
 # ---------------------------------------------
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN rm -f /etc/apt/sources.list.d/yarn.list && \
+    apt-get update && apt-get install -y --no-install-recommends \
     build-essential cmake ninja-build python3 curl xz-utils ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 

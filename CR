@@ -1,0 +1,346 @@
+App\app\chFrScanner.c:1191:    gScanPauseDelayIn_10ms = 9;  // 90ms .. <= ~60ms it misses signals (squelch response and/or PLL lock time) ?
+App\board.c:55:        overlay_FLASH_MainClock       = 48000000;
+App\driver\adc.c:72:        | (Value & ~(SYSCON_CLK_SEL_R_PLL_MASK | FW_R_SARADC_SMPL_MASK))
+App\driver\adc.c:73:        | (((Value & SYSCON_CLK_SEL_R_PLL_MASK) >> SYSCON_CLK_SEL_R_PLL_SHIFT) << SYSCON_CLK_SEL_W_PLL_SHIFT)
+App\driver\bk4819-regs.h:236:#define BK4819_REG_30_SHIFT_ENABLE_PLL_VCO  4
+App\driver\bk4819-regs.h:247:#define BK4819_REG_30_MASK_ENABLE_PLL_VCO   (0xFU << BK4819_REG_30_SHIFT_ENABLE_PLL_VCO)
+App\driver\bk4819-regs.h:264:    BK4819_REG_30_ENABLE_PLL_VCO        = (0xFU << BK4819_REG_30_SHIFT_ENABLE_PLL_VCO),
+App\driver\bk4819-regs.h:265:    BK4819_REG_30_DISABLE_PLL_VCO       = (0x0U << BK4819_REG_30_SHIFT_ENABLE_PLL_VCO),
+App\driver\bk4819.c:861:    // PLL LDO = 2.7v
+App\driver\bk4819.c:865:    // PLL LDO bypass
+App\driver\bk4819.c:883:        BK4819_REG_30_ENABLE_PLL_VCO |
+App\driver\bk4819.c:1119:        BK4819_REG_30_ENABLE_PLL_VCO   |
+App\driver\bk4819.c:1291:        BK4819_REG_30_ENABLE_PLL_VCO   |
+App\driver\bk4829.c:861:    // PLL LDO = 2.7v
+App\driver\bk4829.c:865:    // PLL LDO bypass
+App\driver\bk4829.c:883:        // BK4819_REG_30_ENABLE_PLL_VCO |
+App\driver\bk4829.c:1132:        BK4819_REG_30_ENABLE_PLL_VCO   |
+App\driver\bk4829.c:1324:        BK4819_REG_30_ENABLE_PLL_VCO   |
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:33:   PLL0USB   |    480 MHz     |      XTAL      | External crystal @ 12 MHz
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:35:    PLL1     |    180 MHz     |      XTAL      | External crystal @ 12 MHz
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:37:    CPU      |    180 MHz     |      PLL1      | CPU Clock ==  BASE_M4_CLK
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:39:   IDIV A    |     60 MHz     |      PLL1      | To the USB1 peripheral
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:47:   IDIV E    |    5.3 MHz     |      PLL1      | To the LCD controller
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:60:#define CLK_SRC_PLL0U       0x07
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:61:#define CLK_SRC_PLL0A       0x08
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:62:#define CLK_SRC_PLL1        0x09
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:84:#define PLL1_CLK_SEL      CLK_SRC_XTAL    /* PLL1 input clock: XTAL           */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:85:#define PLL0USB_CLK_SEL   CLK_SRC_XTAL    /* PLL0USB input clock: XTAL        */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:86:#define IDIVA_CLK_SEL     CLK_SRC_PLL1    /* IDIVA input clock: PLL1          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:90:#define IDIVE_CLK_SEL     CLK_SRC_PLL1    /* IDIVD input clock: PLL1          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:106:#define CPU_CLK_SEL       CLK_SRC_PLL1  /* Default CPU clock source is PLL1   */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:117: * Configure PLL1
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:120: *    - PLL1_DIRECT = 0 (Post divider enabled)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:121: *    - PLL1_FBSEL  = 1 (Feedback divider runs from PLL output)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:127: *    - PLL1_DIRECT = 0 (Post divider enabled)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:128: *    - PLL1_FBSEL  = 0 (Feedback divider runs from CCO clock)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:134: *    - PLL1_DIRECT = 1         (Post divider disabled)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:135: *    - PLL1_FBSEL  = dont care (Feedback divider runs from CCO clock)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:141: * PLL1 requirements:
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:158: * Relations beetwen PLL dividers and definitions:
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:159: * N = PLL1_NSEL + 1,     M = PLL1_MSEL + 1,     P = 2 ^ PLL1_PSEL
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:162:/* PLL1 output clock: 180MHz, Fcco: 180MHz, N = 1, M = 15, P = x              */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:163:#define PLL1_NSEL   0           /* Range [0 -   3]: Pre-divider ratio N       */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:164:#define PLL1_MSEL  14           /* Range [0 - 255]: Feedback-divider ratio M  */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:165:#define PLL1_PSEL   0           /* Range [0 -   3]: Post-divider ratio P      */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:167:#define PLL1_BYPASS 0           /* 0: Use PLL, 1: PLL is bypassed             */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:168:#define PLL1_DIRECT 1           /* 0: Use PSEL, 1: Don't use PSEL             */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:169:#define PLL1_FBSEL  0           /* 0: FCCO is used as PLL feedback            */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:170:                                /* 1: FCLKOUT is used as PLL feedback         */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:192: * Configure PLL0USB
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:196: *    - PLL0USB_DIRECTI = 1
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:197: *    - PLL0USB_DIRECTO = 1
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:198: *    - PLL0USB_BYPASS  = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:204: *    - PLL0USB_DIRECTI = 1
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:205: *    - PLL0USB_DIRECTO = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:206: *    - PLL0USB_BYPASS  = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:212: *    - PLL0USB_DIRECTI = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:213: *    - PLL0USB_DIRECTO = 1
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:214: *    - PLL0USB_BYPASS  = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:220: *    - PLL0USB_DIRECTI = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:221: *    - PLL0USB_DIRECTO = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:222: *    - PLL0USB_BYPASS  = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:227: * PLL0 requirements:
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:240:/* PLL0USB output clock: 480MHz, Fcco: 480MHz, N = 1, M = 20, P = 1           */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:241:#define PLL0USB_N       1       /* Range [1 -  256]: Pre-divider              */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:242:#define PLL0USB_M      20       /* Range [1 - 2^15]: Feedback-divider         */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:243:#define PLL0USB_P       1       /* Range [1 -   32]: Post-divider             */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:245:#define PLL0USB_DIRECTI 1       /* 0: Use N_DIV, 1: Don't use N_DIV           */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:246:#define PLL0USB_DIRECTO 1       /* 0: Use P_DIV, 1: Don't use P_DIV           */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:247:#define PLL0USB_BYPASS  0       /* 0: Use PLL, 1: PLL is bypassed             */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:254:/* PLL0 Setting Check */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:255:#if (PLL0USB_BYPASS == 0)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:256: #if (PLL0USB_CLK_SEL == CLK_SRC_XTAL)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:257:  #define PLL0USB_CLKIN CLK_XTAL
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:259:  #define PLL0USB_CLKIN CLK_IRC
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:262: #if   ((PLL0USB_DIRECTI == 1) && (PLL0USB_DIRECTO == 1)) /* Mode 1a          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:263:  #define PLL0USB_FOUT (PLL0USB_CLKIN * 2 * PLL0USB_M)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:264:  #define PLL0USB_FCCO (PLL0USB_FOUT)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:265: #elif ((PLL0USB_DIRECTI == 1) && (PLL0USB_DIRECTO == 0)) /* Mode 1b          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:266:  #define PLL0USB_FOUT (PLL0USB_CLKIN * PLL0USB_M / PLL0USB_P)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:267:  #define PLL0USB_FCCO (PLL0USB_FOUT * 2 * PLL0USB_P)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:268: #elif ((PLL0USB_DIRECTI == 0) && (PLL0USB_DIRECTO == 1)) /* Mode 1c          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:269:  #define PLL0USB_FOUT (PLL0USB_CLKIN * 2 * PLL0USB_M / PLL0USB_N)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:270:  #define PLL0USB_FCCO (PLL0USB_FOUT)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:272:  #define PLL0USB_FOUT (PLL0USB_CLKIN * PLL0USB_M / (PLL0USB_P * PLL0USB_N))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:273:  #define PLL0USB_FCCO (PLL0USB_FOUT * 2 * PLL0USB_P)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:276: #if (PLL0USB_FCCO < 275000000UL || PLL0USB_FCCO > 550000000UL)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:277:  #error "PLL0USB Fcco frequency out of range! (275MHz >= Fcco <= 550MHz)"
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:279: #if (PLL0USB_FOUT < 4300000UL || PLL0USB_FOUT > 550000000UL)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:280:  #error "PLL0USB output frequency out of range! (4.3MHz >= Fclkout <= 550MHz)"
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:284:/* PLL1 Setting Check */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:285:#if (PLL1_BYPASS == 0)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:286: #if (PLL1_CLK_SEL == CLK_SRC_XTAL)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:287:  #define PLL1_CLKIN CLK_XTAL
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:289:  #define PLL1_CLKIN CLK_IRC
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:292: #if   (PLL1_DIRECT == 1)               /* Direct Mode                        */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:293:  #define PLL1_FCCO ((PLL1_MSEL + 1) * (PLL1_CLKIN / (PLL1_NSEL + 1)))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:294:  #define PLL1_FOUT ((PLL1_MSEL + 1) * (PLL1_CLKIN / (PLL1_NSEL + 1)))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:295: #elif (PLL1_FBSEL  == 1)               /* Integer Mode                       */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:296:  #define PLL1_FCCO ((2 * (1 << PLL1_PSEL)) * (PLL1_MSEL + 1) * (PLL1_CLKIN / (PLL1_NSEL + 1)))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:297:  #define PLL1_FOUT ((PLL1_MSEL + 1) * (PLL1_CLKIN / (PLL1_NSEL + 1)))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:299:  #define PLL1_FCCO ((PLL1_MSEL + 1) * (PLL1_CLKIN / (PLL1_NSEL + 1)))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:300:  #define PLL1_FOUT (PLL1_FCCO / (2 * (1 << PLL1_PSEL)))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:302: #if (PLL1_FCCO < 156000000UL || PLL1_FCCO > 320000000UL)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:303:  #error "PLL1 Fcco frequency out of range! (156MHz >= Fcco <= 320MHz)"
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:305: #if (PLL1_FOUT < 9750000UL || PLL1_FOUT > 204000000UL)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:306:  #error "PLL1 output frequency out of range! (9.75MHz >= Fclkout <= 204MHz)"
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:345:/* configure SPIFI clk to IRC via IDIVA (later IDIVA is configured to PLL1/3) */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:358:  PLL1 Setup
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:360:  /* Power down PLL                                                           */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:361:  LPC_CGU->PLL1_CTRL |= 1;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:363:#if ((PLL1_FOUT > 110000000UL) && (CPU_CLK_SEL == CLK_SRC_PLL1))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:365:  LPC_CGU->PLL1_CTRL = (0            << 0) | /* PLL1 Enabled                  */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:366:                       (PLL1_BYPASS  << 1) | /* CCO out sent to post-dividers */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:367:                       (PLL1_FBSEL   << 6) | /* PLL output used as feedback   */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:369:                       (PLL1_PSEL    << 8) | /* PSEL                          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:371:                       (PLL1_NSEL    << 12)| /* NSEL                          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:372:                       (PLL1_MSEL    << 16)| /* MSEL                          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:373:                       (PLL1_CLK_SEL << 24); /* Clock source                  */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:375:  while (!(LPC_CGU->PLL1_STAT & 1));
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:379:                             (0x09 << 24) ;  /* Clock source: PLL1            */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:384:  /* Configure PLL1                                                           */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:385:  LPC_CGU->PLL1_CTRL = (0            << 0) | /* PLL1 Enabled                  */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:386:                       (PLL1_BYPASS  << 1) | /* CCO out sent to post-dividers */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:387:                       (PLL1_FBSEL   << 6) | /* PLL output used as feedback   */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:388:                       (PLL1_DIRECT  << 7) | /* Direct on/off                 */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:389:                       (PLL1_PSEL    << 8) | /* PSEL                          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:391:                       (PLL1_NSEL    << 12)| /* NSEL                          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:392:                       (PLL1_MSEL    << 16)| /* MSEL                          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:393:                       (PLL1_CLK_SEL << 24); /* Clock source                  */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:396:  while (!(LPC_CGU->PLL1_STAT & 1));
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:407:  PLL0USB Setup
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:410:  /* Power down PLL0USB                                                       */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:411:  LPC_CGU->PLL0USB_CTRL  |= 1;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:415:  switch (PLL0USB_M) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:423:      for (i = PLL0USB_M; i <= 0x8000; i++) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:428:  if (PLL0USB_M < 60) selp = (PLL0USB_M >> 1) + 1;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:431:  if      (PLL0USB_M > 16384) seli = 1;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:432:  else if (PLL0USB_M >  8192) seli = 2;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:433:  else if (PLL0USB_M >  2048) seli = 4;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:434:  else if (PLL0USB_M >=  501) seli = 8;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:435:  else if (PLL0USB_M >=   60) seli = 4 * (1024 / (PLL0USB_M + 9));
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:436:  else                        seli = (PLL0USB_M & 0x3C) + 4;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:437:  LPC_CGU->PLL0USB_MDIV   =  (selp   << 17) |
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:443:  switch (PLL0USB_N) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:451:      for (i = PLL0USB_N; i <= 0x0100; i++) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:455:  LPC_CGU->PLL0USB_NP_DIV = (x << 12);
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:459:  switch (PLL0USB_P) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:467:      for (i = PLL0USB_P; i <= 0x200; i++) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:471:  LPC_CGU->PLL0USB_NP_DIV |= x;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:473:  LPC_CGU->PLL0USB_CTRL  = (PLL0USB_CLK_SEL   << 24) | /* Clock source sel    */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:475:                           (1                 << 4 ) | /* PLL0USB clock en    */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:476:                           (PLL0USB_DIRECTO   << 3 ) | /* Direct output       */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:477:                           (PLL0USB_DIRECTI   << 2 ) | /* Direct input        */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:478:                           (PLL0USB_BYPASS    << 1 ) | /* PLL bypass          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:479:                           (0                 << 0 ) ; /* PLL0USB Enabled     */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:480:  while (!(LPC_CGU->PLL0USB_STAT & 1));
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:782:  Get PLL1 (divider and multiplier) parameters
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:784:static __inline uint32_t GetPLL1Param (void) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:789:  ctrl = LPC_CGU->PLL1_CTRL;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:795:    /* Bypass = 1, PLL1 input clock sent to post-dividers */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:830:    case CLK_SRC_PLL0U: reg = LPC_CGU->PLL0USB_CTRL;    break;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:831:    case CLK_SRC_PLL0A: reg = LPC_CGU->PLL0AUDIO_CTRL;  break;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:832:    case CLK_SRC_PLL1:  reg = (LPC_CGU->PLL1_STAT & 1) ? (LPC_CGU->PLL1_CTRL) : (0); break;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:875:      case CLK_SRC_PLL0U: /* Not implemented */  break;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:876:      case CLK_SRC_PLL0A: /* Not implemented */  break;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:878:      case CLK_SRC_PLL1:
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:879:        tmp = GetPLL1Param ();
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:880:        mul *= (tmp     ) & 0xFF;       /* PLL input clock multiplier         */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:881:        div *= (tmp >> 8) & 0xFF;       /* PLL input clock divider            */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4322_Cortex-M4\system_LPC43xx.c:930:  /* Configure PLL0 and PLL1, connect CPU clock to selected clock source */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:33:   PLL0USB   |    480 MHz     |      XTAL      | External crystal @ 12 MHz
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:35:    PLL1     |    180 MHz     |      XTAL      | External crystal @ 12 MHz
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:37:    CPU      |    180 MHz     |      PLL1      | CPU Clock ==  BASE_M4_CLK
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:39:   IDIV A    |     60 MHz     |      PLL1      | To the USB1 peripheral
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:47:   IDIV E    |    5.3 MHz     |      PLL1      | To the LCD controller
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:60:#define CLK_SRC_PLL0U       0x07
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:61:#define CLK_SRC_PLL0A       0x08
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:62:#define CLK_SRC_PLL1        0x09
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:84:#define PLL1_CLK_SEL      CLK_SRC_XTAL    /* PLL1 input clock: XTAL           */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:85:#define PLL0USB_CLK_SEL   CLK_SRC_XTAL    /* PLL0USB input clock: XTAL        */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:86:#define IDIVA_CLK_SEL     CLK_SRC_PLL1    /* IDIVA input clock: PLL1          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:90:#define IDIVE_CLK_SEL     CLK_SRC_PLL1    /* IDIVD input clock: PLL1          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:106:#define CPU_CLK_SEL       CLK_SRC_PLL1  /* Default CPU clock source is PLL1   */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:117: * Configure PLL1
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:120: *    - PLL1_DIRECT = 0 (Post divider enabled)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:121: *    - PLL1_FBSEL  = 1 (Feedback divider runs from PLL output)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:127: *    - PLL1_DIRECT = 0 (Post divider enabled)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:128: *    - PLL1_FBSEL  = 0 (Feedback divider runs from CCO clock)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:134: *    - PLL1_DIRECT = 1         (Post divider disabled)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:135: *    - PLL1_FBSEL  = dont care (Feedback divider runs from CCO clock)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:141: * PLL1 requirements:
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:158: * Relations beetwen PLL dividers and definitions:
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:159: * N = PLL1_NSEL + 1,     M = PLL1_MSEL + 1,     P = 2 ^ PLL1_PSEL
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:162:/* PLL1 output clock: 180MHz, Fcco: 180MHz, N = 1, M = 15, P = x              */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:163:#define PLL1_NSEL   0           /* Range [0 -   3]: Pre-divider ratio N       */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:164:#define PLL1_MSEL  14           /* Range [0 - 255]: Feedback-divider ratio M  */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:165:#define PLL1_PSEL   0           /* Range [0 -   3]: Post-divider ratio P      */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:167:#define PLL1_BYPASS 0           /* 0: Use PLL, 1: PLL is bypassed             */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:168:#define PLL1_DIRECT 1           /* 0: Use PSEL, 1: Don't use PSEL             */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:169:#define PLL1_FBSEL  0           /* 0: FCCO is used as PLL feedback            */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:170:                                /* 1: FCLKOUT is used as PLL feedback         */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:192: * Configure PLL0USB
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:196: *    - PLL0USB_DIRECTI = 1
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:197: *    - PLL0USB_DIRECTO = 1
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:198: *    - PLL0USB_BYPASS  = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:204: *    - PLL0USB_DIRECTI = 1
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:205: *    - PLL0USB_DIRECTO = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:206: *    - PLL0USB_BYPASS  = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:212: *    - PLL0USB_DIRECTI = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:213: *    - PLL0USB_DIRECTO = 1
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:214: *    - PLL0USB_BYPASS  = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:220: *    - PLL0USB_DIRECTI = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:221: *    - PLL0USB_DIRECTO = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:222: *    - PLL0USB_BYPASS  = 0
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:227: * PLL0 requirements:
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:240:/* PLL0USB output clock: 480MHz, Fcco: 480MHz, N = 1, M = 20, P = 1           */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:241:#define PLL0USB_N       1       /* Range [1 -  256]: Pre-divider              */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:242:#define PLL0USB_M      20       /* Range [1 - 2^15]: Feedback-divider         */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:243:#define PLL0USB_P       1       /* Range [1 -   32]: Post-divider             */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:245:#define PLL0USB_DIRECTI 1       /* 0: Use N_DIV, 1: Don't use N_DIV           */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:246:#define PLL0USB_DIRECTO 1       /* 0: Use P_DIV, 1: Don't use P_DIV           */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:247:#define PLL0USB_BYPASS  0       /* 0: Use PLL, 1: PLL is bypassed             */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:254:/* PLL0 Setting Check */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:255:#if (PLL0USB_BYPASS == 0)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:256: #if (PLL0USB_CLK_SEL == CLK_SRC_XTAL)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:257:  #define PLL0USB_CLKIN CLK_XTAL
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:259:  #define PLL0USB_CLKIN CLK_IRC
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:262: #if   ((PLL0USB_DIRECTI == 1) && (PLL0USB_DIRECTO == 1)) /* Mode 1a          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:263:  #define PLL0USB_FOUT (PLL0USB_CLKIN * 2 * PLL0USB_M)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:264:  #define PLL0USB_FCCO (PLL0USB_FOUT)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:265: #elif ((PLL0USB_DIRECTI == 1) && (PLL0USB_DIRECTO == 0)) /* Mode 1b          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:266:  #define PLL0USB_FOUT (PLL0USB_CLKIN * PLL0USB_M / PLL0USB_P)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:267:  #define PLL0USB_FCCO (PLL0USB_FOUT * 2 * PLL0USB_P)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:268: #elif ((PLL0USB_DIRECTI == 0) && (PLL0USB_DIRECTO == 1)) /* Mode 1c          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:269:  #define PLL0USB_FOUT (PLL0USB_CLKIN * 2 * PLL0USB_M / PLL0USB_N)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:270:  #define PLL0USB_FCCO (PLL0USB_FOUT)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:272:  #define PLL0USB_FOUT (PLL0USB_CLKIN * PLL0USB_M / (PLL0USB_P * PLL0USB_N))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:273:  #define PLL0USB_FCCO (PLL0USB_FOUT * 2 * PLL0USB_P)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:276: #if (PLL0USB_FCCO < 275000000UL || PLL0USB_FCCO > 550000000UL)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:277:  #error "PLL0USB Fcco frequency out of range! (275MHz >= Fcco <= 550MHz)"
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:279: #if (PLL0USB_FOUT < 4300000UL || PLL0USB_FOUT > 550000000UL)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:280:  #error "PLL0USB output frequency out of range! (4.3MHz >= Fclkout <= 550MHz)"
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:284:/* PLL1 Setting Check */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:285:#if (PLL1_BYPASS == 0)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:286: #if (PLL1_CLK_SEL == CLK_SRC_XTAL)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:287:  #define PLL1_CLKIN CLK_XTAL
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:289:  #define PLL1_CLKIN CLK_IRC
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:292: #if   (PLL1_DIRECT == 1)               /* Direct Mode                        */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:293:  #define PLL1_FCCO ((PLL1_MSEL + 1) * (PLL1_CLKIN / (PLL1_NSEL + 1)))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:294:  #define PLL1_FOUT ((PLL1_MSEL + 1) * (PLL1_CLKIN / (PLL1_NSEL + 1)))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:295: #elif (PLL1_FBSEL  == 1)               /* Integer Mode                       */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:296:  #define PLL1_FCCO ((2 * (1 << PLL1_PSEL)) * (PLL1_MSEL + 1) * (PLL1_CLKIN / (PLL1_NSEL + 1)))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:297:  #define PLL1_FOUT ((PLL1_MSEL + 1) * (PLL1_CLKIN / (PLL1_NSEL + 1)))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:299:  #define PLL1_FCCO ((PLL1_MSEL + 1) * (PLL1_CLKIN / (PLL1_NSEL + 1)))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:300:  #define PLL1_FOUT (PLL1_FCCO / (2 * (1 << PLL1_PSEL)))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:302: #if (PLL1_FCCO < 156000000UL || PLL1_FCCO > 320000000UL)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:303:  #error "PLL1 Fcco frequency out of range! (156MHz >= Fcco <= 320MHz)"
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:305: #if (PLL1_FOUT < 9750000UL || PLL1_FOUT > 204000000UL)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:306:  #error "PLL1 output frequency out of range! (9.75MHz >= Fclkout <= 204MHz)"
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:345:/* configure SPIFI clk to IRC via IDIVA (later IDIVA is configured to PLL1/3) */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:358:  PLL1 Setup
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:360:  /* Power down PLL                                                           */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:361:  LPC_CGU->PLL1_CTRL |= 1;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:363:#if ((PLL1_FOUT > 110000000UL) && (CPU_CLK_SEL == CLK_SRC_PLL1))
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:365:  LPC_CGU->PLL1_CTRL = (0            << 0) | /* PLL1 Enabled                  */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:366:                       (PLL1_BYPASS  << 1) | /* CCO out sent to post-dividers */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:367:                       (PLL1_FBSEL   << 6) | /* PLL output used as feedback   */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:369:                       (PLL1_PSEL    << 8) | /* PSEL                          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:371:                       (PLL1_NSEL    << 12)| /* NSEL                          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:372:                       (PLL1_MSEL    << 16)| /* MSEL                          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:373:                       (PLL1_CLK_SEL << 24); /* Clock source                  */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:375:  while (!(LPC_CGU->PLL1_STAT & 1));
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:379:                             (0x09 << 24) ;  /* Clock source: PLL1            */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:384:  /* Configure PLL1                                                           */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:385:  LPC_CGU->PLL1_CTRL = (0            << 0) | /* PLL1 Enabled                  */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:386:                       (PLL1_BYPASS  << 1) | /* CCO out sent to post-dividers */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:387:                       (PLL1_FBSEL   << 6) | /* PLL output used as feedback   */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:388:                       (PLL1_DIRECT  << 7) | /* Direct on/off                 */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:389:                       (PLL1_PSEL    << 8) | /* PSEL                          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:391:                       (PLL1_NSEL    << 12)| /* NSEL                          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:392:                       (PLL1_MSEL    << 16)| /* MSEL                          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:393:                       (PLL1_CLK_SEL << 24); /* Clock source                  */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:396:  while (!(LPC_CGU->PLL1_STAT & 1));
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:407:  PLL0USB Setup
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:410:  /* Power down PLL0USB                                                       */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:411:  LPC_CGU->PLL0USB_CTRL  |= 1;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:415:  switch (PLL0USB_M) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:423:      for (i = PLL0USB_M; i <= 0x8000; i++) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:428:  if (PLL0USB_M < 60) selp = (PLL0USB_M >> 1) + 1;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:431:  if      (PLL0USB_M > 16384) seli = 1;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:432:  else if (PLL0USB_M >  8192) seli = 2;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:433:  else if (PLL0USB_M >  2048) seli = 4;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:434:  else if (PLL0USB_M >=  501) seli = 8;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:435:  else if (PLL0USB_M >=   60) seli = 4 * (1024 / (PLL0USB_M + 9));
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:436:  else                        seli = (PLL0USB_M & 0x3C) + 4;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:437:  LPC_CGU->PLL0USB_MDIV   =  (selp   << 17) |
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:443:  switch (PLL0USB_N) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:451:      for (i = PLL0USB_N; i <= 0x0100; i++) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:455:  LPC_CGU->PLL0USB_NP_DIV = (x << 12);
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:459:  switch (PLL0USB_P) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:467:      for (i = PLL0USB_P; i <= 0x200; i++) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:471:  LPC_CGU->PLL0USB_NP_DIV |= x;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:473:  LPC_CGU->PLL0USB_CTRL  = (PLL0USB_CLK_SEL   << 24) | /* Clock source sel    */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:475:                           (1                 << 4 ) | /* PLL0USB clock en    */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:476:                           (PLL0USB_DIRECTO   << 3 ) | /* Direct output       */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:477:                           (PLL0USB_DIRECTI   << 2 ) | /* Direct input        */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:478:                           (PLL0USB_BYPASS    << 1 ) | /* PLL bypass          */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:479:                           (0                 << 0 ) ; /* PLL0USB Enabled     */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:480:  while (!(LPC_CGU->PLL0USB_STAT & 1));
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:782:  Get PLL1 (divider and multiplier) parameters
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:784:static __inline uint32_t GetPLL1Param (void) {
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:789:  ctrl = LPC_CGU->PLL1_CTRL;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:795:    /* Bypass = 1, PLL1 input clock sent to post-dividers */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:830:    case CLK_SRC_PLL0U: reg = LPC_CGU->PLL0USB_CTRL;    break;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:831:    case CLK_SRC_PLL0A: reg = LPC_CGU->PLL0AUDIO_CTRL;  break;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:832:    case CLK_SRC_PLL1:  reg = (LPC_CGU->PLL1_STAT & 1) ? (LPC_CGU->PLL1_CTRL) : (0); break;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:875:      case CLK_SRC_PLL0U: /* Not implemented */  break;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:876:      case CLK_SRC_PLL0A: /* Not implemented */  break;
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:878:      case CLK_SRC_PLL1:
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:879:        tmp = GetPLL1Param ();
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:880:        mul *= (tmp     ) & 0xFF;       /* PLL input clock multiplier         */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:881:        div *= (tmp >> 8) & 0xFF;       /* PLL input clock divider            */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\LPC-Link2\RTE\Device\LPC4370_Cortex-M4\system_LPC43xx.c:930:  /* Configure PLL0 and PLL1, connect CPU clock to selected clock source */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:64:- {id: PLL0_Mode, value: Normal}
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:67:- {id: ENABLE_PLL_USB_OUT, value: Enabled}
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:73:- {id: SYSCON.MAINCLKSELB.sel, value: SYSCON.PLL0_BYPASS}
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:74:- {id: SYSCON.PLL0CLKSEL.sel, value: SYSCON.CLK_IN_EN}
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:75:- {id: SYSCON.PLL0M_MULT.scale, value: '150', locked: true}
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:76:- {id: SYSCON.PLL0N_DIV.scale, value: '8', locked: true}
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:77:- {id: SYSCON.PLL0_PDEC.scale, value: '2'}
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:107:    ANACTRL->XO32M_CTRL |= ANACTRL_XO32M_CTRL_ENABLE_PLL_USB_OUT_MASK;       /* Enable clk_in to HS USB  */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:112:    /*!< Set up PLL */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:113:    CLOCK_AttachClk(kEXT_CLK_to_PLL0);                    /*!< Switch PLL0CLKSEL to EXT_CLK */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:114:    POWER_DisablePD(kPDRUNCFG_PD_PLL0);                  /* Ensure PLL is on  */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:115:    POWER_DisablePD(kPDRUNCFG_PD_PLL0_SSCG);
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:117:        .pllctrl = SYSCON_PLL0CTRL_CLKEN_MASK | SYSCON_PLL0CTRL_SELI(53U) | SYSCON_PLL0CTRL_SELP(31U),
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:118:        .pllndec = SYSCON_PLL0NDEC_NDIV(8U),
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:119:        .pllpdec = SYSCON_PLL0PDEC_PDIV(1U),
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:120:        .pllsscg = {0x0U,(SYSCON_PLL0SSCG1_MDIV_EXT(150U) | SYSCON_PLL0SSCG1_SEL_EXT_MASK)},
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:122:        .flags =  PLL_SETUPFLAG_WAITLOCK
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:124:    CLOCK_SetPLL0Freq(&pll0Setup);                       /*!< Configure PLL0 to the desired values */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\board\clock_config.c:142:    CLOCK_AttachClk(kPLL0_to_MAIN_CLK);                 /*!< Switch MAIN_CLK to PLL0 */
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\fsl_usart.c:366:    if (flexcomm_clock != 48000000U)
+App\external\CMSIS_5\CMSIS\DAP\Firmware\Examples\MCU-LINK\fsl_usart.c:368:        /* FlexComm input clock must be 48000000 */
+App\sram-overlay.c:189:    PMU_TRIM_PLL  = overlay_FLASH_ReadByAHB(0x07CC);

@@ -1,4 +1,3 @@
-
 add_library(App INTERFACE)
 target_include_directories(App INTERFACE .)
 target_link_libraries(App INTERFACE PY32F071_Driver)
@@ -15,14 +14,13 @@ target_sources(App INTERFACE
     driver/st7565.c
     driver/system.c
     driver/systick.c
-    # Application
+    driver/syscalls.c
+    # Main
     app/action.c
     app/app.c
     app/chFrScanner.c
     app/common.c
     app/dtmf.c
-    app/events.c
-    app/events_handlers.c
     app/generic.c
     app/main.c
     app/menu.c
@@ -52,9 +50,7 @@ target_sources(App INTERFACE
     "version.c"
     main.c
     external/printf/printf.c
-    settings_event.c
 )
-
 
 macro(enable_feature feature)
     if(${feature})
@@ -64,8 +60,6 @@ macro(enable_feature feature)
         endif()
     endif()
 endmacro()
-
-# compile options (see README.md for descriptions)
 
 if(ENABLE_FEAT_N7SIX)
     target_compile_definitions(App INTERFACE 
@@ -81,10 +75,11 @@ endif()
 target_compile_definitions(App INTERFACE 
     "AUTHOR_STRING=\"${AUTHOR_STRING}\""
     "VERSION_STRING=\"${VERSION_STRING}\""
+    "BUILD_COMMIT=\"${BUILD_COMMIT}\""
 )
 
 if(NOT SQL_TONE)
-    set(SQL_TONE 550) # For SA818, use 600 and python3 sa818.py --port /dev/ttyS2 radio --frequency 434.975 --ctcss 71.9 --tail Open
+    set(SQL_TONE 550)
 endif()
 target_compile_definitions(App INTERFACE SQL_TONE=${SQL_TONE})
 
@@ -98,7 +93,6 @@ endif()
 enable_feature(ENABLE_UART
     driver/uart.c 
     app/uart.c
-    # driver/aes.c
 )
 
 if(ENABLE_USB)
@@ -117,15 +111,13 @@ if(ENABLE_UART OR ENABLE_USB)
     )
 endif()
 
-# ---- STOCK QUANSHENG FEATURES ----
-
 enable_feature(ENABLE_FMRADIO
     driver/bk1080.c 
     app/fm.c 
     ui/fmradio.c
 )
 enable_feature(ENABLE_AIRCOPY
-    app/aircopy.c 
+    app/aircopy.c
     ui/aircopy.c
 )
 enable_feature(ENABLE_NOAA)
@@ -143,10 +135,9 @@ enable_feature(ENABLE_FLASHLIGHT
     app/flashlight.c
 )
 
-# ---- CUSTOM MODS ----
-
 enable_feature(ENABLE_SPECTRUM
     app/spectrum.c
+    app/waterfall.c
 )
 enable_feature(ENABLE_BIG_FREQ)
 enable_feature(ENABLE_SMALL_BOLD)
@@ -160,34 +151,29 @@ enable_feature(ENABLE_BOOT_BEEPS)
 enable_feature(ENABLE_SHOW_CHARGE_LEVEL)
 enable_feature(ENABLE_REVERSE_BAT_SYMBOL)
 enable_feature(ENABLE_NO_CODE_SCAN_TIMEOUT)
-enable_feature(ENABLE_AM_FIX
-    am_fix.c
-)
 enable_feature(ENABLE_SQUELCH_MORE_SENSITIVE)
 enable_feature(ENABLE_FASTER_CHANNEL_SCAN)
 enable_feature(ENABLE_RSSI_BAR)
 enable_feature(ENABLE_AUDIO_BAR)
+enable_feature(ENABLE_FEAT_N7SIX_AUDIO_SCOPE)
 enable_feature(ENABLE_COPY_CHAN_TO_VFO)
 enable_feature(ENABLE_REDUCE_LOW_MID_TX_POWER)
 enable_feature(ENABLE_BYP_RAW_DEMODULATORS)
 enable_feature(ENABLE_BLMIN_TMP_OFF)
 enable_feature(ENABLE_SCAN_RANGES)
-enable_feature(ENABLE_NAVIG_LEFT_RIGHT)
 
-# ---- CONTRIB MODS ----
-
-# Thank you @markusb
 enable_feature(ENABLE_REGA
     app/rega.c
 ) 
-# Thank you @reppad
 enable_feature(ENABLE_EXTRA_UART_CMD)
 
-# ---- N7SIX MODS ----
-
 enable_feature(ENABLE_FEAT_N7SIX)
-enable_feature(ENABLE_FEAT_N7SIX_GAME 
-    app/breakout.c
+enable_feature(ENABLE_FEAT_N7SIX_CW 
+    app/cw_simple.c
+    app/cwapp.c
+    app/cwkeyer.c
+    app/cwmacro.c
+    app/cwhardware.c
 )
 enable_feature(ENABLE_FEAT_N7SIX_SCREENSHOT 
     screenshot.c
@@ -200,20 +186,35 @@ enable_feature(ENABLE_FEAT_N7SIX_RESUME_STATE)
 enable_feature(ENABLE_FEAT_N7SIX_NARROWER)
 enable_feature(ENABLE_FEAT_N7SIX_INV)
 enable_feature(ENABLE_FEAT_N7SIX_CTR)
+enable_feature(ENABLE_FEAT_N7SIX_SCAN_PROGRESS)
+enable_feature(ENABLE_FEAT_N7SIX_SCAN_FASTER)
+enable_feature(ENABLE_FEAT_N7SIX_SCAN_RSSI)
+enable_feature(ENABLE_FEAT_N7SIX_SCAN_SUBAUDIBLE)
 enable_feature(ENABLE_FEAT_N7SIX_RESCUE_OPS)
 enable_feature(ENABLE_FEAT_N7SIX_VOL)
-enable_feature(ENABLE_FEAT_N7SIX_RESET_CHANNEL)
+enable_feature(ENABLE_FEAT_N7SIX_AUDIO)
+enable_feature(ENABLE_FEAT_N7SIX_RESET_VFO)
 enable_feature(ENABLE_FEAT_N7SIX_PMR)
 enable_feature(ENABLE_FEAT_N7SIX_GMRS_FRS_MURS)
 enable_feature(ENABLE_FEAT_N7SIX_CA)
 enable_feature(ENABLE_FEAT_N7SIX_DEBUG)
+enable_feature(ENABLE_FEAT_N7SIX_MEM)
+enable_feature(ENABLE_FEAT_N7SIX_BEAM
+    app/beam.c
+)
 
-# ---- DEBUGGING ----
+if(ENABLE_FEAT_N7SIX_BEAM AND NOT ENABLE_AIRCOPY)
+    message(FATAL_ERROR "ENABLE_FEAT_N7SIX_BEAM requires ENABLE_AIRCOPY (it reuses g_FSK_Buffer, AIRCOPY_Obfuscate and the FSK packet plumbing).")
+endif()
+enable_feature(ENABLE_FEAT_N7SIX_QRCODE)
+enable_feature(ENABLE_FEAT_N7SIX_LOGO)
+enable_feature(ENABLE_FEAT_N7SIX_LOGO_SAV)
 
-enable_feature(ENABLE_AM_FIX_SHOW_DATA)
+if(ENABLE_FEAT_N7SIX_LOGO_SAV AND NOT ENABLE_FEAT_N7SIX_LOGO)
+    message(FATAL_ERROR "ENABLE_FEAT_N7SIX_LOGO_SAV requires ENABLE_FEAT_N7SIX_LOGO.")
+endif()
+
 enable_feature(ENABLE_AGC_SHOW_DATA)
 enable_feature(ENABLE_UART_RW_BK_REGS)
-
-# ---- COMPILER/LINKER OPTIONS ----
 
 enable_feature(ENABLE_SWD)
