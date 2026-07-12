@@ -1,3 +1,4 @@
+
 add_library(App INTERFACE)
 target_include_directories(App INTERFACE .)
 target_link_libraries(App INTERFACE PY32F071_Driver)
@@ -52,6 +53,7 @@ target_sources(App INTERFACE
     external/printf/printf.c
 )
 
+
 macro(enable_feature feature)
     if(${feature})
         target_compile_definitions(App INTERFACE ${feature})
@@ -60,6 +62,8 @@ macro(enable_feature feature)
         endif()
     endif()
 endmacro()
+
+# compile options (see README.md for descriptions)
 
 if(ENABLE_FEAT_N7SIX)
     target_compile_definitions(App INTERFACE 
@@ -79,7 +83,7 @@ target_compile_definitions(App INTERFACE
 )
 
 if(NOT SQL_TONE)
-    set(SQL_TONE 550)
+    set(SQL_TONE 550) # For SA818, use 600 and python3 sa818.py --port /dev/ttyS2 radio --frequency 434.975 --ctcss 71.9 --tail Open
 endif()
 target_compile_definitions(App INTERFACE SQL_TONE=${SQL_TONE})
 
@@ -93,6 +97,7 @@ endif()
 enable_feature(ENABLE_UART
     driver/uart.c 
     app/uart.c
+    # driver/aes.c
 )
 
 if(ENABLE_USB)
@@ -110,6 +115,8 @@ if(ENABLE_UART OR ENABLE_USB)
         app/uart.c
     )
 endif()
+
+# ---- STOCK QUANSHENG FEATURES ----
 
 enable_feature(ENABLE_FMRADIO
     driver/bk1080.c 
@@ -134,6 +141,8 @@ enable_feature(ENABLE_DTMF_CALLING)
 enable_feature(ENABLE_FLASHLIGHT
     app/flashlight.c
 )
+
+# ---- CUSTOM MODS ----
 
 enable_feature(ENABLE_SPECTRUM
     app/spectrum.c
@@ -162,14 +171,20 @@ enable_feature(ENABLE_BYP_RAW_DEMODULATORS)
 enable_feature(ENABLE_BLMIN_TMP_OFF)
 enable_feature(ENABLE_SCAN_RANGES)
 
+# ---- CONTRIB MODS ----
+
+# Thank you @markusb
 enable_feature(ENABLE_REGA
     app/rega.c
 ) 
+# Thank you @reppad
 enable_feature(ENABLE_EXTRA_UART_CMD)
+
+# ---- N7SIX MODS ----
 
 enable_feature(ENABLE_FEAT_N7SIX)
 enable_feature(ENABLE_FEAT_N7SIX_CW 
-    app/cw_simple.c
+    app/cw.c
     app/cwapp.c
     app/cwkeyer.c
     app/cwmacro.c
@@ -214,7 +229,11 @@ if(ENABLE_FEAT_N7SIX_LOGO_SAV AND NOT ENABLE_FEAT_N7SIX_LOGO)
     message(FATAL_ERROR "ENABLE_FEAT_N7SIX_LOGO_SAV requires ENABLE_FEAT_N7SIX_LOGO.")
 endif()
 
+# ---- DEBUGGING ----
+
 enable_feature(ENABLE_AGC_SHOW_DATA)
 enable_feature(ENABLE_UART_RW_BK_REGS)
+
+# ---- COMPILER/LINKER OPTIONS ----
 
 enable_feature(ENABLE_SWD)

@@ -112,10 +112,13 @@ static uint16_t gCW_RxDitTicks = 0;
 static uint8_t  gCW_RxSignalHistory[128];  // Signal level history for timing diagram
 static uint8_t  gCW_RxTracePeak[128];       // Peak-hold trace for smoother monitoring UI
 static uint16_t gCW_RxTraceClock = 0;       // Pace the trace to Morse timing
-static uint32_t gCW_RxMarkStart = 0;
-static uint32_t gCW_RxSpaceStart = 0;
-static uint8_t  gCW_RxSignalDebounce = 0;
+static bool     gCW_RxToneState = false;
+static uint8_t  gCW_RxToneOnDebounce = 0;
+static uint8_t  gCW_RxToneOffDebounce = 0;
+static int16_t  gCW_RxLastRssi = -120;
+static int16_t  gCW_PeakRssi = -110;  // Start at realistic noise floor
 static int16_t  gCW_RxNoiseFloor = -120;
+static int16_t  gCW_RxSignalFloor = -110;
 static bool     gCW_StartupDelay = false;  // Prevent RX activation during startup
 
 typedef enum {
@@ -140,7 +143,6 @@ static uint16_t gCW_InterWordMs = 420;
 #define CW_RX_DEBOUNCE_TICKS   1
 #define CW_RX_ACTIVATE_TICKS   5  // Require 50ms sustained signal before RX mode
 #define CW_RX_DEACTIVATE_TICKS 3  // Require 30ms of no signal before deactivating RX
-#define CW_RX_SIMPLE_THRESHOLD 8  // dB above noise floor for tone detection
 #define CW_MULTI_TAP_TIMEOUT_TICKS 80
 
 static void CW_UpdateTiming(void)
