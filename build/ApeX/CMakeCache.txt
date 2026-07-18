@@ -365,7 +365,7 @@ ENABLE_F_CAL_MENU:BOOL=FALSE
 ENABLE_KEEP_MEM_NAME:BOOL=TRUE
 
 //No help, variable specified on the command line.
-ENABLE_LTO:BOOL=FALSE
+ENABLE_LTO:BOOL=TRUE
 
 //No help, variable specified on the command line.
 ENABLE_NOAA:BOOL=FALSE
@@ -437,13 +437,13 @@ ENABLE_WIDE_RX:BOOL=TRUE
 GIT_EXECUTABLE:FILEPATH=/usr/local/bin/git
 
 //No help, variable specified on the command line.
-TARGET:UNINITIALIZED=n7six.ApeX-k1.v7.6.8
+TARGET:UNINITIALIZED=n7six.ApeX-k1.v7.6.9
 
 //No help, variable specified on the command line.
 VERSION_STRING_1:UNINITIALIZED=v0.22
 
 //No help, variable specified on the command line.
-VERSION_STRING_2:UNINITIALIZED=v7.6.8
+VERSION_STRING_2:UNINITIALIZED=v7.6.9
 
 //Value Computed by CMake
 n7six_BINARY_DIR:STATIC=/src/build/ApeX

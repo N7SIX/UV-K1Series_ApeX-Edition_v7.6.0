@@ -70,6 +70,15 @@ typedef enum {
 // works, increase this value (e.g. -110) to reject noise if needed.
 #define CW_RX_RSSI_THRESHOLD_DEFAULT  (-120)
 
+// Key press tick reset timeout (ms). Used to clear multi-tap key state.
+#define CW_KEY_TICK_RESET_MS   800
+
+// Display holdoff after TX state changes (10ms ticks)
+#define CW_TX_DISPLAY_HOLDOFF_10MS  20
+
+// Suspend timeout before ending TX (ms)
+#define CW_SUSPEND_TIMEOUT_MS  200
+
 // LCD layout - CW uses lines 24-55 (pages 3-6)
 // gFrameBuffer[3-4] for TX text (wrapping), gFrameBuffer[5] for RX decode, gFrameBuffer[6] for status
 #define CW_LINE_TX1      3   // gFrameBuffer[3] - TX text row 1 (lines 24-31)
@@ -87,7 +96,6 @@ extern char          gCW_Message[CW_MSG_MAX_LEN + 1];
 extern uint8_t       gCW_CursorPos;
 extern uint8_t       gCW_WPM;
 extern uint16_t      gCW_ToneFreq;
-extern int16_t       gCW_RxThreshold;
 extern bool          gCW_PlaybackActive;
 extern bool          gCW_PlaybackRepeat;
 extern uint8_t       gCW_PlaybackMacroIndex;
@@ -145,9 +153,23 @@ extern bool gCW_KeyerUsingSD1;
 
 // Morse lookup
 const char * CW_CharToMorse(char c);
-uint8_t     CW_MorseToChar(const char *morse);
 
-// CW tone timing
+// CW tone timing - shared between TX and decoder
+extern uint16_t gCW_DitMs;
+extern uint16_t gCW_DahMs;
+extern uint16_t gCW_InterElemMs;
+extern uint16_t gCW_InterCharMs;
+extern uint16_t gCW_InterWordMs;
+
+// Shared Morse character map (defined in cw.c, used by cwdecoder.c)
+typedef struct {
+    char ch;
+    const char *morse;
+} CW_CharMap_t;
+
+extern const CW_CharMap_t CW_CHAR_MAP[];
+extern const uint8_t      CW_CHAR_MAP_COUNT;
+
 void CW_PlayDit(void);
 void CW_PlayDah(void);
 void CW_PlayCharacter(const char *morse);

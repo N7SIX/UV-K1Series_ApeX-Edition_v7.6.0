@@ -25,10 +25,6 @@
 #include "ui/main.h"
 #include <string.h>
 
-// Debug logging control
-#define CW_ENCODER_DEBUG 0
-#define CW_MACRO_DEBUG 0
-
 // Morse code lookup table
 // Pattern: LSB first, 0=dit, 1=dah
 typedef struct {
@@ -126,10 +122,12 @@ bool CW_ValidateChar(char ch)
     return false;
 }
 
+// Include the length byte (block[0]) in checksum so corrupted length/signature
+// bytes are detected.
 uint8_t compute_macro_checksum(const uint8_t *block, uint8_t length)
 {
     uint8_t sum = 0;
-    for (uint8_t i = 1; i <= length; i++) {
+    for (uint8_t i = 0; i <= length; i++) {
         sum += block[i];
     }
     return sum;
@@ -157,7 +155,13 @@ uint8_t CW_GetMacroLength(uint8_t macroIndex)
     EEPROM_ReadBuffer(MACRO_ADDRS[macroIndex], block, CW_MACRO_BLOCK_SIZE);
     uint8_t checksum = block[CW_MACRO_CHECKSUM_OFFSET];
     if (checksum != compute_macro_checksum(block, length))
+    {
+        // Optional: erase corrupted macro so next save starts clean.
+        // Commented out to preserve user data in case of transient read errors.
+        // uint8_t erase_byte = 0xFF;
+        // EEPROM_WriteBuffer(MACRO_ADDRS[macroIndex], &erase_byte, 1);
         return 0;
+    }
 
     return length;
 }

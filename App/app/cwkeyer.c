@@ -7,11 +7,11 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *     Unless required by applicable law or agreed to in writing, software
- *     distributed under the License is distributed on an "AS IS" BASIS,
- *     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *     See the License for the specific language governing permissions and
- *     limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 // CW Iambic Keyer implementation
@@ -80,6 +80,8 @@ static bool           s_active_is_dit = false;
 static bool           s_pending_alternate = false;
 static bool           s_last_handkey_ptt = false;
 static uint16_t       s_elem_deadline_extra_ms = 0;
+// Playback buffer for decoded ASCII. Worst case: every char has a space prefix,
+// so size must accommodate up to CW_MACRO_MAX_LEN * 2 characters + NUL.
 static char s_playback_buf[CW_MACRO_MAX_LEN * 2 + 1];
 static uint16_t s_playback_buf_len = 0;
 static uint16_t s_playback_pos = 0;
@@ -155,7 +157,11 @@ void CW_KeyerReconfigure(bool enable)
 
 void CW_UpdateWPM(void)
 {
-    const uint32_t wpm = gEeprom.CW_KEY_WPM;
+    // Validate WPM to prevent divide-by-zero and ensure reasonable range
+    uint32_t wpm = gEeprom.CW_KEY_WPM;
+    if (wpm == 0 || wpm > 50)
+        wpm = 20;  // fallback to default
+
     const uint32_t dit_ticks = TICKS_PER_MINUTE / (wpm * DITS_PER_WORD);
 
     s_dit_count = (uint16_t)dit_ticks;
@@ -518,6 +524,7 @@ static CW_Action_t CW_HandleBugState(void)
 CW_Action_t CW_HandleState(void)
 {
     CW_Action_t action = CW_ACTION_NONE;
+    CW_Input in = {0};
 
     if (s_cfg_dirty && s_KeyerFSMState == CWK_STATE_IDLE && s_bug_state == BUG_STATE_IDLE) {
         CW_KeyerInit();
@@ -536,8 +543,6 @@ CW_Action_t CW_HandleState(void)
     if (gEeprom.CW_KEYER_MODE == CW_KEYER_MODE_BUG) {
         return CW_HandleBugState();
     }
-
-    CW_Input in = {0};
 
     switch (s_KeyerFSMState) {
     case CWK_STATE_IDLE:

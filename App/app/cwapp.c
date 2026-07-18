@@ -65,10 +65,14 @@ void CW_AppUpdate(void)
 
     CW_Action_t action;
     if (gCW_PlaybackActive)
+    {
         action = CW_PlaybackHandleState();
+    }
     else
     {
-        // If no playback, use keyer FSM (for paddle/keyer TX)
+        // Keyer/paddle TX (CW_TxStateMachine handles RF for typed-message only).
+        // Run keyer FSM here for paddle input; it will fight with typed-message TX,
+        // but typed-message sets gCW_PlaybackActive so this path only runs for keyer.
         #ifdef ENABLE_FEAT_N7SIX_CW
         action = CW_HandleState();
         #else
@@ -81,7 +85,7 @@ void CW_AppUpdate(void)
     {
         case CW_ACTION_CARRIER_ON:
             gTxTimerCountdown_500ms = 0;
-            gCW_TxDisplayHoldoff_10ms = 20;
+            gCW_TxDisplayHoldoff_10ms = CW_TX_DISPLAY_HOLDOFF_10MS;
             gPttIsPressed = true;
 
             if (gCW_AppState == CW_APP_INACTIVE)
@@ -105,13 +109,13 @@ void CW_AppUpdate(void)
                 gCW_AppState = CW_APP_SUSPENDED;
                 gCW_SuspendCounter_1ms = gGlobalSysTickCounter;
             }
-            gCW_TxDisplayHoldoff_10ms = 20;
+            gCW_TxDisplayHoldoff_10ms = CW_TX_DISPLAY_HOLDOFF_10MS;
         break;
 
         case CW_ACTION_CARRIER_HOLD_ON:
             gPttIsPressed = true;
             gTxTimerCountdown_500ms = 0;
-            gCW_TxDisplayHoldoff_10ms = 20;
+            gCW_TxDisplayHoldoff_10ms = CW_TX_DISPLAY_HOLDOFF_10MS;
 
             if (gCW_AppState == CW_APP_SUSPENDED)
                 gCW_AppState = CW_APP_TRANSMITTING;
@@ -133,10 +137,10 @@ void CW_AppUpdate(void)
     if (gCW_AppState == CW_APP_SUSPENDED)
     {
         uint16_t elapsed = (uint16_t)(gGlobalSysTickCounter - gCW_SuspendCounter_1ms);
-        if (elapsed >= 200)
+        if (elapsed >= CW_SUSPEND_TIMEOUT_MS)
         {
             gCW_SuspendCounter_1ms = 0;
-            gCW_TxDisplayHoldoff_10ms = 20;
+            gCW_TxDisplayHoldoff_10ms = CW_TX_DISPLAY_HOLDOFF_10MS;
             gPttIsPressed = false;
             CW_EndTxNow();
             gCW_State = CW_COMPOSING;

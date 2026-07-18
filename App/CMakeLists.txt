@@ -189,6 +189,7 @@ enable_feature(ENABLE_FEAT_N7SIX_CW
     app/cwkeyer.c
     app/cwmacro.c
     app/cwhardware.c
+    app/cwdecoder.c
 )
 enable_feature(ENABLE_FEAT_N7SIX_SCREENSHOT 
     screenshot.c

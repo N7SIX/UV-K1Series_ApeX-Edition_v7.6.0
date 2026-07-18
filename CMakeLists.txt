@@ -6,7 +6,7 @@ set(CMAKE_C_EXTENSIONS ON)
 
 
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Debug")
+    set(CMAKE_BUILD_TYPE "Release")
 endif()
 
 set(CMAKE_PROJECT_NAME n7six)
@@ -109,9 +109,10 @@ target_link_libraries(${EXE_NAME} Core App)
 target_compile_definitions(${EXE_NAME} PRIVATE $<$<CONFIG:Debug>:DEBUG>)
 target_link_libraries(${EXE_NAME} ${TOOLCHAIN_LINK_LIBRARIES})
 
-if(ENABLE_LTO)
-    target_compile_options(${EXE_NAME} PRIVATE -flto=auto)
+if(NOT ENABLE_LTO)
+    set(ENABLE_LTO ON CACHE BOOL "Enable Link Time Optimization for smaller code size" FORCE)
 endif()
+target_compile_options(${EXE_NAME} PRIVATE -flto=auto)
 
 if(ENABLE_PA_PROTECTION)
     target_compile_definitions(${EXE_NAME} PRIVATE ENABLE_PA_PROTECTION)

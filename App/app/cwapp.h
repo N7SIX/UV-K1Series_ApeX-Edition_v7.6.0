@@ -29,10 +29,10 @@ extern "C" {
 
 // CW application states
 typedef enum {
-    CW_INACTIVE = 0,
-    CW_TRANSMITTING,
-    CW_SUSPENDED
-} CW_State_t;
+    CW_APP_INACTIVE = 0,
+    CW_APP_TRANSMITTING,
+    CW_APP_SUSPENDED
+} CW_AppState_t;
 
 // CW action codes returned by the keyer/playback engine
 typedef enum {
@@ -52,7 +52,7 @@ void CW_AppUpdate(void);
 void CW_EndTxNow(void);
 
 // Get current CW state
-CW_State_t CW_GetState(void);
+CW_AppState_t CW_GetState(void);
 
 // Check if CW is active (transmitting or suspended)
 bool CW_IsActive(void);
