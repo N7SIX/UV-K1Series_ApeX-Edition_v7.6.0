@@ -22,7 +22,8 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
-# Allow user to pass either "6a38c220" or "build_id-6a38c220"
+# Allow user to pass either the 8-hex-digit BUILD_ID shown in SysInf (e.g. "6a5c8274")
+# or the full restore-point directory name "build_id-6a5c8274".
 RAW_BUILD_ID="$1"
 if [[ "${RAW_BUILD_ID}" =~ ^build_id- ]]; then
     BUILD_ID="${RAW_BUILD_ID#build_id-}"

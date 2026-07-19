@@ -1163,25 +1163,19 @@ void UI_DisplayMenu(void)
             {
                 strcpy(String, "STOP");
             }
-            else if(gSubMenuSelection < 81)
+            else if(gSubMenuSelection <= 80)
             {
                 sprintf(String, "CARRIER\n%02ds:%03dms", ((gSubMenuSelection * 250) / 1000), ((gSubMenuSelection * 250) % 1000));
-                //#if !defined(ENABLE_SPECTRUM) || !defined(ENABLE_FMRADIO)
-                //ST7565_Gauge(5, 1, 80, gSubMenuSelection);
                 gaugeLine = 5;
                 gaugeMin = 1;
                 gaugeMax = 80;
-                //#endif
             }
             else
             {
                 sprintf(String, "TIMEOUT\n%02dm:%02ds", (((gSubMenuSelection - 80) * 5) / 60), (((gSubMenuSelection - 80) * 5) % 60));
-                //#if !defined(ENABLE_SPECTRUM) || !defined(ENABLE_FMRADIO)
-                //ST7565_Gauge(5, 80, 104, gSubMenuSelection);
                 gaugeLine = 5;
                 gaugeMin = 80;
                 gaugeMax = 104;
-                //#endif
             }
             break;
 

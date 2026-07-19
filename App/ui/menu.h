@@ -177,7 +177,6 @@ extern const char* const            gSubMenu_SFT_D[3];
 extern const char* const            gSubMenu_W_N[2];
 extern const char* const            gSubMenu_OFF_ON[2];
 extern const char*                  gSubMenu_NA;
-extern const char* const            gSubMenu_TOT[11];
 extern const char* const            gSubMenu_RXMode[4];
 
 #ifdef ENABLE_VOICE

@@ -14,25 +14,26 @@ mkdir -p "${ARCHIVE_DIR}"
 
 INCLUDE_BUILD="${INCLUDE_BUILD:-false}"
 
-# Determine BUILD_COMMIT (same algorithm as CMakeLists.txt)
+# Read the exact BUILD_COMMIT that CMake exported during configure.
+# BUILD_COMMIT is created first by CMake; BUILD_ID must reuse the same value.
 BUILD_COMMIT="unknown"
-if [ -d "${SRC_DIR}/.git" ] && command -v git >/dev/null 2>&1; then
-    cd "${SRC_DIR}"
-    BUILD_COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
-    cd - >/dev/null
-fi
-
-if [ "${BUILD_COMMIT}" = "unknown" ] || [ -z "${BUILD_COMMIT}" ]; then
-    if command -v python3 >/dev/null 2>&1; then
-        BUILD_COMMIT="$(python3 -c "import time; print(f'{int(time.time()):08x}')" 2>/dev/null || echo unknown)"
-    elif command -v python >/dev/null 2>&1; then
-        BUILD_COMMIT="$(python -c "import time; print('%08x' % int(time.time()))" 2>/dev/null || echo unknown)"
+for candidate in \
+    "${SRC_DIR}/build/ApeX/BUILD_COMMIT.txt" \
+    "${SRC_DIR}/build/BUILD_COMMIT.txt" \
+    "${SRC_DIR}/.build_commit" \
+    "${SRC_DIR}/build_id.txt"
+do
+    if [ -f "${candidate}" ]; then
+        CANDIDATE="$(grep -E '^[0-9a-f]{6,}$' "${candidate}" 2>/dev/null | head -n1 || true)"
+        if [ -z "${CANDIDATE}" ]; then
+            CANDIDATE="$(grep -E 'BUILD_COMMIT=' "${candidate}" 2>/dev/null | head -n1 | cut -d'=' -f2 | tr -d '[:space:]"' || true)"
+        fi
+        if [ -n "${CANDIDATE}" ]; then
+            BUILD_COMMIT="$(echo "${CANDIDATE}" | head -c 12)"
+            break
+        fi
     fi
-    if [ "${BUILD_COMMIT}" = "unknown" ] || [ -z "${BUILD_COMMIT}" ]; then
-        TS="$(date +%s)"
-        BUILD_COMMIT="build${TS:2}"
-    fi
-fi
+done
 
 RESTORE_DIR="${ARCHIVE_DIR}/build_id-${BUILD_COMMIT}"
 
