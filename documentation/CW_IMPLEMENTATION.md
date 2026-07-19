@@ -528,6 +528,6 @@ Standard ITU-R M.1677-1 character set implemented:
 
 ---
 
-*Document generated: 2026-07-18*
-*Firmware: UV-K1 ApeX Edition v7.6.9*
+*Document generated: 2026-07-19*
+*Firmware: UV-K1 ApeX Edition v7.6.8*
 *CW Module: N7SIX Custom Mod*

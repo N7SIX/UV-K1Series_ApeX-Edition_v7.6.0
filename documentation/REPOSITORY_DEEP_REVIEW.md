@@ -50,9 +50,14 @@ App/ structure:
   helper/   battery.c/h, boot.c/h
   external/ printf/, CMSIS_5/
   usb/      usbd_cdc_if.c, usb_config.h
-  documentation/  SPECTRUM_WATERFALL_QUICK_GUIDE.md,
-                  SPECTRUM_WATERFALL_REVIEW.md,
-                  REPOSITORY_DEEP_REVIEW.md
+  documentation/  CW_IMPLEMENTATION.md,
+                  EEPROM_ARCHITECTURE.md,
+                  MEMORY_OPTIMIZATION_REPORT.md,
+                  RECOMMENDATION_SAFETY_ANALYSIS.md,
+                  REPOSITORY_DEEP_REVIEW.md,
+                  SAFETY_AND_IMPROVEMENTS.md,
+                  SPECTRUM_WATERFALL_QUICK_GUIDE.md,
+                  SPECTRUM_WATERFALL_REVIEW.md
 ```
 
 ---
