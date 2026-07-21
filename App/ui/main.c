@@ -1964,23 +1964,36 @@ void UI_DisplayMain(void)
                     const FREQ_Config_t *pConfig = (mode == VFO_MODE_TX) ? vfoInfo->pTX : vfoInfo->pRX;
                     const unsigned int code_type = pConfig->CodeType;
 #ifdef ENABLE_FEAT_N7SIX
-                    const char *code_list[] = {"", "  TTN", "DCR", "DCS"};
+    const char *code_list[] = {"", " TTN", "DCR", "DCS"};
 #else
-                    const char *code_list[] = {"", "  TTN", "DCR", "DCS"};
+    const char *code_list[] = {"", " CT", "DCR", "DCS"};
 #endif
-                    if (code_type < ARRAY_SIZE(code_list))
-                        s = code_list[code_type];
-                
-                    // Replace "CT" with "TTN" or "TSQ" based on TX/RX CTCSS configuration
-                    if (code_type == 1) { // CTCSS
-                        const bool tx_has_ctcss = vfoInfo->pTX->CodeType == 1;
-                        const bool rx_has_ctcss = vfoInfo->pRX->CodeType == 1;
-                        if (tx_has_ctcss && rx_has_ctcss) {
-                            s = "TSQ"; // Both TX and RX CTCSS enabled
-                        } else if (tx_has_ctcss) {
-                            s = " TTN"; // Only TX CTCSS enabled
-                        }
-                    }
+
+    if (code_type < ARRAY_SIZE(code_list))
+        s = code_list[code_type];
+
+    // Replace CTCSS label based on state (TX vs RX)
+    if (code_type == 1) { // CTCSS
+        const bool tx_has_ctcss = (vfoInfo->pTX->CodeType == 1);
+        const bool rx_has_ctcss = (vfoInfo->pRX->CodeType == 1);
+
+        // Check if the radio is currently in Transmit mode
+        const bool is_transmitting = (gCurrentFunction == FUNCTION_TRANSMIT);
+
+        if (is_transmitting) {
+            // When actively transmitting, show TTN if TX tone is active
+            if (tx_has_ctcss) {
+                s = "TTN";
+            }
+        } else {
+            // In Standby/RX mode
+            if (tx_has_ctcss && rx_has_ctcss) {
+                s = "TSQ"; // Both TX and RX CTCSS set
+            } else if (tx_has_ctcss) {
+                s = "TTN"; // TX tone only
+            }
+        }
+    }
 #ifdef ENABLE_FEAT_N7SIX
                     if(gCurrentFunction != FUNCTION_TRANSMIT || activeTxVFO != vfo_num)
                         t = gModulationStr[mod];
