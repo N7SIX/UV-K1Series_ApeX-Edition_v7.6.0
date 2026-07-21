@@ -1,7 +1,0 @@
-BUILD_ID=d039549
-DATE=2026-07-19
-TIME=09:43:14 UTC
-HOST=codespaces-277802
-PRESET=ApeX
-INCLUDE_BUILD=true
-SRC_DIR=/workspaces/UV-K1Series_ApeX-Edition_v7.6.0
