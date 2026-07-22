@@ -194,15 +194,24 @@ void CW_Render(void)
                 }
                 else
                 {
+                    // Show the T A I L (most recently decoded characters)
+                    // instead of the head (oldest). This makes the display
+                    // "scroll" naturally: new characters appear on the right,
+                    // old ones fall off the left.
+                    uint16_t offset = 0;
+                    const uint16_t displayLen = (uint16_t)CW_CHARS_PER_TX_LINE * 2;
+                    if (len > displayLen)
+                        offset = len - displayLen;
+
                     char line1[CW_CHARS_PER_TX_LINE + 1];
-                    memcpy(line1, textToRender, CW_CHARS_PER_TX_LINE);
+                    memcpy(line1, textToRender + offset, CW_CHARS_PER_TX_LINE);
                     line1[CW_CHARS_PER_TX_LINE] = '\0';
                     UI_PrintStringSmallNormal(line1, 28, 0, CW_LINE_TX1);
 
-                    uint16_t remaining = len - CW_CHARS_PER_TX_LINE;
+                    uint16_t remaining = len - offset - CW_CHARS_PER_TX_LINE;
                     if (remaining > CW_CHARS_PER_TX_LINE) remaining = CW_CHARS_PER_TX_LINE;
                     char line2[CW_CHARS_PER_TX_LINE + 1];
-                    memcpy(line2, textToRender + CW_CHARS_PER_TX_LINE, remaining);
+                    memcpy(line2, textToRender + offset + CW_CHARS_PER_TX_LINE, remaining);
                     line2[remaining] = '\0';
                     UI_PrintStringSmallNormal(line2, 2, 0, CW_LINE_TX2);
                 }
@@ -226,6 +235,14 @@ void CW_Render(void)
         default: break;
     }
     gUpdateDisplay = true;
+
+    // Immediate display refresh to ensure decoded text appears without
+    // waiting for the main loop. This bypasses potential display update
+    // latency from other 10ms tasks (scanning, DTMF, power save).
+    ST7565_BlitLine(CW_LINE_TX1);
+    ST7565_BlitLine(CW_LINE_TX2);
+    ST7565_BlitLine(CW_LINE_DECODE);
+    ST7565_BlitLine(CW_LINE_STATUS);
 }
 
 // ---- Lifecycle ----
@@ -488,6 +505,8 @@ static void CW_TxStateMachine(void)
                         if (!gCW_TxSentAny || gCW_TxPrevWasSpace || trailing) { gCW_TxMsgIdx++; continue; }
                         gCW_TxPrevWasSpace = true;
                         gCW_TxState = CW_TX_WORD_GAP;
+                        // +5 before division rounds to nearest 10 ms tick;
+                        // this intentionally adds up to ~0.5 ms to word gaps.
                         gCW_TxTimer = (uint8_t)((gCW_InterWordMs + 5) / 10);
                         gCW_TxMsgIdx++;
                         return;

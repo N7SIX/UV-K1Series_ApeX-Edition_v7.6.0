@@ -245,13 +245,18 @@ static void CW_DecodeCharacter(bool addWordSpace)
         gCW_RxCharConfidence = 100;
     }
 
+    // Compute confidence threshold BEFORE resetting accumulators.
+    // Short chars (1-2 elements) get a 20% floor; longer chars need 25%.
+    const uint8_t CONFIDENCE_THRESHOLD = (gCW_RxElementsInChar <= 2) ? 20 : 25;
+
     // Reset accumulators for next character
     gCW_RxSignalSum = 0;
     gCW_RxElementsInChar = 0;
 
     gCW_RxMorse[gCW_RxMorseLen] = '\0';
     const char *decodedToken = CW_MorseToDecodedToken(gCW_RxMorse);
-    if (decodedToken != NULL && decodedToken[0] != '\0')
+
+    if (decodedToken != NULL && decodedToken[0] != '\0' && gCW_RxCharConfidence >= CONFIDENCE_THRESHOLD)
     {
         CW_AppendDecodedText(decodedToken);
     }

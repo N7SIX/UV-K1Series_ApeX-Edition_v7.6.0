@@ -43,6 +43,13 @@
 #define TICKS_PER_MS 1
 #define TICKS_PER_MINUTE (60 * 1000 * TICKS_PER_MS)
 
+// Optional element deadline extension applied when the speaker is off.
+// This relaxes the feel of the keying rhythm but exceeds strict ITU WPM timing.
+// Set to 0 for standards-compliant timing, or make this a menu setting later.
+#ifndef CW_ELEM_DEADLINE_EXTRA_MS
+#define CW_ELEM_DEADLINE_EXTRA_MS 20
+#endif
+
 // Keyer FSM states
 typedef enum {
     CWK_STATE_IDLE = 0,
@@ -72,7 +79,6 @@ static uint16_t         s_bug_phase_start = 0;
 static uint16_t       s_dit_count  = 0;
 static uint16_t       s_dah_count  = 0;
 static uint16_t       s_gap_count  = 0;
-static uint16_t       s_ext_gap_count = 0;
 static uint16_t       s_char_gap_count = 0;
 static uint16_t       s_word_gap_count = 0;
 static uint16_t       s_elem_start_count = 0;
@@ -167,7 +173,6 @@ void CW_UpdateWPM(void)
     s_dit_count = (uint16_t)dit_ticks;
     s_dah_count = (uint16_t)(3U * dit_ticks);
     s_gap_count = (uint16_t)dit_ticks;
-    s_ext_gap_count = (uint16_t)(3U * dit_ticks / 2U);
     s_char_gap_count = (uint16_t)(3U * dit_ticks);
     s_word_gap_count = (uint16_t)(7U * dit_ticks);
 }
@@ -438,7 +443,11 @@ static CW_Action_t CW_HandleBugState(void)
         }
         if (in.dit) {
             s_bug_phase_start = now;
-            s_elem_deadline_extra_ms = gEnableSpeaker ? 0 : 20;
+            // When the speaker is disabled, add a small timing extension (20 ms)
+            // to give the operator a slightly more relaxed feel for the rhythm.
+            // This is intentional for operational comfort but technically exceeds
+            // strict ITU WPM timing. Make configurable if strict timing is required.
+            s_elem_deadline_extra_ms = gEnableSpeaker ? 0 : CW_ELEM_DEADLINE_EXTRA_MS;
             s_bug_state = BUG_STATE_DIT_ELEMENT;
             return CW_ACTION_CARRIER_ON;
         }
@@ -560,7 +569,7 @@ CW_Action_t CW_HandleState(void)
 
             s_pending_alternate = false;
             s_elem_start_count = cur_count;
-            s_elem_deadline_extra_ms = gEnableSpeaker ? 0 : 20;
+            s_elem_deadline_extra_ms = gEnableSpeaker ? 0 : CW_ELEM_DEADLINE_EXTRA_MS;
             s_KeyerFSMState = CWK_STATE_ACTIVE_ELEMENT;
             action = CW_ACTION_CARRIER_ON;
         }
@@ -668,7 +677,7 @@ CW_Action_t CW_HandleState(void)
             CW_ReadKeys(&in);
             bool have_key = (in.dit || in.dah);
 
-            if (elapsed_gap < s_ext_gap_count) {
+            if (elapsed_gap < s_gap_count + (s_gap_count >> 1)) {
                 if (have_key) {
                     if (in.dit && !in.dah) {
                         s_active_is_dit = true;
