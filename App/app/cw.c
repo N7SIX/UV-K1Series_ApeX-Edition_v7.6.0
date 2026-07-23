@@ -616,7 +616,7 @@ void CW_DeleteChar(void)
 
 void CW_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 {
-    if (!gCW_ActiveState || !bKeyPressed) return;
+    if (!gCW_ActiveState) return;
     if (Key != KEY_F) gWasFKeyPressed = false;
 
     if (bKeyHeld)
@@ -697,7 +697,22 @@ void CW_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         case KEY_DOWN: gCW_PrevKey = 0; gCW_PrevLetter = 0; gCW_KeyTick = 0; CW_AppendChar(' '); CW_Render(); break;
         case KEY_SIDE2: gCW_UpperCase = !gCW_UpperCase; CW_Render(); AUDIO_PlayBeep(BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL); break;
         // KEY_STAR intentionally removed to avoid double-toggle with KEY_SIDE2 long-press
-        case KEY_MENU: gRequestDisplayScreen = DISPLAY_MENU; break;
+        case KEY_MENU:
+            if (!bKeyHeld && bKeyPressed)
+            {
+                // Initial press - reset flag to allow new long-press detection
+                gCW_MenuLongHandled = false;
+            }
+            else if (!bKeyPressed && !bKeyHeld)
+            {
+                // Short press release - open menu only if long-press wasn't handled
+                if (!gCW_MenuLongHandled)
+                {
+                    gRequestDisplayScreen = DISPLAY_MENU;
+                }
+                gCW_MenuLongHandled = false;
+            }
+            break;
         case KEY_SIDE1: gCW_CursorPos = 0; gCW_Message[0] = '\0'; gCW_PrevKey = 0; gCW_PrevLetter = 0; CW_Render(); AUDIO_PlayBeep(BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL); break;
         case KEY_F:
             if (!bKeyHeld) { gCW_CursorPos = 0; gCW_Message[0] = '\0'; gCW_PrevKey = 0; gCW_PrevLetter = 0; CW_Render(); }
