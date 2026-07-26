@@ -186,7 +186,7 @@ uint16_t          gEEPROM_1F8C;
 MR_ChannelCache_t gMR_ChannelAttributes_Cache[MR_CHANNELS_CACHE_SIZE] = {0};
 ChannelAttributes_t gMR_ChannelAttributes_Current = {0};
 
-volatile uint16_t gBatterySaveCountdown_10ms = battery_save_count_10ms;
+volatile uint16_t gBatterySaveCountdown_10ms = 1000;  // was: battery_save_count_10ms (10000/10)
 
 volatile bool     gPowerSaveCountdownExpired;
 volatile bool     gSchedulePowerSave;
@@ -657,3 +657,5 @@ void MR_PrintCacheStats(void)
         return false;
     }
 #endif
+
+char gListName[MR_CHANNELS_LIST][4];

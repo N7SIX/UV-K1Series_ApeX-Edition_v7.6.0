@@ -1,4 +1,5 @@
-/* Copyright 2025 muzkr https://github.com/muzkr
+/* Copyright 2026 Sean, N7SIX https://github.com/n7six
+ * Copyright 2025 muzkr https://github.com/muzkr
  * Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *
@@ -56,6 +57,7 @@ void SETTINGS_InitEEPROM(void)
     // Version check
     // Read stored version from EEPROM and compare with VERSION_STRING_2
     // 
+    #ifdef ENABLE_FEAT_N7SIX
     {
         char storedVersion[16] = {0};
         PY25Q16_ReadBuffer(0x00A160, storedVersion, sizeof(storedVersion));
@@ -135,6 +137,7 @@ void SETTINGS_InitEEPROM(void)
             }
         }
     }
+    #endif
 
     // 0E70..0E77
     PY25Q16_ReadBuffer(0x00A000, Data, 8);
@@ -224,13 +227,15 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
 
 #ifdef ENABLE_FMRADIO
     {   // 0E88..0E8F
-        struct
-        {
-            uint16_t selFreq;
-            uint8_t  selChn;
-            uint8_t  isMrMode:1;
-            uint8_t  band:2;
-            //uint8_t  space:2;
+        union {
+            struct {
+                uint16_t selFreq;
+                uint8_t  selChn;
+                uint8_t  isMrMode:1;
+                uint8_t  band:2;
+                //uint8_t  space:2;
+            } __attribute__((packed));
+            uint8_t __raw[4];
         } __attribute__((packed)) fmCfg;
         PY25Q16_ReadBuffer(0x00A020, &fmCfg, 4);
 
@@ -514,6 +519,15 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
     #endif
 }
 
+typedef struct
+{
+    int16_t  BK4819_XtalFreqLow;
+    uint16_t EEPROM_1F8A;
+    uint16_t EEPROM_1F8C;
+    uint8_t  VOLUME_GAIN;
+    uint8_t  DAC_GAIN;
+} misc_t;
+
 void SETTINGS_LoadCalibration(void)
 {
 //  uint8_t Mic;
@@ -550,25 +564,18 @@ void SETTINGS_LoadCalibration(void)
     gEeprom.MIC_SENSITIVITY_TUNING = gMicGain_dB2[gEeprom.MIC_SENSITIVITY];
 
     {
-        struct
-        {
-            int16_t  BK4819_XtalFreqLow;
-            uint16_t EEPROM_1F8A;
-            uint16_t EEPROM_1F8C;
-            uint8_t  VOLUME_GAIN;
-            uint8_t  DAC_GAIN;
-        } __attribute__((packed)) Misc;
+        misc_t misc;
 
         // radio 1 .. 04 00 46 00 50 00 2C 0E
         // radio 2 .. 05 00 46 00 50 00 2C 0E
         // 0x1F88
-        PY25Q16_ReadBuffer(0x010000 + 0x188, &Misc, 8);
+        PY25Q16_ReadBuffer(0x010000 + 0x188, &misc, 8);
 
-        gEeprom.BK4819_XTAL_FREQ_LOW = (Misc.BK4819_XtalFreqLow >= -1000 && Misc.BK4819_XtalFreqLow <= 1000) ? Misc.BK4819_XtalFreqLow : 0;
-        gEEPROM_1F8A                 = Misc.EEPROM_1F8A & 0x01FF;
-        gEEPROM_1F8C                 = Misc.EEPROM_1F8C & 0x01FF;
-        gEeprom.VOLUME_GAIN          = (Misc.VOLUME_GAIN < 64) ? Misc.VOLUME_GAIN : 58;
-        gEeprom.DAC_GAIN             = (Misc.DAC_GAIN    < 16) ? Misc.DAC_GAIN    : 8;
+        gEeprom.BK4819_XTAL_FREQ_LOW = (misc.BK4819_XtalFreqLow >= -1000 && misc.BK4819_XtalFreqLow <= 1000) ? misc.BK4819_XtalFreqLow : 0;
+        gEEPROM_1F8A                 = misc.EEPROM_1F8A & 0x01FF;
+        gEEPROM_1F8C                 = misc.EEPROM_1F8C & 0x01FF;
+        gEeprom.VOLUME_GAIN          = (misc.VOLUME_GAIN < 64) ? misc.VOLUME_GAIN : 58;
+        gEeprom.DAC_GAIN             = (misc.DAC_GAIN    < 16) ? misc.DAC_GAIN    : 8;
 
         #ifdef ENABLE_FEAT_N7SIX
             gEeprom.VOLUME_GAIN_BACKUP   = gEeprom.VOLUME_GAIN;
@@ -581,40 +588,29 @@ void SETTINGS_LoadCalibration(void)
 
 uint32_t SETTINGS_FetchChannelFrequency(const uint16_t channel)
 {
-    struct
-    {
-        uint32_t frequency;
-        uint32_t offset;
-    } __attribute__((packed)) info;
-
-    PY25Q16_ReadBuffer(channel * 16, &info, sizeof(info));
-
-    return info.frequency;
+    uint32_t info[2];
+    PY25Q16_ReadBuffer(channel * 16, info, sizeof(info));
+    return info[0];
 }
 
 bool SETTINGS_FetchChannelScanInfo(const uint16_t channel, uint32_t *frequency, ModulationMode_t *modulation)
 {
-    struct
-    {
-        uint32_t frequency;
-        uint32_t offset;
-        uint8_t  settings[4];
-    } __attribute__((packed)) info;
+    uint8_t raw[12];
+    PY25Q16_ReadBuffer(channel * 16, raw, sizeof(raw));
 
-    PY25Q16_ReadBuffer(channel * 16, &info, sizeof(info));
-
+    uint32_t freq = *(uint32_t *)raw;
     if (frequency)
-        *frequency = info.frequency;
+        *frequency = freq;
 
     if (modulation)
     {
-        uint8_t mode = info.settings[3] >> 4;
+        uint8_t mode = raw[11] >> 4;
         if (mode >= MODULATION_UKNOWN)
             mode = MODULATION_FM;
         *modulation = (ModulationMode_t)mode;
     }
 
-    return info.frequency != 0 && info.frequency != 0xFFFFFFFF;
+    return freq != 0 && freq != 0xFFFFFFFF;
 }
 
 bool SETTINGS_FetchChannelScanDisplayInfo(const uint16_t channel, ChannelScanDisplayInfo_t *info)
@@ -622,46 +618,44 @@ bool SETTINGS_FetchChannelScanDisplayInfo(const uint16_t channel, ChannelScanDis
     if (info == NULL)
         return false;
 
-    struct
-    {
-        uint32_t frequency;
-        uint32_t offset;
-        uint8_t  data[8];
-    } __attribute__((packed)) raw;
+    uint8_t raw[16];
+    PY25Q16_ReadBuffer(channel * 16, raw, sizeof(raw));
 
-    PY25Q16_ReadBuffer(channel * 16, &raw, sizeof(raw));
+    uint32_t freq = *(uint32_t *)&raw[0];
+    uint32_t offs = *(uint32_t *)&raw[4];
+    uint8_t *dat = &raw[8];
 
-    if (raw.frequency == 0 || raw.frequency == 0xFFFFFFFF)
+    if (freq == 0 || freq == 0xFFFFFFFF)
         return false;
 
     memset(info, 0, sizeof(*info));
 
-    info->rx.Frequency = raw.frequency;
-    info->tx.Frequency = raw.frequency;
-    info->offset       = (raw.offset >= _1GHz_in_KHz) ? (_1GHz_in_KHz / 100) : raw.offset;
+    info->rx.Frequency = freq;
+    info->tx.Frequency = freq;
+    info->offset       = (offs >= _1GHz_in_KHz) ? (_1GHz_in_KHz / 100) : offs;
 
-    info->rx.CodeType = (raw.data[2] >> 0) & 0x0F;
-    info->tx.CodeType = (raw.data[2] >> 4) & 0x0F;
-    RADIO_ValidateAndSetCode(&info->rx, raw.data[0]);
-    RADIO_ValidateAndSetCode(&info->tx, raw.data[1]);
+    info->rx.CodeType = (dat[2] >> 0) & 0x0F;
+    info->tx.CodeType = (dat[2] >> 4) & 0x0F;
+    RADIO_ValidateAndSetCode(&info->rx, dat[0]);
+    RADIO_ValidateAndSetCode(&info->tx, dat[1]);
 
-    uint8_t tmp = raw.data[3] & 0x0F;
+    uint8_t tmp = dat[3] & 0x0F;
     if (tmp > TX_OFFSET_FREQUENCY_DIRECTION_SUB)
         tmp = TX_OFFSET_FREQUENCY_DIRECTION_OFF;
     info->txOffsetFrequencyDirection = tmp;
 
-    tmp = raw.data[3] >> 4;
+    tmp = dat[3] >> 4;
     if (tmp >= MODULATION_UKNOWN)
         tmp = MODULATION_FM;
     info->modulation = (ModulationMode_t)tmp;
 
-    tmp = raw.data[6];
+    tmp = dat[6];
     if (tmp >= STEP_N_ELEM)
         tmp = STEP_12_5kHz;
     info->stepSetting   = (STEP_Setting_t)tmp;
     info->stepFrequency = gStepFrequencyTable[tmp];
 
-    if (raw.data[4] == 0xFF)
+    if (dat[4] == 0xFF)
     {
         info->frequencyReverse = false;
         info->channelBandwidth = BANDWIDTH_WIDE;
@@ -671,7 +665,7 @@ bool SETTINGS_FetchChannelScanDisplayInfo(const uint16_t channel, ChannelScanDis
     }
     else
     {
-        const uint8_t d4 = raw.data[4];
+        const uint8_t d4 = dat[4];
         info->frequencyReverse = !!((d4 >> 0) & 1u);
         info->channelBandwidth = !!((d4 >> 1) & 1u);
         info->outputPower      =   ((d4 >> 2) & 7u);
@@ -682,16 +676,16 @@ bool SETTINGS_FetchChannelScanDisplayInfo(const uint16_t channel, ChannelScanDis
     switch (info->txOffsetFrequencyDirection)
     {
         case TX_OFFSET_FREQUENCY_DIRECTION_ADD:
-            info->tx.Frequency = raw.frequency + info->offset;
+            info->tx.Frequency = freq + info->offset;
             break;
         case TX_OFFSET_FREQUENCY_DIRECTION_SUB:
-            info->tx.Frequency = raw.frequency - info->offset;
+            info->tx.Frequency = freq - info->offset;
             break;
         default:
             break;
     }
 
-    if (raw.data[5] == 0xFF)
+    if (dat[5] == 0xFF)
     {
 #ifdef ENABLE_DTMF_CALLING
         info->dtmfDecodingEnable = false;
@@ -703,7 +697,7 @@ bool SETTINGS_FetchChannelScanDisplayInfo(const uint16_t channel, ChannelScanDis
 #ifdef ENABLE_DTMF_CALLING
         info->dtmfDecodingEnable = (raw.data[5] >> 0) & 1u;
 #endif
-        const uint8_t pttId = (raw.data[5] >> 1) & 7u;
+        const uint8_t pttId = (dat[5] >> 1) & 7u;
         info->dtmfPttIdTxMode = pttId < ARRAY_SIZE(gSubMenu_PTT_ID) ? pttId : PTT_ID_OFF;
     }
 
@@ -820,7 +814,7 @@ void SETTINGS_SaveFM(void)
                 //uint8_t  space:2;
             };
             uint8_t __raw[8];
-        } __attribute__((packed)) fmCfg;
+        } fmCfg;
 
         memset(fmCfg.__raw, 0xFF, sizeof(fmCfg.__raw));
         fmCfg.selChn   = gEeprom.FM_SelectedChannel;
@@ -1218,12 +1212,12 @@ void SETTINGS_SaveChannel(uint16_t Channel, uint8_t VFO, const VFO_Info_t *pVFO,
 
         SETTINGS_UpdateChannel(Channel, pVFO, true, true, true);
 
-        if (IS_MR_CHANNEL(Channel)) {
+        if (IS_MR_CHANNEL(Channel) && Channel < MR_CHANNELS_MAX) {
 #ifndef ENABLE_KEEP_MEM_NAME
             // clear/reset the channel name
             SETTINGS_SaveChannelName(Channel, "");
 #else
-            if (Mode >= 3) {
+            if (Mode >= 2) {
                 SETTINGS_SaveChannelName(Channel, pVFO->Name);
             }
 #endif
@@ -1292,7 +1286,7 @@ void SETTINGS_UpdateChannel(uint16_t channel, const VFO_Info_t *pVFO, bool keep,
 
         MR_SetChannelAttributes(channel, &att);
 
-        if (IS_MR_CHANNEL(channel)) {   // it's a memory channel
+        if (IS_MR_CHANNEL(channel) && channel < MR_CHANNELS_MAX) {   // it's a memory channel
             if (!keep) {
                 // clear/reset the channel name
                 SETTINGS_SaveChannelName(channel, "");
