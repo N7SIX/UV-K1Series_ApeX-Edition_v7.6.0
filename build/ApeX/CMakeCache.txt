@@ -437,13 +437,13 @@ ENABLE_WIDE_RX:BOOL=TRUE
 GIT_EXECUTABLE:FILEPATH=/usr/local/bin/git
 
 //No help, variable specified on the command line.
-TARGET:UNINITIALIZED=n7six.ApeX-k1.v7.6.9
+TARGET:UNINITIALIZED=n7six.ApeX-k1.v7.6.9B
 
 //No help, variable specified on the command line.
 VERSION_STRING_1:UNINITIALIZED=v0.22
 
 //No help, variable specified on the command line.
-VERSION_STRING_2:UNINITIALIZED=v7.6.9
+VERSION_STRING_2:UNINITIALIZED=v7.6.9B
 
 //Value Computed by CMake
 n7six_BINARY_DIR:STATIC=/src/build/ApeX

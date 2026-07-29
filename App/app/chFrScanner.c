@@ -712,6 +712,10 @@ static bool MemChannelFastPrecheck(uint16_t channel)
     // candidate is eventually retained.
     scanFastLastFullTuneCandidate = false;
     gRxVfo->freq_config_RX.Frequency = frequency;
+    if (scanFastDisplayVfoValid && scanFastDisplayVfo.FrequencyReverse)
+    {
+        gRxVfo->freq_config_TX.Frequency = scanFastDisplayVfo.freq_config_TX.Frequency;
+    }
     return false;
 }
 

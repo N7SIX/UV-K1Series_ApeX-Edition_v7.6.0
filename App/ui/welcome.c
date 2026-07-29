@@ -283,7 +283,7 @@ void UI_DisplayWelcome(void)
 
             if(strlen(WelcomeString1) == 0)
             {
-                strcpy(WelcomeString1, "BIENVENUE");
+                strcpy(WelcomeString1, "MABUHAY!");
             }
         }
 
@@ -294,44 +294,12 @@ void UI_DisplayWelcome(void)
         // 1. Render Version string first
         UI_PrintStringSmallNormal(Version, 0, 127, 4);
 
-        // 2. Scan gFrameBuffer rows for row 4 (where small font prints) to find actual pixel boundaries
-        uint8_t minX = 127;
-        uint8_t maxX = 0;
-
-        for (uint8_t x = 0; x < 128; x++) {
-            if (gFrameBuffer[4][x] != 0x00) {
-                if (x < minX) minX = x;
-                if (x > maxX) maxX = x;
-            }
-        }
-
-        // 3. Fallback check in case the string is empty
-        if (minX > maxX) {
-            minX = 40;
-            maxX = 87;
-        }
-
-        // 4. Add 2-pixel padding around the actual rendered text
-        uint8_t boxStart = (minX >= 2) ? (minX - 2) : 0;
-        uint8_t boxEnd   = (maxX <= 125) ? (maxX + 2) : 127;
-
-        // 5. Draw Left Accent Line
-        if (boxStart > 0) {
-            UI_DrawLineBuffer(gFrameBuffer, 0, 35, boxStart - 1, 35, 1);
-        }
-
-        // 6. Invert background across the actual text boundaries
-        gFrameBuffer[4][boxStart] ^= 0x7F;
-        for (uint8_t x = boxStart + 1; x < boxEnd; x++)
+        // 2. Draw static full-width background for the version string
+        //    Covers full horizontal width (0-127), maintains 2 rows height (rows 3-4)
+        for (uint8_t x = 0; x < 128; x++)
         {
             gFrameBuffer[4][x] ^= 0xFF;
             gFrameBuffer[3][x] ^= 0x80;
-        }
-        gFrameBuffer[4][boxEnd] ^= 0x7F;
-
-        // 7. Draw Right Accent Line
-        if (boxEnd < 127) {
-            UI_DrawLineBuffer(gFrameBuffer, boxEnd + 1, 35, 127, 35, 1);
         }
 
         /*
