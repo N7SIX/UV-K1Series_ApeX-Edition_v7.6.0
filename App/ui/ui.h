@@ -38,6 +38,10 @@ enum GUI_DisplayType_t
     DISPLAY_REGA,
 #endif
 
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    DISPLAY_RXTX_LOG,
+#endif
+
     DISPLAY_N_ELEM,
     DISPLAY_INVALID = 0xFFu
 };

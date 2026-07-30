@@ -618,6 +618,9 @@ const t_sidefunction gSubMenu_SIDEFUNCTIONS[] =
     {"MAIN ONLY",       ACTION_OPT_MAINONLY},
     {"PTT",             ACTION_OPT_PTT},
     {"WIDE\nNARROW",    ACTION_OPT_WN},
+    #ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    {"RXTX LOG",        ACTION_OPT_RXTX_LOG},
+    #endif
     {"MUTE",            ACTION_OPT_MUTE},
     #ifdef ENABLE_FEAT_N7SIX_AUDIO
         {"RxA",            ACTION_OPT_RXA},

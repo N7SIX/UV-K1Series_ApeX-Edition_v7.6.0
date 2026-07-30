@@ -34,6 +34,9 @@
         #include "app/action.h"
         #include "ui/ui.h"
     #endif
+    #ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+        #include "app/rxtx_log.h"
+    #endif
     #ifdef ENABLE_SPECTRUM
         #include "app/spectrum.h"
     #endif
@@ -98,6 +101,10 @@ void Main(void)
     BOARD_ADC_GetBatteryInfo(&gBatteryCurrentVoltage, &gBatteryCurrent);
 
     SETTINGS_InitEEPROM();
+
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    RXTX_LOG_Init();
+#endif
 
     #ifdef ENABLE_FEAT_N7SIX
         gDW = gEeprom.DUAL_WATCH;

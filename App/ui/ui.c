@@ -19,6 +19,9 @@
 
 #include "app/chFrScanner.h"
 #include "app/dtmf.h"
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    #include "app/rxtx_log.h"
+#endif
 #ifdef ENABLE_FMRADIO
     #include "app/fm.h"
 #endif
@@ -63,6 +66,10 @@ void (*UI_DisplayFunctions[])(void) = {
 
 #ifdef ENABLE_REGA
     [DISPLAY_REGA] = &UI_DisplayREGA,
+#endif
+
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    [DISPLAY_RXTX_LOG] = &UI_DisplayRxTxLog,
 #endif
 };
 

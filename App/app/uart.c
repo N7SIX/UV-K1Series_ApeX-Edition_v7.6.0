@@ -187,6 +187,10 @@ typedef union
     static uint16_t VCP_ReadIndex;
 #endif
 
+#if defined(ENABLE_FEAT_N7SIX_K5VIEWER) || defined(ENABLE_FEAT_N7SIX_RXTX_LOG_K5VIEWER)
+uint8_t gUART_LockK5Viewer = 0;
+#endif
+
 // static bool     bIsEncrypted = true;
 #define bIsEncrypted true
 

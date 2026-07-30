@@ -39,6 +39,10 @@
 #include "ui/status.h"
 #include "ui/ui.h"
 
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    #include "app/rxtx_log.h"
+#endif
+
 FUNCTION_Type_t gCurrentFunction;
 
 bool FUNCTION_IsRx()
@@ -141,6 +145,10 @@ void FUNCTION_PowerSave() {
 
 void FUNCTION_Transmit()
 {
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    RXTX_LOG_BeginTx(gTxVfo);
+#endif
+
     // if DTMF is enabled when TX'ing, it changes the TX audio filtering !! .. 1of11
     BK4819_DisableDTMF();
 
@@ -238,6 +246,11 @@ void FUNCTION_Select(FUNCTION_Type_t Function)
 {
     const FUNCTION_Type_t PreviousFunction = gCurrentFunction;
     const bool bWasPowerSave = PreviousFunction == FUNCTION_POWER_SAVE;
+
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    if (PreviousFunction == FUNCTION_TRANSMIT && Function != FUNCTION_TRANSMIT)
+        RXTX_LOG_EndActive();
+#endif
 
     gCurrentFunction = Function;
 

@@ -47,6 +47,19 @@
     #include "app/uart.h"
     #include "scheduler.h"
 #endif
+
+#if defined(ENABLE_FEAT_N7SIX_RXTX_LOG_K5VIEWER)
+    #if defined(ENABLE_UART)
+        #include "driver/uart.h"
+    #endif
+    #if defined(ENABLE_USB)
+        #include "driver/vcp.h"
+    #endif
+#endif
+
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    #include "app/rxtx_log.h"
+#endif
 #include "py32f0xx.h"
 #include "audio.h"
 #include "board.h"
@@ -118,6 +131,10 @@ void (*ProcessKeysFunctions[])(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld) 
 
 #ifdef ENABLE_AIRCOPY
     [DISPLAY_AIRCOPY] = &AIRCOPY_ProcessKeys,
+#endif
+
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    [DISPLAY_RXTX_LOG] = &RXTX_LOG_ProcessKeys,
 #endif
 };
 
@@ -699,6 +716,10 @@ void APP_StartListening(FUNCTION_Type_t function)
 
 #ifdef ENABLE_FEAT_N7SIX_LOGO_SAV
     ScreenSaverExit();
+#endif
+
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    RXTX_LOG_BeginRx(gRxVfo, function);
 #endif
 
 #ifdef ENABLE_FEAT_N7SIX_RX_TX_TIMER
@@ -1573,6 +1594,20 @@ void CheckKeys(void)
     }
 }
 
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_K5VIEWER
+static void RXTX_LOG_K5ViewerSend(const uint8_t *buf, uint16_t len)
+{
+#if defined(ENABLE_FEAT_N7SIX_SCREENSHOT)
+    if (gUSB_ScreenshotEnabled) {
+        VCP_Send(buf, len);
+    } else
+#endif
+    {
+        UART_Send(buf, len);
+    }
+}
+#endif
+
 void APP_TimeSlice10ms(void)
 {
     gNextTimeslice = false;
@@ -1602,6 +1637,24 @@ void APP_TimeSlice10ms(void)
 
     if (gCurrentFunction != FUNCTION_POWER_SAVE || !gRxIdleMode)
         CheckRadioInterrupts();
+
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    RXTX_LOG_Task10ms();
+#endif
+
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_K5VIEWER
+    if (gUART_LockK5Viewer > 0)
+        gUART_LockK5Viewer--;
+
+    if (gUART_LockK5Viewer == 0) {
+        static uint32_t prevSig = 0;
+        uint32_t sig = RXTX_LOG_K5ViewerSignature();
+        if (sig != prevSig) {
+            RXTX_LOG_SendK5ViewerPacket(RXTX_LOG_K5ViewerSend);
+            prevSig = sig;
+        }
+    }
+#endif
 
 #ifdef ENABLE_FEAT_N7SIX_CW
     CW_TimeSlice10ms();
@@ -2099,6 +2152,10 @@ void APP_TimeSlice500ms(void)
     BATTERY_TimeSlice500ms();
     SCANNER_TimeSlice500ms();
     UI_MAIN_TimeSlice500ms();
+
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    RXTX_LOG_Tick500ms();
+#endif
 
 #ifdef ENABLE_DTMF_CALLING
     if (gCurrentFunction != FUNCTION_TRANSMIT) {

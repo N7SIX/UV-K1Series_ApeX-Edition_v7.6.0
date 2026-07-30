@@ -143,6 +143,9 @@ enum ACTION_OPT_t {
         ACTION_OPT_POWER_HIGH,
         ACTION_OPT_REMOVE_OFFSET,
     #endif
+    #ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+        ACTION_OPT_RXTX_LOG,
+    #endif
 #endif
 #ifdef ENABLE_REGA
     ACTION_OPT_REGA_ALARM,

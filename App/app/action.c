@@ -49,6 +49,10 @@
     #include "app/beam.h"
 #endif
 
+#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+    #include "app/rxtx_log.h"
+#endif
+
 #if defined(ENABLE_FMRADIO)
 static void ACTION_Scan_FM(bool bRestart);
 #endif
@@ -127,6 +131,9 @@ void (*action_opt_table[])(void) = {
     #ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
         [ACTION_OPT_POWER_HIGH] = &ACTION_Power_High,
         [ACTION_OPT_REMOVE_OFFSET] = &ACTION_Remove_Offset,
+    #endif
+    #ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+        [ACTION_OPT_RXTX_LOG] = &ACTION_RxTxLog,
     #endif
 #else
     [ACTION_OPT_RXMODE] = &FUNCTION_NOP,
@@ -379,6 +386,9 @@ void ACTION_Handle(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         #ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
             case ACTION_OPT_POWER_HIGH:
             case ACTION_OPT_REMOVE_OFFSET:
+        #endif
+        #ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+            case ACTION_OPT_RXTX_LOG:
         #endif
     #endif
     #ifdef ENABLE_FEAT_N7SIX_BEAM
