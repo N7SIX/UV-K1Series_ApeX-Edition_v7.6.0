@@ -1,7 +1,0 @@
-BUILD_ID=6a619d30
-DATE=2026-07-23
-TIME=12:49:16 MPST
-HOST=SeanEbue
-PRESET=ApeX
-INCLUDE_BUILD=true
-SRC_DIR=/c/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.8-main
