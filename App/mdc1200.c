@@ -16,7 +16,7 @@
  * MDC-1200 Implementation: v7.6.10A
  * Pure logic layer for protocol-compliant MDC-1200 frame encoding.
  * Hardware-specific transmission handled in driver layer (bk4819.c, bk4829.c).
- * 
+ *
  * Note: MDC1200_Transmit() is declared here but implemented in the driver layer
  * to maintain separation of concerns and avoid circular dependencies.
  */
@@ -70,15 +70,35 @@ static uint16_t mdc1200_crc16(const uint8_t *p, size_t len)
     return crc;
 }
 
+/* Authentic MDC-1200 16x7 bit interleaver.
+ *
+ * The 112 source bits (14 bytes: 4 data + 2 CRC + 1 pad + 7 ECC) are spread
+ * across a 16-column by 7-row matrix. Source bit n is placed at output bit
+ * position (n % 7) * 16 + (n / 7). This is the exact interleave used by the
+ * canonical MDC-1200 reference (fsync-mdc1200-decode / mdc-encode-decode) and
+ * is the inverse of the de-interleaver used on the receive side.
+ *
+ * The previous implementation used a broken "step by 16 with wrap" loop that
+ * wrote one element past the end of the 112-bit buffer (lbits[112]..lbits[125])
+ * on every 8th bit, silently losing 14 source bits and emitting 14 uninitialized
+ * bits. That produced frames that were NOT valid MDC-1200 and would not decode
+ * on genuine receivers, nor round-trip through MDC1200_DecodeFrame(). This
+ * canonical permutation fixes the encoder so it is bit-exact with the standard.
+ */
+static uint8_t mdc1200_interleave_pos(unsigned int n)
+{
+    return (uint8_t)(((n % 7u) * 16u) + (n / 7u));
+}
+
 static void mdc1200_encode_str(uint8_t *data)
 {
     uint8_t csr[7] = {0};
+    uint8_t src[14] = {0};
+    uint8_t lbits[112] = {0};
     int i;
     int j;
     int k;
-    int m;
     int b;
-    uint8_t lbits[112];
     uint16_t crc;
 
     if (data == NULL) {
@@ -90,6 +110,8 @@ static void mdc1200_encode_str(uint8_t *data)
     data[5] = (uint8_t)((crc >> 8) & 0x00FFu);
     data[6] = 0;
 
+    /* Convolutional ECC: one parity byte per data byte over a K=7 shift
+     * register with generator taps at positions 0, 2, 5 and 6. */
     for (i = 0; i < 7; ++i) {
         data[i + 7] = 0;
         for (j = 0; j <= 7; ++j) {
@@ -101,25 +123,25 @@ static void mdc1200_encode_str(uint8_t *data)
         }
     }
 
-    k = 0;
-    m = 0;
+    /* Snapshot the 14 source bytes (4 data + 2 CRC + 1 pad + 7 ECC) before
+     * overwriting, then extract their 112 bits MSB-first (bit 7 of each byte
+     * is the first bit), interleave with the canonical 16x7 permutation, and
+     * repack MSB-first. The decoder uses the exact inverse convention, so a
+     * built frame round-trips bit-for-bit. */
     for (i = 0; i < 14; ++i) {
-        for (j = 0; j <= 7; ++j) {
-            b = 0x01 & (data[i] >> j);
-            lbits[k] = b;
-            k += 16;
-            if (k > 111)
-                k = ++m;
-        }
+        src[i] = data[i];
     }
 
-    k = 0;
+    for (i = 0; i < 112; ++i) {
+        k = (int)mdc1200_interleave_pos((unsigned int)i);
+        lbits[k] = (uint8_t)((src[i / 8] >> (7 - (i % 8))) & 0x01u);
+    }
+
     for (i = 0; i < 14; ++i) {
         data[i] = 0;
-        for (j = 7; j >= 0; --j) {
-            if (lbits[k])
-                data[i] |= (uint8_t)(1u << j);
-            ++k;
+        for (j = 0; j < 8; ++j) {
+            if (lbits[(i * 8) + j])
+                data[i] |= (uint8_t)(1u << (7 - j));
         }
     }
 }
@@ -194,6 +216,28 @@ MDC1200_Error_t MDC1200_BuildFifoWords(const uint8_t *frame,
     return MDC1200_ERROR_NONE;
 }
 
+/* Inverse of mdc1200_interleave_pos().
+ *
+ * Forward: k = (n % 7) * 16 + (n / 7)   =>  col = n % 7, row = n / 7
+ * Inverse: n = (k % 16) * 7 + (k / 16)  =>  row = k % 16, col = k / 16
+ *
+ * Given a frame bit index k (0..111) that holds source bit n, recover n. */
+static unsigned int mdc1200_deinterleave_pos(unsigned int k)
+{
+    return (k % 16u) * 7u + (k / 16u);
+}
+
+/* Reverse the canonical 16x7 bit interleave. on-air/frame bit at index k holds
+ * source bit mdc1200_deinterleave_pos(k). */
+static void mdc1200_deinterleave(const uint8_t *bits, uint8_t *out)
+{
+    unsigned int k;
+
+    for (k = 0u; k < 112u; ++k) {
+        out[mdc1200_deinterleave_pos(k)] = bits[k];
+    }
+}
+
 MDC1200_Error_t MDC1200_DecodeFrame(const uint8_t *frame,
                                    size_t frame_len,
                                    uint8_t *op_out,
@@ -203,8 +247,8 @@ MDC1200_Error_t MDC1200_DecodeFrame(const uint8_t *frame,
 {
     uint8_t payload[14u] = {0};
     uint8_t bits[112u] = {0};
+    uint8_t srcbits[112u] = {0};
     size_t n;
-    size_t pos;
     size_t byte_index;
     size_t bit_index;
     uint16_t crc_in;
@@ -227,11 +271,12 @@ MDC1200_Error_t MDC1200_DecodeFrame(const uint8_t *frame,
         bits[n] = (uint8_t)((frame[12u + byte_index] >> (7u - bit_index)) & 0x01u);
     }
 
+    mdc1200_deinterleave(bits, srcbits);
+
     for (n = 0u; n < 112u; ++n) {
-        pos = ((n % 7u) * 16u) + (n / 7u);
-        byte_index = (pos / 8u);
-        bit_index = (pos % 8u);
-        payload[byte_index] = (uint8_t)(payload[byte_index] | ((bits[n] & 0x01u) << (7u - bit_index)));
+        byte_index = (n / 8u);
+        bit_index = (n % 8u);
+        payload[byte_index] = (uint8_t)(payload[byte_index] | ((srcbits[n] & 0x01u) << (7u - bit_index)));
     }
 
     *op_out = payload[0];
@@ -251,10 +296,10 @@ MDC1200_Error_t MDC1200_VerifyCRC(const uint8_t *frame,
 {
     uint8_t payload[14u] = {0};
     uint8_t bits[112u] = {0};
+    uint8_t srcbits[112u] = {0};
     uint16_t crc_in;
     uint16_t crc_calc;
     size_t n;
-    size_t pos;
     size_t byte_index;
     size_t bit_index;
 
@@ -270,11 +315,12 @@ MDC1200_Error_t MDC1200_VerifyCRC(const uint8_t *frame,
         bits[n] = (uint8_t)((frame[12u + byte_index] >> (7u - bit_index)) & 0x01u);
     }
 
+    mdc1200_deinterleave(bits, srcbits);
+
     for (n = 0u; n < 112u; ++n) {
-        pos = ((n % 7u) * 16u) + (n / 7u);
-        byte_index = (pos / 8u);
-        bit_index = (pos % 8u);
-        payload[byte_index] = (uint8_t)(payload[byte_index] | ((bits[n] & 0x01u) << (7u - bit_index)));
+        byte_index = (n / 8u);
+        bit_index = (n % 8u);
+        payload[byte_index] = (uint8_t)(payload[byte_index] | ((srcbits[n] & 0x01u) << (7u - bit_index)));
     }
 
     crc_in = ((uint16_t)payload[4] | ((uint16_t)payload[5] << 8u));

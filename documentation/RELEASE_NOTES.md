@@ -2,15 +2,24 @@
 
 ---
 
-## Beta v7.6.10A (2026-08-15)
+## Beta v7.6.10B (2026-08-15)
 
-**MDC-1200 Protocol Validation & Finalization**
+**MDC-1200 Core Protocol Correction — Encoder/Decoder/Harness Fixes**
 
-- **Decode-Side Reference Checker** — Implemented `MDC1200_DecodeFrame()` and `MDC1200_VerifyCRC()` to validate MDC-1200 encoder output against the protocol specification. Reverses the 112-bit stride-16 interleaving, recovers the 14-byte payload, and verifies CRC-16 match. Validated against known-good golden vector (op=0x01, arg=0x23, unit_id=0x4567).
-- **MDC-1200 Finalized** — Single-burst implementation now validated from both encoder and decoder sides. Legacy MDC-1200L variant fully removed. Menu simplified to exactly 4 modes: "OFF", "ROGER", "MDC", "MDC-1200". All active documentation purged of MDC-1200L references; archive docs preserved.
-- **Unit Tests & Build Status** — ✅ Regression tests pass (100%); ✅ Firmware builds clean (no warnings); no firmware size increase.
+- **Files:** `App/mdc1200.c`, `App/driver/bk4819.c`, `App/driver/bk4829.c`, `tests/test_framework.h`, `tests/test_main.c`, `tests/test_mdc1200.c`
+- **Summary:** Deep host-side audit (`App/mdc1200.c`) revealed the original MDC-1200 encoder/decoder were self-consistent but **wrong** and the unit-test harness never reported failures. All defects corrected and verified.
+- **Critical encoder fix (interleaver):** Original interleaver wrote out of bounds past 112-element array (`lbits[112..125]`) on the 8th bit of every row, silently dropping 14 source bits and inserting 14 uninitialized bits. Replaced with canonical 16×7 permutation `k = (n % 7) * 16 + (n / 7)` (no OOB).
+- **Critical decoder fix (de-interleaver):** Decoder used forward mapping instead of inverse, so frames could not round-trip. Now uses true inverse `src = (k % 16) * 7 + (k / 16)`.
+- **Bit-order fix:** Encoder now extracts/repacks bits MSB-first to match decoder (previously LSB-first, bit-reflecting non-zero payloads).
+- **Test harness fix:** `g_test_failures`/`g_test_checks` were `static` in a header — each translation unit got its own copy, so `TEST_SUMMARY()` always printed "0 checks, 0 failures" and never exited nonzero. Made `extern` with single shared definition in `test_main.c`; the suite now genuinely reports failures.
+- **Legacy doc cleanup:** Removed stale "MDC-1200L support" comments from both drivers and aligned `MDC1200_Transmit` return type with the header.
+- **Compile fix:** `BK4819_PlayRogerNormal()` in `bk4819.c` was declared `void` but called with `(Bandwidth)` — signature now matches `bk4829.c` and the call site.
+- **Public API availability:** `MDC1200_Transmit()` was defined only in `bk4819.c`, but `App/CMakeLists.txt` builds only `bk4829.c`; added the implementation to `bk4829.c` so the header-declared API exists in the compiled firmware.
+- **Verified:** Standalone diagnostic (host gcc) confirms encode→decode round-trip with valid CRC across multiple non-trivial vectors `{01,23,4567}`, `{00,00,0000}`, `{AA,55,FFFF}`, `{12,34,ABCD}`. Unit-test MDC-1200 section reports zero failures.
+- **Regression note:** With the harness repaired, the suite now surfaces **pre-existing, unrelated** failures in `test_frequencies.c` (step/power/TX checks) and `test_crc.c` (tests separate `driver/crc.c`, not the MDC CRC). These are outside MDC-1200 scope and pending separate triage.
+- **Docs:** Deleted 4 stale MDC audit docs that asserted the (now-known-buggy) "authentic" golden frame bytes; kept the corrected `MDC1200_FULL_DEEP_AUDIT_v7.6.10A.md`.
+- **Status:** ✅ MDC-1200 path verified correct (round-trip + CRC + transmit API). Unrelated `frequencies`/`driver/crc` test failures remain open.
 
----
 
 ## Stable v7.6.10 (2026-08-11)
 

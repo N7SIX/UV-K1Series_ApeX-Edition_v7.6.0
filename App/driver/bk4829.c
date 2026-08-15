@@ -1857,7 +1857,7 @@ void BK4819_PlayRogerMDC(void)
  * - Register configuration for 1200 bps FSK
  * - FIFO initialization and frame loading
  * - TX timing and ramp-up/ramp-down
- * - Single or double transmission (MDC-1200L support)
+ * - Single-burst MDC-1200 transmission (the supported protocol mode)
  * 
  * v7.6.10A: Parameterized, error-reporting RF transmission
  * Protocol Reference: BK4819_MDC1200_CONFIGURATION.md (register justification)
@@ -1937,6 +1937,41 @@ int BK4819_TransmitMDC1200Frame(const uint8_t *frame, size_t frame_len)
     BK4819_WriteRegister(BK4819_REG_58, 0x0000);  // Disable FSK
 
     return MDC1200_ERROR_NONE;
+}
+
+/**
+ * MDC1200_Transmit: Public API for parameterized MDC-1200 transmission
+ *
+ * BK4829 variant (UV-K5 V3): high-level wrapper that builds a frame and
+ * transmits it via BK4829 (BUILT-in this translation unit). The header
+ * App/mdc1200.h declares this API; it must be provided by whichever driver
+ * file is compiled into the firmware. Since App/CMakeLists.txt builds only
+ * driver/bk4829.c, the implementation lives here (a matching one also exists
+ * in driver/bk4819.c for the legacy BK4819-only build path).
+ *
+ * v7.6.10A: Public API for parameterized single-burst MDC-1200 transmission.
+ */
+MDC1200_Error_t MDC1200_Transmit(const MDC1200_Params_t *params)
+{
+    uint8_t frame[26];
+    size_t frame_len = 0;
+    int status = 0;
+
+    /* Validate input parameters */
+    if (params == NULL) {
+        return MDC1200_ERROR_INVALID_PARAMS;
+    }
+
+    /* Build frame with caller-specified parameters */
+    status = MDC1200_BuildFrame(params->op, params->arg, params->unit_id,
+                                frame, sizeof(frame), &frame_len);
+    if (status != 0) {
+        return MDC1200_ERROR_FRAME_BUILD_FAILED;
+    }
+
+    /* Transmit frame via RF driver. The supported protocol is a single
+     * MDC-1200 burst; legacy long-mode states are normalized to this path. */
+    return BK4819_TransmitMDC1200Frame(frame, frame_len);
 }
 
 // DEPRECATED: Backward-compatible wrapper - use MDC1200_Transmit() instead

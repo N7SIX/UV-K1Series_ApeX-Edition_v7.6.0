@@ -27,8 +27,8 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 #endif
 
-static int g_test_failures = 0;
-static int g_test_checks   = 0;
+extern int g_test_failures;
+extern int g_test_checks;
 
 #define TEST_ASSERT(cond)                                                      \
     do {                                                                       \

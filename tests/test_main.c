@@ -18,6 +18,11 @@
 
 #include "test_framework.h"
 
+/* Single shared definition of the test counters. Declared extern in
+ * test_framework.h so all test translation units share one instance. */
+int g_test_failures = 0;
+int g_test_checks   = 0;
+
 void test_frequencies(void);
 void test_dcs(void);
 void test_crc(void);

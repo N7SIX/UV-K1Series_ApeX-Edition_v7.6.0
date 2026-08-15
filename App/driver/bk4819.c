@@ -1757,7 +1757,7 @@ void BK4819_PrepareFSKReceive(void)
     BK4819_WriteRegister(BK4819_REG_59, 0x3068);
 }
 
-static void BK4819_PlayRogerNormal(void)
+static void BK4819_PlayRogerNormal(BK4819_FilterBandwidth_t Bandwidth)
 {
     #if 0
         const uint32_t tone1_Hz = 500;
@@ -1772,13 +1772,17 @@ static void BK4819_PlayRogerNormal(void)
     BK4819_EnterTxMute();
     BK4819_SetAF(BK4819_AF_MUTE);
 
-    BK4819_WriteRegister(BK4819_REG_70, BK4819_REG_70_ENABLE_TONE1 | (66u << BK4819_REG_70_SHIFT_TONE1_TUNING_GAIN));
+    const uint8_t rogerToneGain = (Bandwidth == BK4819_FILTER_BW_WIDE) ? 32u : 67u;
+    if (Bandwidth == BK4819_FILTER_BW_WIDE)
+        BK4819_SetFilterBandwidth(BK4819_FILTER_BW_NARROW, true);
+    BK4819_WriteRegister(BK4819_REG_71, scale_freq(tone1_Hz));
 
     BK4819_EnableTXLink();
     SYSTEM_DelayMs(50);
 
-    BK4819_WriteRegister(BK4819_REG_71, scale_freq(tone1_Hz));
-
+    BK4819_WriteRegister(BK4819_REG_70,
+        BK4819_REG_70_ENABLE_TONE1 |
+        (rogerToneGain << BK4819_REG_70_SHIFT_TONE1_TUNING_GAIN));
     BK4819_ExitTxMute();
     SYSTEM_DelayMs(80);
     BK4819_EnterTxMute();
@@ -1790,6 +1794,10 @@ static void BK4819_PlayRogerNormal(void)
     BK4819_EnterTxMute();
 
     BK4819_WriteRegister(BK4819_REG_70, 0x0000);
+
+    if (Bandwidth == BK4819_FILTER_BW_WIDE)
+        BK4819_SetFilterBandwidth(Bandwidth, true);
+
     BK4819_WriteRegister(BK4819_REG_30, 0xC1FE);   // 1 1 0000 0 1 1111 1 1 1 0
 }
 
@@ -1848,7 +1856,7 @@ void BK4819_PlayRogerMDC(void)
  * v7.6.10A: High-level wrapper that builds frame and transmits via BK4819
  * Combines frame building with RF transmission for complete MDC-1200 operation
  */
-int MDC1200_Transmit(const MDC1200_Params_t *params)
+MDC1200_Error_t MDC1200_Transmit(const MDC1200_Params_t *params)
 {
     uint8_t frame[26];
     size_t frame_len = 0;
@@ -1878,7 +1886,7 @@ int MDC1200_Transmit(const MDC1200_Params_t *params)
  * - Register configuration for 1200 bps FSK
  * - FIFO initialization and frame loading
  * - TX timing and ramp-up/ramp-down
- * - Single or double transmission (MDC-1200L support)
+ * - Single-burst MDC-1200 transmission (the supported protocol mode)
  * 
  * v7.6.10A: Parameterized, error-reporting RF transmission
  * Protocol Reference: BK4819_MDC1200_CONFIGURATION.md (register justification)
