@@ -2,7 +2,7 @@
 
 ---
 
-## Beta v7.6.10B (2026-08-15)
+## Beta v7.6.10B (2026-08-16)
 
 **MDC-1200 Core Protocol Correction — Encoder/Decoder/Harness Fixes**
 
