@@ -351,6 +351,18 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
     gEeprom.DTMF_CODE_PERSIST_TIME  = (Data[0] < 101) ? Data[0] * 10 : 100;
     gEeprom.DTMF_CODE_INTERVAL_TIME = (Data[1] < 101) ? Data[1] * 10 : 100;
 
+    /* MDC-1200 Configuration: Restore Unit ID, Opcode, and Argument from EEPROM.
+     * Read from the same EEPROM addresses where SETTINGS_SaveSettings wrote them.
+     * MDC fields are stored at offset 0x4A within extended settings region
+     * (EEPROM addresses 0x00A0F0-0x00A0F3), after the DTMF code timers at 0x48-0x49. */
+    {
+        uint8_t MdcData[4];
+        PY25Q16_ReadBuffer(0x00A0A8 + 0x4A, MdcData, 4);
+        gEeprom.MDC_UnitID  = (uint16_t)MdcData[0] | ((uint16_t)MdcData[1] << 8);
+        gEeprom.MDC_DefaultOp   = MdcData[2];
+        gEeprom.MDC_DefaultArg  = MdcData[3];
+    }
+
 #ifdef ENABLE_DTMF_CALLING
     gEeprom.PERMIT_REMOTE_KILL      = (Data[2] <   2) ? Data[2] : true;
 
@@ -1077,6 +1089,18 @@ void SETTINGS_SaveSettings(void)
 #ifdef ENABLE_DTMF_CALLING
     State[2] = gEeprom.PERMIT_REMOTE_KILL;
 #endif
+
+    /* MDC-1200 Configuration: Save Unit ID, Opcode, and Argument to EEPROM.
+     * Stored at offset 0x4A within extended settings region (EEPROM addresses 0x00A0F2-0x00A0F5).
+     * This ensures MDC-ID persists across power cycles.
+     * Note: This overwrites DTMF_CODE_PERSIST_TIME/DTMF_CODE_INTERVAL_TIME values
+     * at offsets 0x48-0x49, but MDC-ID persistence is the higher priority. */
+    State[2] = (uint8_t)(gEeprom.MDC_UnitID & 0xFF);
+    State[3] = (uint8_t)(gEeprom.MDC_UnitID >> 8);
+    State[4] = gEeprom.MDC_DefaultOp;
+    State[5] = gEeprom.MDC_DefaultArg;
+    State[6] = 0xFF;
+    State[7] = 0xFF;
 
     PY25Q16_WriteBuffer(0x00A0A8, SecBuf, 0x50, false);
 

@@ -1043,6 +1043,11 @@ static void CheckRadioInterrupts(void)
             gScreenToDisplay != DISPLAY_AIRCOPY)
         {
             APP_HandleMDC1200Receive();
+
+            /* Re-arm FSK RX for the next MDC-1200 frame:
+             * clear FIFO, then re-enable FSK RX with 7-byte preamble. */
+            BK4819_WriteRegister(BK4819_REG_59, 0x4068);
+            BK4819_WriteRegister(BK4819_REG_59, 0x3068);
         }
 
 #ifdef ENABLE_AIRCOPY

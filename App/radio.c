@@ -924,6 +924,32 @@ void RADIO_SetupRegisters(bool switchToForeground)
     BK4819_EnableDTMF();
     InterruptMask |= BK4819_REG_3F_DTMF_5TONE_FOUND;
 
+    /* MDC-1200 FSK RX support (v7.6.10A):
+     * When Roger mode is set to MDC-1200, enable the BK4819 FSK receive
+     * path so the fskRxFinied interrupt fires when an MDC-1200 frame is
+     * received. Previously this was only configured for BEAM/AIRCOPY modes,
+     * leaving MDC-1200 RX permanently disabled. */
+    if (gEeprom.ROGER == ROGER_MODE_MDC_1200) {
+        InterruptMask |= BK4819_REG_3F_FSK_RX_FINISHED
+                       | BK4819_REG_3F_FSK_FIFO_ALMOST_FULL;
+
+        /* Configure BK4819 for MDC-1200 FSK reception:
+         * - REG_58: FSK enable, FSK 1.2K RX bandwidth, preamble 0x55, RX Mode
+         * - REG_5D: FSK data length 26 bytes (0x1A = 26)
+         * - REG_5A/5B/5C: sync pattern matching TX (0x55 0x55 0x55 0xAA),
+         *   with CRC disabled so raw MDC-1200 frame is collected in FIFO */
+        BK4819_WriteRegister(BK4819_REG_58, 0x00C1);
+        BK4819_WriteRegister(BK4819_REG_5D, 0x1A00);
+        BK4819_WriteRegister(BK4819_REG_5A, 0x5555);
+        BK4819_WriteRegister(BK4819_REG_5B, 0x55AA);
+        BK4819_WriteRegister(BK4819_REG_5C, 0xAA30);
+
+        /* Arm FSK RX: clear FIFO first, then enable FSK RX with
+         * 7-byte preamble and 4-byte sync length. */
+        BK4819_WriteRegister(BK4819_REG_59, 0x4068);
+        BK4819_WriteRegister(BK4819_REG_59, 0x3068);
+    }
+
     RADIO_SetupAGC(gRxVfo->Modulation == MODULATION_AM, false);
     //RADIO_SetupAGC(false, false);
 

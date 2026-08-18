@@ -1,0 +1,5 @@
+C:/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0-main/tests/build_mingw/CMakeFiles/unit_tests.dir
+C:/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0-main/tests/build_mingw/CMakeFiles/static-analysis.dir
+C:/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0-main/tests/build_mingw/CMakeFiles/test.dir
+C:/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0-main/tests/build_mingw/CMakeFiles/edit_cache.dir
+C:/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0-main/tests/build_mingw/CMakeFiles/rebuild_cache.dir
