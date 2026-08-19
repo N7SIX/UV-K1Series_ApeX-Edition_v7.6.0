@@ -313,5 +313,5 @@ The direct hex digit input feature has been successfully implemented, compiled, 
 ---
 
 **Created**: August 2024  
-**Implementation By**: Copilot AI  
+**Implementation By**: Sean, N7SIX  
 **Status**: Ready for Beta Testing
