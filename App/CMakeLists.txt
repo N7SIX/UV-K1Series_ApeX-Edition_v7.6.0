@@ -244,6 +244,9 @@ enable_feature(ENABLE_FEAT_N7SIX_K5VIEWER)
 
 enable_feature(ENABLE_AGC_SHOW_DATA)
 enable_feature(ENABLE_UART_RW_BK_REGS)
+# Optional MDC-1200 RX diagnostic: LED flash + decoded-status when a frame
+# is received. Disabled by default; build with -DENABLE_MDC_DEBUG=ON to use.
+enable_feature(ENABLE_MDC_DEBUG)
 
 # ---- COMPILER/LINKER OPTIONS ----
 

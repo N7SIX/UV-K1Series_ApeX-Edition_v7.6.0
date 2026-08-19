@@ -1338,7 +1338,13 @@ void UI_DisplayMain(void)
     const bool         cwSingleVfoView = false;
 #endif
 
-    center_line = CENTER_LINE_NONE;
+    /* Phase 3: Preserve an active MDC alert. The RX handler sets
+     * center_line = CENTER_LINE_MDC_ALERT (mdc_handler.c); if we unconditionally
+     * reset to NONE here, the decoded MDC frame is never rendered by
+     * UI_DisplayMDCAlert() further down. It is restored to its previous value
+     * by MDC_UITimeSlice500ms() once the alert times out or is dismissed. */
+    if (center_line != CENTER_LINE_MDC_ALERT)
+        center_line = CENTER_LINE_NONE;
 
 #ifdef ENABLE_FEAT_N7SIX_SCAN_PROGRESS
     if (gScanStateDir == SCAN_OFF)
@@ -2471,6 +2477,16 @@ void UI_DisplayMain(void)
                 UI_PrintStringSmallNormal(String, 2, 0, 3);
             }
 #endif
+        }
+    }
+
+    /* Phase 3: Render MDC status message when active (unless a full MDC alert
+     * is showing). This makes MDC_DisplayStatusUpdate()/MDC_ShowModal()
+     * messages visible; it was previously written to a buffer nothing drew. */
+    if (center_line != CENTER_LINE_MDC_ALERT) {
+        const char *MDCStatus = MDC_GetStatusMessage();
+        if (MDCStatus != NULL) {
+            UI_PrintStringSmallNormal(MDCStatus, 0, 127, 3);
         }
     }
 

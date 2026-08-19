@@ -1,5 +1,24 @@
 # Changelog
 
+## Fix — MDC-1200 RX decoded ID not displayed (2026-08-19)
+
+- **Files:** `App/ui/main.c`, `App/app/app.c`
+- **Problem:** A valid MDC-1200 frame was decoded and dispatched, and `MDC_TriggerDisplay()` correctly set `center_line = CENTER_LINE_MDC_ALERT` + `gUpdateDisplay`. But `UI_DisplayMain()` began by unconditionally executing `center_line = CENTER_LINE_NONE;`, wiping the alert flag before the `UI_DisplayMDCAlert()` render check further down — so the decoded **`Unit: 0xXXXX`** never reached the screen.
+- **Fix:** `UI_DisplayMain()` now only resets `center_line` to `NONE` when it is not already `CENTER_LINE_MDC_ALERT`, letting `UI_DisplayMDCAlert()` render the opcode, Unit ID and argument for the 3-second routine alert (auto-closed by `MDC_UITimeSlice500ms()`).
+- **Also wired:** `UI_HandleMDCDismiss()` was dead code — it is now called from `ProcessKey()` so a key press (PTT excluded) dismisses the permanent **emergency** alert instead of leaving the screen stuck.
+- **Status:** ✅ Full ApeX firmware build passes.
+
+---
+
+## Fix — MDC-1200 roger mutes TX voice (2026-08-19)
+
+- **Files:** `App/radio.c`, `App/driver/bk4819.c`, `App/driver/bk4829.c`
+- **Problem:** With Roger set to **MDC-1200**, `RADIO_SetupRegisters()` arms the BK4819 in continuous FSK-RX mode (`BK4819_SetupMDC1200Receive()` → REG_58 = 0x00C1, REG_59 = 0x3068). Nothing tore that FSK path down before a normal voice TX, so the radio keyed up and transmitted only the FSK preamble with the microphone audio muted. Setting Roger to plain **MDC** restored TX audio because it never leaves FSK-RX armed.
+- **Fix:** Added `BK4819_DisableMDC1200Receive()` in both BK4819 and BK4829 drivers which disables the FSK RX path (REG_59 = 0x0068, REG_58 = 0x0000, REG_70 = 0x0000). `RADIO_SetTxParameters()` calls it before `BK4819_PrepareTransmit()` whenever Roger mode is MDC-1200 (excluding Aircopy/Beam, which own their own FSK path). FSK RX is re-armed automatically by `RADIO_SetupRegisters(false)` at the end of every transmission.
+- **Status:** ✅ Full ApeX firmware build passes; MDC RX remains enabled and TX now carries voice audio.
+
+---
+
 ## Beta v7.6.10C (2026-08-18)
 
 ### MDC-1200 EEPROM Persistence + FSK RX Enablement Fixes

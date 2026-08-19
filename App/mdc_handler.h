@@ -214,6 +214,13 @@ void MDC_Handle_Unknown(uint16_t unit_id, uint8_t arg);
 void MDC_DisplayStatusUpdate(const char *message, uint32_t timeout_ms);
 
 /**
+ * Get the currently active MDC status message, or NULL if none is active.
+ *
+ * @return Pointer to the active status message string, or NULL.
+ */
+const char *MDC_GetStatusMessage(void);
+
+/**
  * Show modal popup for critical events (Emergency).
  *
  * @param title   - Popup title (e.g., "EMERGENCY")

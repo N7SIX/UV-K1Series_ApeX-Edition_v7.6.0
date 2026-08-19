@@ -893,6 +893,14 @@ static void APP_HandleMDC1200Receive(void)
     for (i = 0u; i < MDC1200_FIFO_WORD_COUNT; ++i)
         rx_words[i] = BK4819_ReadRegister(BK4819_REG_5F);
 
+#ifdef ENABLE_MDC_DEBUG
+    /* Debug marker #1: fskRxFinied fired and the FIFO was read.
+     * Lights the RX LED so a detected burst is visible even if it later
+     * fails CRC (therefore no other display change occurs). */
+    UI_MAIN_SetRxLed(true);
+    gUpdateDisplay = true;
+#endif
+
     /* Decode MDC frame: extract op, arg, unit_id and verify CRC */
     if (MDC1200_DecodeFrameWords(rx_words, ARRAY_SIZE(rx_words), &op, &arg, &unit_id, &valid) == MDC1200_ERROR_NONE) {
         /* Phase 2: Dispatch to opcode handler with user-visible reactions */
@@ -2284,6 +2292,20 @@ static void ALARM_Off(void)
 
 static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 {
+    /* Phase 3: On the main screen, any key press dismisses an active MDC
+     * emergency alert. PTT is excluded so transmission still works while the
+     * alert is on screen. The regular (non-emergency) MDC alert auto-closes
+     * via MDC_UITimeSlice500ms() and needs no key handling. */
+    if (gScreenToDisplay == DISPLAY_MAIN &&
+        bKeyPressed &&
+        g_MDC_DisplayState.is_emergency &&
+        center_line == CENTER_LINE_MDC_ALERT &&
+        Key != KEY_PTT)
+    {
+        UI_HandleMDCDismiss();
+        return;
+    }
+
 #ifdef ENABLE_FEAT_N7SIX_SLEEP
     if (gSleepWakeKey != KEY_INVALID) {
         if (Key == gSleepWakeKey && !bKeyPressed)
