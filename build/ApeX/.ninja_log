@@ -93,3 +93,7 @@
 6194	6619	1787154706205038934	CMakeFiles/n7six.ApeX-k1.v7.6.10C.dir/App/app/rxtx_log.c.obj	e3d1d901acc9bc5f
 6426	6628	1787154706218038934	CMakeFiles/n7six.ApeX-k1.v7.6.10C.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj	46ddfea868f768b1
 6629	13646	1787154713222038861	n7six.ApeX-k1.v7.6.10C.elf	6fb39ce530c88dc6
+11	400	1787155323786032547	CMakeFiles/n7six.ApeX-k1.v7.6.10C.dir/App/mdc_handler.c.obj	205e1dc5db159346
+13	400	1787155323785032547	CMakeFiles/n7six.ApeX-k1.v7.6.10C.dir/App/ui/mdc.c.obj	d1686001dbdda7f4
+7	470	1787155323858032546	CMakeFiles/n7six.ApeX-k1.v7.6.10C.dir/App/app/app.c.obj	ecdbe9069d878f2d
+470	4398	1787155327767032506	n7six.ApeX-k1.v7.6.10C.elf	6fb39ce530c88dc6

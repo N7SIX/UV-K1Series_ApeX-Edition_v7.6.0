@@ -19,6 +19,7 @@
 
 #include "mdc_handler.h"
 #include "audio.h"
+#include "driver/backlight.h"
 #include "settings.h"
 #include "scheduler.h"
 #include "globals/ui_globals.h"
@@ -167,6 +168,12 @@ static void MDC_TriggerDisplay(bool is_emergency, uint32_t timeout_ms)
     /* Switch to MDC alert display */
     center_line = CENTER_LINE_MDC_ALERT;
     gUpdateDisplay = true;
+
+    /* Wake the display so the alert is always visible: the backlight may
+     * have timed out (dark screen) or the logo screen-saver may be showing
+     * DISPLAY_MAIN content. Both would otherwise swallow the 3-second window
+     * rendered by UI_DisplayMDCAlert(). */
+    BACKLIGHT_TurnOn();
 }
 
 /* ============================================================================

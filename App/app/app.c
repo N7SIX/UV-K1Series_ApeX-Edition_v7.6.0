@@ -1760,22 +1760,34 @@ void APP_TimeSlice10ms(void)
 
 #ifdef ENABLE_FEAT_N7SIX_LOGO_SAV
     if (gScreenSaverDisplayed) {
-        if (gUpdateDisplayCurrent) {
-            gUpdateDisplayCurrent = false;
-        } else if (gUpdateStatusCurrent) {
-            gUpdateStatusCurrent = false;
-            gUpdateStatus = false;
+        if (center_line == CENTER_LINE_MDC_ALERT) {
+            /* Phase 3: an incoming MDC alert must always break through the
+             * screen saver. Drop it here and let the alert render below,
+             * otherwise the 3-second decoded-frame window is silently
+             * swallowed and the RX display never appears. */
+            gScreenSaverDisplayed = false;
+            gUpdateStatusCurrent = true;
+            BACKLIGHT_TurnOn();
+        } else {
+            if (gUpdateDisplayCurrent) {
+                gUpdateDisplayCurrent = false;
+            } else if (gUpdateStatusCurrent) {
+                gUpdateStatusCurrent = false;
+                gUpdateStatus = false;
+            }
         }
 
-        if (gSetting_set_sav == SET_SAV_MATRIX) {
-            if (++gScreenSaverTick >= 8u) {
-                gScreenSaverTick = 0;
-                ScreenSaverRenderMatrix(false);
-            }
-        } else if (gSetting_set_sav == SET_SAV_LOGO_PLUS) {
-            if (++gScreenSaverTick >= 16u) {
-                gScreenSaverTick = 0;
-                ScreenSaverRenderLogoPlus(false);
+        if (gScreenSaverDisplayed) {
+            if (gSetting_set_sav == SET_SAV_MATRIX) {
+                if (++gScreenSaverTick >= 8u) {
+                    gScreenSaverTick = 0;
+                    ScreenSaverRenderMatrix(false);
+                }
+            } else if (gSetting_set_sav == SET_SAV_LOGO_PLUS) {
+                if (++gScreenSaverTick >= 16u) {
+                    gScreenSaverTick = 0;
+                    ScreenSaverRenderLogoPlus(false);
+                }
             }
         }
     }

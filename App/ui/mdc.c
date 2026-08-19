@@ -45,7 +45,16 @@ void UI_DisplayMDCAlert(void)
     
     /* Get MDC frame data */
     if (!g_MDC_LastRxFrame.is_valid) {
-        return;  /* No valid frame to display */
+        /* FSK burst received but framing/CRC failed. Show a visible
+         * diagnostic instead of rendering nothing, so a decode miss on the
+         * RX side is never mistaken for 'burst not received at all'. */
+        snprintf(String, sizeof(String), "MDC: RX Error");
+        UI_PrintStringSmallNormal(String, 0, 127, 3);
+        snprintf(String, sizeof(String), "Frame CRC failed");
+        UI_PrintStringSmallNormal(String, 0, 127, 4);
+        snprintf(String, sizeof(String), "Check TX unit ID");
+        UI_PrintStringSmallNormal(String, 0, 127, 5);
+        return;
     }
     
     unit_id = g_MDC_LastRxFrame.unit_id;

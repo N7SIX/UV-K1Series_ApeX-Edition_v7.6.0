@@ -1,5 +1,16 @@
 # Changelog
 
+## Fix — MDC-1200 RX alert invisible on dark / screen-saver LCD (2026-08-19)
+
+- **Files:** `App/mdc_handler.c`, `App/app/app.c`, `App/ui/mdc.c`
+- **Problem:** The received MDC alert still failed to appear on the RX radio under two conditions:
+  1. The backlight timer had expired or the logo screen-saver (`SET_SAV_MATRIX`/`SET_SAV_LOGO_PLUS`) was displayed. `APP_TimeSlice10ms()` discards every `gUpdateDisplay` while `gScreenSaverDisplayed` is true, so the whole 3-second `UI_DisplayMDCAlert()` window silently passed on a dark/screen-saver LCD.
+  2. A burst was received but framing/CRC failed: `UI_DisplayMDCAlert()` returned early and rendered nothing, making a decode miss indistinguishable from "burst never received".
+- **Fix:** `MDC_TriggerDisplay()` now calls `BACKLIGHT_TurnOn()` for every decoded alert so the LCD wakes even after the backlight timer. `APP_TimeSlice10ms()` drops the screen saver (clears `gScreenSaverDisplayed`, forces a status redraw and backlight) as soon as `center_line == CENTER_LINE_MDC_ALERT`, so the alert always renders. Received-but-invalid frames now show a visible `MDC: RX Error / Frame CRC failed / Check TX unit ID` diagnostic during the 2-second unknown-frame window.
+- **Status:** ✅ Full ApeX firmware build passes (RAM 87.30 %, FLASH 96.29 %); MDC-1200 host unit tests green.
+
+---
+
 ## Fix — MDC-1200 RX decoded ID not displayed (2026-08-19)
 
 - **Files:** `App/ui/main.c`, `App/app/app.c`
