@@ -93,3 +93,5 @@
 5842	6040	1787155724116028406	CMakeFiles/n7six.ApeX-k1.v7.6.10C.dir/Middlewares/CherryUSB/port/usb_dc_py32.c.obj	e8f376e799916e56
 5956	6049	1787155724124028406	CMakeFiles/n7six.ApeX-k1.v7.6.10C.dir/Middlewares/CherryUSB/class/cdc/usbd_cdc.c.obj	a2bc00bb61f5101b
 6049	11991	1787155730057028345	n7six.ApeX-k1.v7.6.10C.elf	6fb39ce530c88dc6
+5	306	1787157018355015021	CMakeFiles/n7six.ApeX-k1.v7.6.10C.dir/App/settings.c.obj	c336f980356d6a79
+307	4022	1787157021986014984	n7six.ApeX-k1.v7.6.10C.elf	6fb39ce530c88dc6

@@ -142,9 +142,14 @@ and on load:
 
 **Severity if DTMF calling is ever enabled:** HIGH — the DTMF remote-kill/revive
 permission would be silently overwritten by the MDC Unit ID (and mis-read back).
-**Recommendation (P1):** move MDC fields to a non-conflicting offset (e.g., continue
-at 0x50, or use the free 0x4E-0x4F + next chunk), or move `PERMIT_REMOTE_KILL` to a
-free byte, so the two systems never share a byte.
+
+### 5.3 ✅ RESOLVED (P1 hardening applied 2026-08-19)
+- MDC fields moved from offset 0x4A (`0x00A0F2`-`0x00A0F5`) to the **free offset 0x0C**
+  (EEPROM **`0x00A0B4`-`0x00A0B7`**), which no feature reads or writes.
+- Save clears the legacy 0x4A-0x4D bytes back to `0xFF` (keeping `PERMIT_REMOTE_KILL`
+  at 0x4A intact in `ENABLE_DTMF_CALLING` builds), and load performs a **one-time
+  migration** of any MDC value left by older firmware, so existing IDs survive the upgrade.
+- `PERMIT_REMOTE_KILL` and MDC no longer share a byte in any build configuration.
 
 ---
 

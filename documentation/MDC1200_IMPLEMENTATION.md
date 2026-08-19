@@ -91,17 +91,21 @@ uint8_t  MDC_DefaultArg;  /* Default argument (0x00-0x0F) */
 
 MDC fields are written to the extended settings EEPROM region during `SETTINGS_SaveSettings()`:
 
-- **Offset 0x4A** within extended settings region (EEPROM addresses `0x00A0F2`–`0x00A0F5`):
-  - `State[2]` = MDC_UnitID LSB
-  - `State[3]` = MDC_UnitID MSB
-  - `State[4]` = MDC_DefaultOp
-  - `State[5]` = MDC_DefaultArg
+- **Offset 0x0C** within extended settings region (EEPROM addresses `0x00A0B4`–`0x00A0B7`):
+  - `State[0]` = MDC_UnitID LSB
+  - `State[1]` = MDC_UnitID MSB
+  - `State[2]` = MDC_DefaultOp
+  - `State[3]` = MDC_DefaultArg
+- This is a **free padding area**: it does not collide with FM channels (`0x00A028`–`0x00A0A7`),
+  the DTMF persist/interval timers (`0x00A0F0`–`0x00A0F1`) or `PERMIT_REMOTE_KILL`
+  (`0x00A0F2` under `ENABLE_DTMF_CALLING`).
 
 ### 4.3 Restore Path (`SETTINGS_InitEEPROM()`)
 
-Reads 4 bytes from `0x00A0A8 + 0x4A` and restores:
+Reads 4 bytes from `0x00A0A8 + 0x0C` and restores, with a **one-time migration** of any
+legacy value saved at the old offset 0x4A (`0x00A0F2`) by previous firmware:
 ```c
-PY25Q16_ReadBuffer(0x00A0A8 + 0x4A, MdcData, 4);
+PY25Q16_ReadBuffer(0x00A0A8 + 0x0C, MdcData, 4);
 gEeprom.MDC_UnitID   = (uint16_t)MdcData[0] | ((uint16_t)MdcData[1] << 8);
 gEeprom.MDC_DefaultOp   = MdcData[2];
 gEeprom.MDC_DefaultArg  = MdcData[3];
@@ -112,14 +116,16 @@ gEeprom.MDC_DefaultArg  = MdcData[3];
 1. User enters 4 hex digits → `gEeprom.MDC_UnitID = value` (RAM)
 2. `gRequestSaveSettings = true`
 3. Main loop calls `SETTINGS_SaveSettings()`
-4. MDC fields written to EEPROM at offset 0x4A
+4. MDC fields written to EEPROM at offset 0x0C (`0x00A0B4`–`0x00A0B7`); the legacy
+   `0x00A0F2`–`0x00A0F5` bytes are cleared back to `0xFF`
 5. **Power cycle** → `SETTINGS_InitEEPROM()` reads MDC fields back → value persists ✅
 
 **Note:** The earlier documented EEPROM addresses (0x00A050–0x00A053) were **incorrect**
-and fell inside the FM-channels region (0x00A028–0x00A0A7). The corrected location is
-offset 0x4A within the extended settings region (0x00A0F2–0x00A0F5), which does not
-conflict with FM channels. The DTMF_CODE_PERSIST and DTMF_CODE_INTERVAL timers at
-0x48–0x49 are overwritten as a known trade-off.
+and fell inside the FM-channels region (0x00A028–0x00A0A7). MDC was later moved from
+offset 0x4A (`0x00A0F2`–`0x00A0F5`) to offset 0x0C (`0x00A0B4`–`0x00A0B7`) as audit **P1
+hardening**: the old location shares a byte with `PERMIT_REMOTE_KILL` under
+`ENABLE_DTMF_CALLING`. Existing MDC IDs are migrated automatically on first boot after
+the upgrade.
 ---
 
 ## 5. TX Path

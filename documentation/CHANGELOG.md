@@ -1,5 +1,14 @@
 # Changelog
 
+## Fix — MDC-1200 EEPROM P1 hardening: MDC fields moved off PERMIT_REMOTE_KILL (2026-08-19)
+
+- **Files:** `App/settings.c`, `documentation/MDC1200_IMPLEMENTATION.md`, `documentation/MDC1200_DEEP_REVIEW_AUDIT_v7.6.10C.md`
+- **Problem:** MDC fields were persisted at extended-settings offset 0x4A (`0x00A0F2`–`0x00A0F5`). Under `ENABLE_DTMF_CALLING` that byte also holds `PERMIT_REMOTE_KILL`, so MDC and the DTMF remote-kill permission silently overwrote each other (latent P1 flagged by the deep-review audit).
+- **Fix:** Relocated MDC to the free offset 0x0C (`0x00A0B4`–`0x00A0B7`). The save path now clears the legacy bytes (preserving `PERMIT_REMOTE_KILL` in DTMF-calling builds) and the load path performs a one-time migration of any previously-saved MDC value. No collision with FM channels, DTMF timers, or calibration regions in any build.
+- **Status:** ✅ Full ApeX firmware build passes; existing MDC IDs are migrated automatically on first boot after upgrade.
+
+---
+
 ## Fix — MDC-1200 RX alert invisible on dark / screen-saver LCD (2026-08-19)
 
 - **Files:** `App/mdc_handler.c`, `App/app/app.c`, `App/ui/mdc.c`
