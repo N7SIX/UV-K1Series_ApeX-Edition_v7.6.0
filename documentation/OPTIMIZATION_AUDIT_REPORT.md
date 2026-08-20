@@ -1,7 +1,7 @@
 # Flash & RAM Optimization Audit Report
 ## UV-K1Series ApeX-Edition v7.6.9G
 
-> **Auditor:** Sean, N7SIX Deep Review  
+> **Auditor:** Cline AI Deep Review  
 > **Date:** 2026-08-06  
 > **Scope:** Flash/RAM reduction, code cleanup, dead code removal, bug fixes  
 > **Constraints:** No changes to EEPROM layout, calibration data, or core logic. All features must remain enabled.  

@@ -1760,43 +1760,6 @@ void BK4819_PrepareFSKReceive(void)
     BK4819_WriteRegister(BK4819_REG_59, 0x3068);
 }
 
-void BK4819_SetupMDC1200Receive(void)
-{
-    /* Configure BK4819 for MDC-1200 FSK reception, mirroring the TX and
-     * AirCopy FSK reference so the 1200 bps burst can be demodulated:
-     * - REG_58: FSK enable, FSK 1.2K RX bandwidth, preamble 0x55, RX Mode
-     * - REG_72: FSK/tone-2 reference = 1200 Hz
-     * - REG_70: enable tone-2 + gain (FSK demod reference)
-     * - REG_5D: FSK data length 26 bytes (0x1A = 26)
-     * - REG_5A/5B/5C: sync pattern matching TX (0x55 0x55 0x55 0xAA),
-     *   with CRC disabled so the raw MDC-1200 frame is collected in FIFO */
-    BK4819_WriteRegister(BK4819_REG_58, 0x00C1);
-    BK4819_WriteRegister(BK4819_REG_72, 0x3065);
-    BK4819_WriteRegister(BK4819_REG_70, 0x00C3);
-    BK4819_WriteRegister(BK4819_REG_5D, 0x1A00);
-    BK4819_WriteRegister(BK4819_REG_5A, 0x5555);
-    BK4819_WriteRegister(BK4819_REG_5B, 0x55AA);
-    BK4819_WriteRegister(BK4819_REG_5C, 0xAA30);
-
-    /* Arm FSK RX: clear FIFO first, then enable FSK RX with
-     * 7-byte preamble and 4-byte sync length. */
-    BK4819_WriteRegister(BK4819_REG_59, 0x4068);
-    BK4819_WriteRegister(BK4819_REG_59, 0x3068);
-}
-
-void BK4819_DisableMDC1200Receive(void)
-{
-    /* Tear down the MDC-1200 FSK RX path that BK4819_SetupMDC1200Receive()
-     * armed. Must be done before a normal voice TX while Roger mode is set to
-     * MDC-1200: with FSK RX still enabled the BK4819 owns the audio path with
-     * the 1200 Hz FSK/Tone-2 reference, so the mic is muted and only the FSK
-     * preamble is transmitted. The FSK RX is re-armed automatically by
-     * RADIO_SetupRegisters(false) → BK4819_SetupMDC1200Receive() afterwards. */
-    BK4819_WriteRegister(BK4819_REG_59, 0x0068);  // Disable FSK RX/TX (sync len 4, preamble 7)
-    BK4819_WriteRegister(BK4819_REG_70, 0x0000);  // Disable Tone-2 (1200 Hz FSK demod reference)
-    BK4819_WriteRegister(BK4819_REG_58, 0x0000);  // Disable FSK, restore normal FM audio path
-}
-
 static void BK4819_PlayRogerNormal(BK4819_FilterBandwidth_t Bandwidth)
 {
     #if 0
@@ -1976,21 +1939,20 @@ int BK4819_TransmitMDC1200Frame(const uint8_t *frame, size_t frame_len)
     return MDC1200_ERROR_NONE;
 }
 
-// Roger beep for the MDC-1200 mode. Publishes the radio's configured Unit ID,
-// opcode and argument through the single documented protocol entry point
-// MDC1200_Transmit() (App/mdc1200.c) so there is one build+transmit path and
-// the documented public API is actually reachable. Keep this driver's MDC
-// block in sync with the reference copy in bk4819.c (bk4819.c is NOT compiled
-// by App/CMakeLists.txt today).
+// DEPRECATED: Backward-compatible wrapper - use MDC1200_Transmit() instead
+// v7.6.10A: Now returns int for error reporting
 int BK4819_PlayRogerMDC1200(void)
 {
-    MDC1200_Params_t params;
-
-    params.unit_id = gEeprom.MDC_UnitID;
-    params.op      = gEeprom.MDC_DefaultOp;
-    params.arg     = gEeprom.MDC_DefaultArg;
-
-    return (int)MDC1200_Transmit(&params);
+    uint8_t frame[26];
+    size_t frame_len;
+    
+    /* Build frame with radio's configured MDC parameters */
+    if (MDC1200_BuildFrame(gEeprom.MDC_DefaultOp, gEeprom.MDC_DefaultArg,
+                           gEeprom.MDC_UnitID, frame, sizeof(frame), &frame_len) != 0) {
+        return MDC1200_ERROR_FRAME_BUILD_FAILED;
+    }
+    
+    return BK4819_TransmitMDC1200Frame(frame, frame_len);
 }
 
 // DEPRECATED: Backward-compatible wrapper - use MDC1200_Transmit() instead

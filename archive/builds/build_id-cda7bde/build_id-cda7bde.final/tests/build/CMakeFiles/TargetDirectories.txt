@@ -1,0 +1,5 @@
+/workspaces/UV-K1Series_ApeX-Edition_v7.6.0/tests/build/CMakeFiles/unit_tests.dir
+/workspaces/UV-K1Series_ApeX-Edition_v7.6.0/tests/build/CMakeFiles/static-analysis.dir
+/workspaces/UV-K1Series_ApeX-Edition_v7.6.0/tests/build/CMakeFiles/test.dir
+/workspaces/UV-K1Series_ApeX-Edition_v7.6.0/tests/build/CMakeFiles/edit_cache.dir
+/workspaces/UV-K1Series_ApeX-Edition_v7.6.0/tests/build/CMakeFiles/rebuild_cache.dir

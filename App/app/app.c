@@ -893,14 +893,6 @@ static void APP_HandleMDC1200Receive(void)
     for (i = 0u; i < MDC1200_FIFO_WORD_COUNT; ++i)
         rx_words[i] = BK4819_ReadRegister(BK4819_REG_5F);
 
-#ifdef ENABLE_MDC_DEBUG
-    /* Debug marker #1: fskRxFinied fired and the FIFO was read.
-     * Lights the RX LED so a detected burst is visible even if it later
-     * fails CRC (therefore no other display change occurs). */
-    UI_MAIN_SetRxLed(true);
-    gUpdateDisplay = true;
-#endif
-
     /* Decode MDC frame: extract op, arg, unit_id and verify CRC */
     if (MDC1200_DecodeFrameWords(rx_words, ARRAY_SIZE(rx_words), &op, &arg, &unit_id, &valid) == MDC1200_ERROR_NONE) {
         /* Phase 2: Dispatch to opcode handler with user-visible reactions */
@@ -1051,11 +1043,6 @@ static void CheckRadioInterrupts(void)
             gScreenToDisplay != DISPLAY_AIRCOPY)
         {
             APP_HandleMDC1200Receive();
-
-            /* Re-arm FSK RX for the next MDC-1200 frame:
-             * clear FIFO, then re-enable FSK RX with 7-byte preamble. */
-            BK4819_WriteRegister(BK4819_REG_59, 0x4068);
-            BK4819_WriteRegister(BK4819_REG_59, 0x3068);
         }
 
 #ifdef ENABLE_AIRCOPY
@@ -1760,34 +1747,22 @@ void APP_TimeSlice10ms(void)
 
 #ifdef ENABLE_FEAT_N7SIX_LOGO_SAV
     if (gScreenSaverDisplayed) {
-        if (center_line == CENTER_LINE_MDC_ALERT) {
-            /* Phase 3: an incoming MDC alert must always break through the
-             * screen saver. Drop it here and let the alert render below,
-             * otherwise the 3-second decoded-frame window is silently
-             * swallowed and the RX display never appears. */
-            gScreenSaverDisplayed = false;
-            gUpdateStatusCurrent = true;
-            BACKLIGHT_TurnOn();
-        } else {
-            if (gUpdateDisplayCurrent) {
-                gUpdateDisplayCurrent = false;
-            } else if (gUpdateStatusCurrent) {
-                gUpdateStatusCurrent = false;
-                gUpdateStatus = false;
-            }
+        if (gUpdateDisplayCurrent) {
+            gUpdateDisplayCurrent = false;
+        } else if (gUpdateStatusCurrent) {
+            gUpdateStatusCurrent = false;
+            gUpdateStatus = false;
         }
 
-        if (gScreenSaverDisplayed) {
-            if (gSetting_set_sav == SET_SAV_MATRIX) {
-                if (++gScreenSaverTick >= 8u) {
-                    gScreenSaverTick = 0;
-                    ScreenSaverRenderMatrix(false);
-                }
-            } else if (gSetting_set_sav == SET_SAV_LOGO_PLUS) {
-                if (++gScreenSaverTick >= 16u) {
-                    gScreenSaverTick = 0;
-                    ScreenSaverRenderLogoPlus(false);
-                }
+        if (gSetting_set_sav == SET_SAV_MATRIX) {
+            if (++gScreenSaverTick >= 8u) {
+                gScreenSaverTick = 0;
+                ScreenSaverRenderMatrix(false);
+            }
+        } else if (gSetting_set_sav == SET_SAV_LOGO_PLUS) {
+            if (++gScreenSaverTick >= 16u) {
+                gScreenSaverTick = 0;
+                ScreenSaverRenderLogoPlus(false);
             }
         }
     }
@@ -2304,20 +2279,6 @@ static void ALARM_Off(void)
 
 static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 {
-    /* Phase 3: On the main screen, any key press dismisses an active MDC
-     * emergency alert. PTT is excluded so transmission still works while the
-     * alert is on screen. The regular (non-emergency) MDC alert auto-closes
-     * via MDC_UITimeSlice500ms() and needs no key handling. */
-    if (gScreenToDisplay == DISPLAY_MAIN &&
-        bKeyPressed &&
-        g_MDC_DisplayState.is_emergency &&
-        center_line == CENTER_LINE_MDC_ALERT &&
-        Key != KEY_PTT)
-    {
-        UI_HandleMDCDismiss();
-        return;
-    }
-
 #ifdef ENABLE_FEAT_N7SIX_SLEEP
     if (gSleepWakeKey != KEY_INVALID) {
         if (Key == gSleepWakeKey && !bKeyPressed)

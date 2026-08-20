@@ -1,6 +1,6 @@
 # Direct Hex Digit Input Feature - Implementation Complete ✅
 
-**Project**: UV-K1 ApeX Edition v7.6.10C    
+**Project**: UV-K1 ApeX Edition v7.6.10B  
 **Feature**: Direct hexadecimal digit entry for MDC-1200 Unit ID  
 **Status**: ✅ **IMPLEMENTATION COMPLETE** - Compiled and Ready for Deployment  
 **Date**: August 2026
@@ -313,5 +313,5 @@ The direct hex digit input feature has been successfully implemented, compiled, 
 ---
 
 **Created**: August 2024  
-**Implementation By**: Sean, N7SIX  
+**Implementation By**: Copilot AI  
 **Status**: Ready for Beta Testing

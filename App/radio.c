@@ -22,9 +22,6 @@
 #ifdef ENABLE_FMRADIO
     #include "app/fm.h"
 #endif
-#ifdef ENABLE_FEAT_N7SIX_BEAM
-    #include "app/beam.h"
-#endif
 #include "audio.h"
 #include "dcs.h"
 #include "driver/bk4819.h"
@@ -40,7 +37,6 @@
 #include "radio.h"
 #include "settings.h"
 #include "ui/menu.h"
-#include "ui/ui.h"   // gScreenToDisplay / DISPLAY_AIRCOPY (used by the AIRCOPY FSK guard)
 
 // FIX #11: Initialize VFO pointers to safe defaults
 // Prevents NULL pointer dereference if EEPROM initialization fails
@@ -928,22 +924,6 @@ void RADIO_SetupRegisters(bool switchToForeground)
     BK4819_EnableDTMF();
     InterruptMask |= BK4819_REG_3F_DTMF_5TONE_FOUND;
 
-    /* MDC-1200 FSK RX support (v7.6.10A):
-     * When Roger mode is set to MDC-1200, enable the BK4819 FSK receive
-     * path so the fskRxFinied interrupt fires when an MDC-1200 frame is
-     * received. Previously this was only configured for BEAM/AIRCOPY modes,
-     * leaving MDC-1200 RX permanently disabled. */
-    if (gEeprom.ROGER == ROGER_MODE_MDC_1200) {
-        InterruptMask |= BK4819_REG_3F_FSK_RX_FINISHED
-                       | BK4819_REG_3F_FSK_FIFO_ALMOST_FULL;
-
-        /* Configure + arm BK4819 FSK RX for MDC-1200 receive. The register
-         * sequence (including the 1200 Hz FSK/demod reference) is centralized
-         * in BK4819_SetupMDC1200Receive() so the RX config cannot drift from
-         * the TX / AirCopy FSK path. */
-        BK4819_SetupMDC1200Receive();
-    }
-
     RADIO_SetupAGC(gRxVfo->Modulation == MODULATION_AM, false);
     //RADIO_SetupAGC(false, false);
 
@@ -1039,24 +1019,6 @@ void RADIO_SetTxParameters(void)
 
     // TX compressor
     BK4819_SetCompander((gRxVfo->Modulation == MODULATION_FM && (gRxVfo->Compander == 1 || gRxVfo->Compander >= 3)) ? gRxVfo->Compander : 0);
-
-    /* MDC-1200 roger keeps the BK4819 armed in FSK-RX mode (RADIO_SetupRegisters()
-     * → BK4819_SetupMDC1200Receive()). Before starting a normal voice TX we must
-     * disable that FSK path, otherwise the mic audio stays muted and only the FSK
-     * preamble is transmitted. The FSK RX is re-armed automatically by
-     * RADIO_SetupRegisters(false) at the end of the transmission.
-     * FSK-based features (Aircopy/Beam) bring up their own FSK path, so they are
-     * excluded here to keep them functional. */
-    if (gEeprom.ROGER == ROGER_MODE_MDC_1200
-    #ifdef ENABLE_FEAT_N7SIX_BEAM
-        && !gBeamActive
-    #endif
-    #ifdef ENABLE_AIRCOPY
-        && gScreenToDisplay != DISPLAY_AIRCOPY
-    #endif
-    ) {
-        BK4819_DisableMDC1200Receive();
-    }
 
     BK4819_PrepareTransmit();
 

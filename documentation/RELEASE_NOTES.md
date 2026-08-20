@@ -2,35 +2,12 @@
 
 ---
 
-## Beta v7.6.10C (2026-08-18)
+## Beta v7.6.10B (2026-08-15)
 
-**MDC-1200 EEPROM Persistence + FSK RX Enablement Fixes**
+**MDC-1200 Core Protocol Correction — Encoder/Decoder/Harness Fixes**
 
-- **Files:** `App/settings.c`, `App/radio.c`, `App/app/app.c`, `documentation/*`
-
-**Two critical gaps fixed to make MDC-1200 work end-to-end on real radios:**
-
-### 1. MDC-ID EEPROM Persistence (`App/settings.c`)
-- **Problem:** MDC settings (`MDC_UnitID`, `MDC_DefaultOp`, `MDC_DefaultArg`) were never written to EEPROM — RAM-only, reset to 0x0000 on every power cycle.
-- **Fix:** `SETTINGS_SaveSettings()` now writes MDC fields to EEPROM offset 0x4A (extended settings region, addresses 0x00A0F2–0x00A0F5); `SETTINGS_InitEEPROM()` restores them on boot.
-- **Corrected EEPROM addresses:** the previously documented 0x00A050–0x00A053 conflicted with the FM-channels region; corrected location has no conflict.
-- **Verified:** MDC-ID survives power cycles (user-confirmed).
-
-### 2. MDC-1200 FSK RX Enablement (`App/radio.c`, `App/app/app.c`)
-- **Problem:** The BK4819 FSK receive path was only armed for BEAM/AIRCOPY modes. It was **never** enabled for MDC-1200, so `fskRxFinied` never fired and received frames were never decoded/displayed.
-- **Fix:** `RADIO_SetupRegisters()` now enables FSK RX interrupts and configures the FSK registers (REG_58/5D/5A/5B/5C) when Roger mode = MDC-1200; `CheckRadioInterrupts()` re-arms FSK RX after each frame.
-- **Verified:** Receiving radio now decodes and displays the transmitting radio's Unit ID (user-confirmed).
-
-### Documentation Cleanup
-- Removed 14 obsolete MDC docs referencing non-existent `MENU_MDC_OP`/`MENU_MDC_ARG` and wrong EEPROM addresses.
-- Added consolidated `documentation/MDC1200_IMPLEMENTATION.md`.
-- Updated `MDC_IMPLEMENTATION_CHECKLIST.md`.
-
-**Status:** ✅ MDC-1200 TX, RX, EEPROM persistence, and display all verified working.
-
----
-
-## Stable v7.6.10 (2026-08-11)
+- **Files:** `App/mdc1200.c`, `App/driver/bk4819.c`, `App/driver/bk4829.c`, `tests/test_framework.h`, `tests/test_main.c`, `tests/test_mdc1200.c`
+- **Summary:** Deep host-side audit (`App/mdc1200.c`) revealed the original MDC-1200 encoder/decoder were self-consistent but **wrong** and the unit-test harness never reported failures. All defects corrected and verified.
 - **Critical encoder fix (interleaver):** Original interleaver wrote out of bounds past 112-element array (`lbits[112..125]`) on the 8th bit of every row, silently dropping 14 source bits and inserting 14 uninitialized bits. Replaced with canonical 16×7 permutation `k = (n % 7) * 16 + (n / 7)` (no OOB).
 - **Critical decoder fix (de-interleaver):** Decoder used forward mapping instead of inverse, so frames could not round-trip. Now uses true inverse `src = (k % 16) * 7 + (k / 16)`.
 - **Bit-order fix:** Encoder now extracts/repacks bits MSB-first to match decoder (previously LSB-first, bit-reflecting non-zero payloads).

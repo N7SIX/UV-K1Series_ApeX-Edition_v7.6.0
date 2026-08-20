@@ -2,7 +2,7 @@
 
 > **Firmware:** UV-K1Series ApeX-Edition v7.6.0  
 > **Audit Date:** 2026-08-08  
-> **Auditor:** Sean, N7SIX deep code review  
+> **Auditor:** AI-assisted deep code review  
 > **Scope:** Full CW mode implementation across TX keyer, RX decoder, macro system, UI, and EEPROM integration.
 
 ---

@@ -169,8 +169,6 @@ uint8_t  BK4819_GetCTCType(void);
 
 void     BK4819_SendFSKData(uint16_t *pData);
 void     BK4819_PrepareFSKReceive(void);
-void     BK4819_SetupMDC1200Receive(void);
-void     BK4819_DisableMDC1200Receive(void);
 
 int      BK4819_PlayRoger(BK4819_FilterBandwidth_t Bandwidth);
 

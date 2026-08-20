@@ -1,6 +1,6 @@
 # Full Deep Audit Report — UV-K1Series ApeX-Edition v7.6.0/7.6.9D
 
-> **Auditor:** Sean, N7SIX Deep Review  
+> **Auditor:** Cline AI Deep Review  
 > **Date:** 2026-08-03 (updated 2026-08-06)  
 > **Scope:** UX/UI cleanliness, radio performance, logic irregularities  
 > **Constraints:** No changes to EEPROM layout, calibration data, or existing logic behavior  

@@ -332,6 +332,14 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
     gEeprom.TX_VFO                         = (Data[3] <  2) ? Data[3] : 0;
     gEeprom.BATTERY_TYPE                   = (Data[4] < BATTERY_TYPE_UNKNOWN) ? Data[4] : BATTERY_TYPE_1600_MAH;
 
+    // 0E9C..0E9F (0x00A0B4) - MDC-1200 configuration
+    // Unit ID (2 bytes), Default Opcode (1 byte), Default Argument (1 byte)
+    // 0x0000 is a valid Unit ID (broadcast/signalling) and must be preserved.
+    PY25Q16_ReadBuffer(0x00A0A8 + 0x0C, Data, 4);
+    gEeprom.MDC_UnitID    = (uint16_t)Data[0] | ((uint16_t)Data[1] << 8);
+    gEeprom.MDC_DefaultOp = (Data[2] < 8)  ? Data[2] : 0;
+    gEeprom.MDC_DefaultArg = (Data[3] < 16) ? Data[3] : 0;
+
     // 0ED0..0ED7
     PY25Q16_ReadBuffer(0x00A0A8 + 0x40, Data, 8);
     gEeprom.DTMF_SIDE_TONE               = (Data[0] <   2) ? Data[0] : true;
@@ -350,46 +358,6 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
     PY25Q16_ReadBuffer(0x00A0A8 + 0x48, Data, 8);
     gEeprom.DTMF_CODE_PERSIST_TIME  = (Data[0] < 101) ? Data[0] * 10 : 100;
     gEeprom.DTMF_CODE_INTERVAL_TIME = (Data[1] < 101) ? Data[1] * 10 : 100;
-
-    /* MDC-1200 Configuration: Restore Unit ID, Opcode, and Argument from EEPROM.
-     * Stored at extended-settings offset 0x0C (EEPROM 0x00A0B4-0x00A0B7), a free
-     * padding area that never collides with the DTMF timers (0x48-0x49) or with
-     * PERMIT_REMOTE_KILL (0x4A) when ENABLE_DTMF_CALLING is enabled (audit P1
-     * hardening). Older builds stored MDC at offset 0x4A (0x00A0F2-0x00A0F5):
-     * migrate any legacy value once so existing MDC IDs survive the upgrade. */
-    {
-        uint8_t MdcData[4];
-        PY25Q16_ReadBuffer(0x00A0A8 + 0x0C, MdcData, 4);
-
-        if (MdcData[0] == 0xFF && MdcData[1] == 0xFF &&
-            MdcData[2] == 0xFF && MdcData[3] == 0xFF)
-        {
-            /* New location is uninitialized: try the legacy offset. */
-            uint8_t LegacyData[4];
-            PY25Q16_ReadBuffer(0x00A0A8 + 0x4A, LegacyData, 4);
-
-            if (LegacyData[0] != 0xFF || LegacyData[1] != 0xFF ||
-                LegacyData[2] != 0xFF || LegacyData[3] != 0xFF)
-            {
-                memcpy(MdcData, LegacyData, sizeof(MdcData));
-                PY25Q16_WriteBuffer(0x00A0A8 + 0x0C, MdcData, 4, false);
-
-                /* Clear the legacy slot so a future ENABLE_DTMF_CALLING build
-                 * never mis-reads stale MDC bytes as PERMIT_REMOTE_KILL. */
-                uint8_t Cleared[4];
-                memset(Cleared, 0xFF, sizeof(Cleared));
-                PY25Q16_WriteBuffer(0x00A0A8 + 0x4A, Cleared, 4, false);
-            }
-        }
-
-        gEeprom.MDC_UnitID  = (uint16_t)MdcData[0] | ((uint16_t)MdcData[1] << 8);
-
-        /* Sanitize opcode/argument: an uninitialized (0xFF) or corrupt EEPROM
-         * byte must never produce an out-of-range MDC opcode/argument that
-         * could corrupt a transmitted frame. */
-        gEeprom.MDC_DefaultOp   = (MdcData[2] <= 0x07u) ? MdcData[2] : 0;
-        gEeprom.MDC_DefaultArg  = (MdcData[3] <= 0x0Fu) ? MdcData[3] : 0;
-    }
 
 #ifdef ENABLE_DTMF_CALLING
     gEeprom.PERMIT_REMOTE_KILL      = (Data[2] <   2) ? Data[2] : true;
@@ -1075,6 +1043,15 @@ void SETTINGS_SaveSettings(void)
         State[0] = gEeprom.POWER_ON_PASSWORD;
     #endif
 
+    // 0x0E9C (0x00A0B4) - MDC-1200 configuration
+    // Unit ID (2 bytes), Default Opcode (1 byte), Default Argument (1 byte)
+    // 0x0000 is a valid Unit ID (broadcast/signalling) and must be preserved.
+    State = SecBuf + 0x0C;
+    State[0] = (uint8_t)(gEeprom.MDC_UnitID & 0xFF);
+    State[1] = (uint8_t)((gEeprom.MDC_UnitID >> 8) & 0xFF);
+    State[2] = gEeprom.MDC_DefaultOp;
+    State[3] = gEeprom.MDC_DefaultArg;
+
     // 0x0EA0
     State = SecBuf + 0x10;
 #ifdef ENABLE_VOICE
@@ -1117,27 +1094,6 @@ void SETTINGS_SaveSettings(void)
 #ifdef ENABLE_DTMF_CALLING
     State[2] = gEeprom.PERMIT_REMOTE_KILL;
 #endif
-
-    /* MDC-1200 Configuration: Save Unit ID, Opcode, and Argument to EEPROM.
-     * Stored at extended-settings offset 0x0C (EEPROM 0x00A0B4-0x00A0B7), a free
-     * padding area. Audit P1 hardening: the old offset 0x4A (0x00A0F2) also
-     * holds PERMIT_REMOTE_KILL under ENABLE_DTMF_CALLING, so MDC and the DTMF
-     * remote-kill permission can no longer share that byte. The legacy bytes
-     * are cleared below so stale MDC data is never read back as that flag. */
-#ifndef ENABLE_DTMF_CALLING
-    State[2] = 0xFF;
-#endif
-    State[3] = 0xFF;
-    State[4] = 0xFF;
-    State[5] = 0xFF;
-    State[6] = 0xFF;
-    State[7] = 0xFF;
-
-    State = SecBuf + 0x0C;
-    State[0] = (uint8_t)(gEeprom.MDC_UnitID & 0xFF);
-    State[1] = (uint8_t)(gEeprom.MDC_UnitID >> 8);
-    State[2] = gEeprom.MDC_DefaultOp;
-    State[3] = gEeprom.MDC_DefaultArg;
 
     PY25Q16_WriteBuffer(0x00A0A8, SecBuf, 0x50, false);
 
