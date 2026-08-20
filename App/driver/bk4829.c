@@ -1976,20 +1976,21 @@ int BK4819_TransmitMDC1200Frame(const uint8_t *frame, size_t frame_len)
     return MDC1200_ERROR_NONE;
 }
 
-// DEPRECATED: Backward-compatible wrapper - use MDC1200_Transmit() instead
-// v7.6.10A: Now returns int for error reporting
+// Roger beep for the MDC-1200 mode. Publishes the radio's configured Unit ID,
+// opcode and argument through the single documented protocol entry point
+// MDC1200_Transmit() (App/mdc1200.c) so there is one build+transmit path and
+// the documented public API is actually reachable. Keep this driver's MDC
+// block in sync with the reference copy in bk4819.c (bk4819.c is NOT compiled
+// by App/CMakeLists.txt today).
 int BK4819_PlayRogerMDC1200(void)
 {
-    uint8_t frame[26];
-    size_t frame_len;
-    
-    /* Build frame with radio's configured MDC parameters */
-    if (MDC1200_BuildFrame(gEeprom.MDC_DefaultOp, gEeprom.MDC_DefaultArg,
-                           gEeprom.MDC_UnitID, frame, sizeof(frame), &frame_len) != 0) {
-        return MDC1200_ERROR_FRAME_BUILD_FAILED;
-    }
-    
-    return BK4819_TransmitMDC1200Frame(frame, frame_len);
+    MDC1200_Params_t params;
+
+    params.unit_id = gEeprom.MDC_UnitID;
+    params.op      = gEeprom.MDC_DefaultOp;
+    params.arg     = gEeprom.MDC_DefaultArg;
+
+    return (int)MDC1200_Transmit(&params);
 }
 
 // DEPRECATED: Backward-compatible wrapper - use MDC1200_Transmit() instead

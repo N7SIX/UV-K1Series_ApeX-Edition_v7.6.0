@@ -383,8 +383,12 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
         }
 
         gEeprom.MDC_UnitID  = (uint16_t)MdcData[0] | ((uint16_t)MdcData[1] << 8);
-        gEeprom.MDC_DefaultOp   = MdcData[2];
-        gEeprom.MDC_DefaultArg  = MdcData[3];
+
+        /* Sanitize opcode/argument: an uninitialized (0xFF) or corrupt EEPROM
+         * byte must never produce an out-of-range MDC opcode/argument that
+         * could corrupt a transmitted frame. */
+        gEeprom.MDC_DefaultOp   = (MdcData[2] <= 0x07u) ? MdcData[2] : 0;
+        gEeprom.MDC_DefaultArg  = (MdcData[3] <= 0x0Fu) ? MdcData[3] : 0;
     }
 
 #ifdef ENABLE_DTMF_CALLING

@@ -13,7 +13,7 @@
  *     See the License for the specific language governing permissions and
  *     limitations under the License.
  *
- * MDC-1200 Full Implementation: v7.6.10A
+  * MDC-1200 Full Implementation: v7.6.10C
  *
  * Complete protocol-layer implementation providing:
  * - MDC1200_BuildFrame(): Encode raw parameters into 26-byte frames

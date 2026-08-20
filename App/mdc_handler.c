@@ -24,8 +24,10 @@
 #include "scheduler.h"
 #include "globals/ui_globals.h"
 #include "ui/main.h"
-#include <stdio.h>
-#include <string.h>
+
+/* Forward declaration: MDC_TriggerDisplay is defined below but used by
+ * MDC_DispatchFrame() (invalid / CRC-failed frames) before its definition. */
+static void MDC_TriggerDisplay(bool is_emergency, uint32_t timeout_ms);
 
 /* ============================================================================
  * Global State
@@ -40,8 +42,7 @@ MDC_RxFrame_t g_MDC_LastRxFrame = {
     .opcode = 0xFF,
     .argument = 0xFF,
     .timestamp_ms = 0,
-    .is_valid = false,
-    .is_new = false
+    .is_valid = false
 };
 
 /**
@@ -54,18 +55,8 @@ MDC_DisplayState_t g_MDC_DisplayState = {
     .is_emergency = false
 };
 
-/**
- * Status message buffer for UI display.
- * Displayed in status bar, auto-clears after timeout.
- */
-static struct {
-    char message[48];
-    uint32_t timeout_ms;
-    uint32_t expire_time;
-    bool active;
-} g_MDC_StatusMessage = {0};
 
-/**
+ /**
  * Handler function pointers (dispatch table).
  * One function per possible opcode (0x00–0x07, plus one for unknown).
  */
@@ -126,11 +117,13 @@ void MDC_DispatchFrame(uint8_t opcode, uint8_t arg, uint16_t unit_id, bool is_va
     g_MDC_LastRxFrame.argument = arg;
     g_MDC_LastRxFrame.timestamp_ms = gGlobalSysTickCounter * 10u;  /* Convert ticks to ms */
     g_MDC_LastRxFrame.is_valid = is_valid;
-    g_MDC_LastRxFrame.is_new = true;
 
-    /* Reject invalid frames */
+    /* Reject invalid (CRC-failed) frames: show the RX-error diagnostic on the
+     * MDC alert line without an audio alert. This is distinct from a
+     * structurally valid but unassigned opcode, which falls through to the
+     * dispatch table below (unknown opcodes → MDC_Handle_Unknown). */
     if (!is_valid) {
-        MDC_Handle_Unknown(unit_id, arg);
+        MDC_TriggerDisplay(false, 2000u);   /* 2s; ui/mdc.c renders "CRC failed" */
         return;
     }
 
@@ -180,27 +173,7 @@ static void MDC_TriggerDisplay(bool is_emergency, uint32_t timeout_ms)
  * Display & Audio Utilities
  * ============================================================================ */
 
-void MDC_DisplayStatusUpdate(const char *message, uint32_t timeout_ms)
-{
-    strncpy(g_MDC_StatusMessage.message, message, sizeof(g_MDC_StatusMessage.message) - 1);
-    g_MDC_StatusMessage.message[sizeof(g_MDC_StatusMessage.message) - 1] = '\0';
-    g_MDC_StatusMessage.timeout_ms = timeout_ms;
-    g_MDC_StatusMessage.expire_time = gGlobalSysTickCounter + (timeout_ms / 10u);
-    g_MDC_StatusMessage.active = true;
-    gUpdateDisplay = true;
-}
 
-void MDC_ShowModal(const char *title, const char *message, uint32_t timeout_ms)
-{
-    /* 
-     * Note: Full modal implementation would go here.
-     * For now, display as status message.
-     * In Phase 3, integrate with UI framework for true modal.
-     */
-    char combined[96];
-    snprintf(combined, sizeof(combined), "%s: %s", title, message);
-    MDC_DisplayStatusUpdate(combined, timeout_ms ? timeout_ms : 3000u);  /* 3s default */
-}
 
 void MDC_PlayAlert(int alert_type)
 {
@@ -285,25 +258,7 @@ void MDC_Handle_Unknown(uint16_t unit_id, uint8_t arg)
     /* No beep for unknown frames to avoid alert fatigue */
 }
 
-/* ============================================================================
- * Periodic Update (called from 500ms UI slice)
- * ============================================================================ */
 
-void MDC_TimeSlice500ms(void)
-{
-    /* Check if status message should expire */
-    if (g_MDC_StatusMessage.active) {
-        if (gGlobalSysTickCounter >= g_MDC_StatusMessage.expire_time) {
-            g_MDC_StatusMessage.active = false;
-            gUpdateDisplay = true;
-        }
-    }
-
-    /* Clear "is_new" flag after display update */
-    if (g_MDC_LastRxFrame.is_new) {
-        g_MDC_LastRxFrame.is_new = false;
-    }
-}
 
 /* ============================================================================
  * Phase 3: UI Display Functions
@@ -321,18 +276,6 @@ void MDC_UITimeSlice500ms(void)
         center_line = g_MDC_DisplayState.previous_mode;
         gUpdateDisplay = true;
     }
-}
-
-/* ============================================================================
- * UI Integration (status bar display)
- * ============================================================================ */
-
-const char *MDC_GetStatusMessage(void)
-{
-    if (g_MDC_StatusMessage.active) {
-        return g_MDC_StatusMessage.message;
-    }
-    return NULL;
 }
 
 /* ============================================================================

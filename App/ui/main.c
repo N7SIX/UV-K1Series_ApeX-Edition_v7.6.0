@@ -2480,17 +2480,7 @@ void UI_DisplayMain(void)
         }
     }
 
-    /* Phase 3: Render MDC status message when active (unless a full MDC alert
-     * is showing). This makes MDC_DisplayStatusUpdate()/MDC_ShowModal()
-     * messages visible; it was previously written to a buffer nothing drew. */
-    if (center_line != CENTER_LINE_MDC_ALERT) {
-        const char *MDCStatus = MDC_GetStatusMessage();
-        if (MDCStatus != NULL) {
-            UI_PrintStringSmallNormal(MDCStatus, 0, 127, 3);
-        }
-    }
-
-    /* Phase 3: Render MDC alert when active (high priority, always visible) */
+    /* Phase 3: Render the MDC alert when active (high priority, always visible) */
     if (center_line == CENTER_LINE_MDC_ALERT) {
         UI_DisplayMDCAlert();
     }

@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * MDC-1200 Implementation: v7.6.10A
- * This module provides protocol-compliant MDC-1200 (Short) and MDC-1200L (Long)
- * frame encoding for transmission over BK4819/BK4829 RF transceivers.
+ * MDC-1200 Implementation: v7.6.10C
+ * This module provides protocol-compliant single-burst MDC-1200 frame encoding
+ * and decoding for the BK4819/BK4829 RF transceivers. The legacy MDC-1200L
+ * ("long burst") variant is intentionally not supported.
  */
 
 #ifndef MDC1200_H
@@ -163,11 +164,14 @@ MDC1200_Error_t MDC1200_VerifyCRC(const uint8_t *frame,
  *         - MDC1200_ERROR_FIFO_WRITE_FAILED: FIFO conversion error
  *         - MDC1200_ERROR_TX_NOT_READY: Transceiver not ready (optional validation)
  *
- * A single MDC-1200 burst is the supported protocol mode. Legacy long-mode
- * settings are treated as standard MDC-1200 for compatibility and are not
- * exposed in the user menu.
+  * A single MDC-1200 burst is the supported protocol mode. Legacy long-mode
+ * settings are no longer supported; the UI only exposes single-burst MDC-1200.
  *
- * v7.6.10A: Public API for parameterized transmission
+ * The firmware's live transmit path calls this entry point from
+ * BK4819_PlayRogerMDC1200(), so frame building and RF transmission are
+ * centralized in this protocol module rather than duplicated per transceiver.
+ *
+ * v7.6.10C: Public API for parameterized transmission
  */
 MDC1200_Error_t MDC1200_Transmit(const MDC1200_Params_t *params);
 

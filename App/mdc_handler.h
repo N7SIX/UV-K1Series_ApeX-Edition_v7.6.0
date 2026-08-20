@@ -202,32 +202,7 @@ void MDC_Handle_Unknown(uint16_t unit_id, uint8_t arg);
  * Display & Audio Reaction Utilities
  * ============================================================================ */
 
-/**
- * Update status bar with MDC message.
- * 
- * Example: "MDC Status from 0x1234" or "MDC Emergency from 0x1234"
- * Automatically clears after timeout.
- *
- * @param message - Short message (max 32 chars)
- * @param timeout_ms - Display duration (0 = permanent until next event)
- */
-void MDC_DisplayStatusUpdate(const char *message, uint32_t timeout_ms);
 
-/**
- * Get the currently active MDC status message, or NULL if none is active.
- *
- * @return Pointer to the active status message string, or NULL.
- */
-const char *MDC_GetStatusMessage(void);
-
-/**
- * Show modal popup for critical events (Emergency).
- *
- * @param title   - Popup title (e.g., "EMERGENCY")
- * @param message - Detailed message (e.g., "From Unit 0x1234")
- * @param timeout_ms - Auto-close timeout (0 = require user dismiss)
- */
-void MDC_ShowModal(const char *title, const char *message, uint32_t timeout_ms);
 
 /**
  * Play audio alert tone.

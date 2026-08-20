@@ -657,7 +657,7 @@ VOICE_LIST = ["OFF", "Chinese", "English"]
 # ACTIVE CHANNEL
 TX_VFO_LIST = ["A", "B"]
 ALARMMODE_LIST = ["SITE", "TONE"]
-ROGER_LIST = ["OFF", "Roger beep (ROGER)", "MDC data burst (MDC)", "MDC-1200", "MDC-1200L"]
+ROGER_LIST = ["OFF", "Roger beep (ROGER)", "MDC data burst (MDC)", "MDC-1200"]
 RTE_LIST = ["OFF", "100ms", "200ms", "300ms", "400ms",
             "500ms", "600ms", "700ms", "800ms", "900ms", "1000ms"]
 VOX_LIST = ["OFF", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
