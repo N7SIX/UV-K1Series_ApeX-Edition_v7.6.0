@@ -54,7 +54,7 @@ DEBUG_SHOW_OBFUSCATED_COMMANDS = False
 DEBUG_SHOW_MEMORY_ACTIONS = False
 
 # TODO: remove the driver version when it's in mainline chirp 
-DRIVER_VERSION = "Quansheng UV-K1 / UV-K5 V3 driver ver: 2026/08/12 (c) N7SIX v7.6.10B"
+DRIVER_VERSION = "Quansheng UV-K1 / UV-K5 V3 driver ver: 2026/08/12 (c) N7SIX v7.6.10C"
 FIRMWARE_VERSION_UPDATE = "https://github.com/N7SIX/UV-K1Series_ApeX-Edition_v7.6.0/releases/"
 CHIRP_DRIVER_VERSION_UPDATE = "https://github.com/N7SIX/UV-K1Series_ApeX-Edition_v7.6.0/releases/"
 
