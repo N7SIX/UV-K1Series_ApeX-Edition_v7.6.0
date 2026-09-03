@@ -1,0 +1,37 @@
+import io
+
+p = 'App/ui/main.c'
+with io.open(p, 'r', encoding='utf-8', newline='') as f:
+    s = f.read()
+
+old = "#ifdef ENABLE_AGC_SHOW_DATA
+        UI_MAIN_PrintAGC(true);
+        return;
+#endif"
+new = ("#ifdef ENABLE_AGC_SHOW_DATA
+"
+       "        /* Skip the AGC readout while an MDC alert owns the center line,
+"
+       "         * otherwise PrintAGC() erases frame-buffer line 3 and blits over
+"
+       "         * the MDC-ID alert every 500ms tick. */
+"
+       "        if (center_line != CENTER_LINE_MDC_ALERT)
+"
+       "        {
+"
+       "            UI_MAIN_PrintAGC(true);
+"
+       "            return;
+"
+       "        }
+"
+       "#endif")
+
+count = s.count(old)
+assert count == 1, "match count = %d" % count
+s = s.replace(old, new)
+
+with io.open(p, 'w', encoding='utf-8', newline='') as f:
+    f.write(s)
+print("patched OK")
