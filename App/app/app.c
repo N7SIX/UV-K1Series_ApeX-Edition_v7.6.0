@@ -1046,8 +1046,8 @@ static void CheckRadioInterrupts(void)
         }
 
         if (interrupts.fskRxFinied &&
-            (gEeprom.ROGER == ROGER_MODE_MDC_1200 ||
-             gEeprom.ROGER == ROGER_MODE_MDC_1200L) &&
+            (gRxVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200 ||
+             gRxVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200L) &&
             !gBeamActive &&
             gScreenToDisplay != DISPLAY_AIRCOPY)
         {

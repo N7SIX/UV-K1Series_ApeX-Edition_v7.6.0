@@ -144,6 +144,107 @@ void test_mdc1200(void)
     TEST_ASSERT(valid);
 
     /*
+     * === TX FIFO words (preamble-stripped) ===
+     *
+     * MDC1200_BuildTxFifoWords() strips the 0x55 preamble (which the BK4819
+     * hardware re-generates) and appends a single 0x55 pad byte to keep the
+     * FIFO 16-bit aligned.  The output must contain the leader + payload
+     * immediately, with NO embedded 0xAA (phase-reversal) byte.
+     */
+    {
+        uint16_t tx_fifo[32];
+        size_t   tx_count = 0;
+
+        /* Standard: 5 leader + 14 payload + 1 pad = 20 bytes = 10 words. */
+        TEST_ASSERT(MDC1200_BuildTxFifoWords(frame, frame_len, tx_fifo,
+                                             ARRAY_SIZE(tx_fifo), &tx_count) == MDC1200_ERROR_NONE);
+        TEST_ASSERT_EQ_INT(tx_count, 10u);
+        /* Word 0 = leader[0]:leader[1] = 0x07 0x09 */
+        TEST_ASSERT_EQ_INT(tx_fifo[0], 0x0709u);
+        /* Leader bytes 2..4 then 14 payload bytes = 17 bytes (8 full words + 1 byte) */
+        for (i = 0; i < MDC1200_LEADER_LENGTH; ++i) {
+            uint8_t b = (i < 2u) ? (uint8_t)(tx_fifo[0] >> (8u * (1u - i)))
+                                 : (uint8_t)(tx_fifo[i / 2u] >> (8u * (1u - (i % 2u))));
+            TEST_ASSERT_EQ_INT(b, expected_leader[i]);
+        }
+        /* Payload region: frame[i+7] == expected at tx_fifo offset i+5 */
+        for (i = 0; i < MDC1200_PAYLOAD_LENGTH; ++i) {
+            uint8_t b = tx_fifo[(5u + i) / 2u] >> (8u * (1u - ((5u + i) % 2u)));
+            TEST_ASSERT_EQ_INT(b, frame[MDC1200_PREAMBLE_LENGTH + MDC1200_LEADER_LENGTH + i]);
+        }
+        /* Last word: payload byte[13] + pad 0x55 = 0x60 0x55 */
+        TEST_ASSERT_EQ_INT(tx_fifo[9u], 0x6055u);
+
+        /* Long: 20 pretime + 5 leader + 14 payload + 1 pad = 40 bytes = 20 words. */
+        tx_count = 0;
+        TEST_ASSERT(MDC1200_BuildTxFifoWords(frame_long, frame_len_long, tx_fifo,
+                                             ARRAY_SIZE(tx_fifo), &tx_count) == MDC1200_ERROR_NONE);
+        TEST_ASSERT_EQ_INT(tx_count, 20u);
+        /* Word 0 = pretime 0x55 0x55 */
+        TEST_ASSERT_EQ_INT(tx_fifo[0], 0x5555u);
+        /* leader begins at tx_fifo buffer offset 20 (after the 20-byte pretime) */
+        for (i = 0; i < MDC1200_LEADER_LENGTH; ++i) {
+            uint8_t b = tx_fifo[(20u + i) / 2u] >> (8u * (1u - ((20u + i) % 2u)));
+            TEST_ASSERT_EQ_INT(b, expected_leader[i]);
+        }
+        /* payload begins at offset 25 => relative to frame_long offset 27 */
+        for (i = 0; i < MDC1200_PAYLOAD_LENGTH; ++i) {
+            uint8_t b = tx_fifo[(25u + i) / 2u] >> (8u * (1u - ((25u + i) % 2u)));
+            TEST_ASSERT_EQ_INT(b, frame_long[MDC1200_COMPOSITE_PREAMBLE_LENGTH +
+                                             MDC1200_LEADER_LENGTH + i]);
+        }
+        /* Last word: payload byte[13] + pad 0x55 */
+        TEST_ASSERT_EQ_INT(tx_fifo[19u], 0x6055u);
+
+        /* Error paths. */
+        TEST_ASSERT(MDC1200_BuildTxFifoWords(NULL, frame_len, tx_fifo,
+                                             ARRAY_SIZE(tx_fifo), &tx_count) == MDC1200_ERROR_INVALID_PARAMS);
+        TEST_ASSERT(MDC1200_BuildTxFifoWords(frame, 12u, tx_fifo,
+                                             ARRAY_SIZE(tx_fifo), &tx_count) == MDC1200_ERROR_FRAME_BUILD_FAILED);
+        TEST_ASSERT(MDC1200_BuildTxFifoWords(frame, frame_len, tx_fifo, 1u,
+                                             &tx_count) == MDC1200_ERROR_FIFO_WRITE_FAILED);
+    }
+
+    /*
+     * === MDC-1200 vs MDC-1200L: the "L" MUST remain a LONGER preamble ===
+     *
+     * The whole point of the "L" variant is a longer 0x55 preamble for
+     * weak-signal reach.  The RX/sync handling and the preamble-strip logic
+     * must never collapse the two into the same on-air length.  These
+     * assertions pin the intended difference so a future refactor cannot
+     * silently make MDC-1200L identical to MDC-1200.
+     */
+    {
+        uint16_t tx_fifo_short[32], tx_fifo_long[32];
+        size_t   cnt_short = 0, cnt_long = 0;
+        size_t   preamble_short, preamble_long;
+
+        /* Frame constants must differ. */
+        TEST_ASSERT(MDC1200_FRAME_LENGTH != MDC1200L_FRAME_LENGTH);              /* 26 vs 46 */
+        TEST_ASSERT(MDC1200_PREAMBLE_LENGTH != MDC1200_COMPOSITE_PREAMBLE_LENGTH); /* 7 vs 27 */
+        TEST_ASSERT_EQ_INT(MDC1200_COMPOSITE_PREAMBLE_LENGTH,
+                           MDC1200_PRETIME_LENGTH + MDC1200_PREAMBLE_LENGTH);     /* 27 = 20 + 7 */
+
+        /* The MDC-1200L TX FIFO must be exactly the pretime longer than the
+         * standard TX FIFO (the payload/leader are shared). 20 bytes = 10 words. */
+        TEST_ASSERT(MDC1200_BuildTxFifoWords(frame, frame_len, tx_fifo_short,
+                                             ARRAY_SIZE(tx_fifo_short), &cnt_short) == MDC1200_ERROR_NONE);
+        TEST_ASSERT(MDC1200_BuildTxFifoWords(frame_long, frame_len_long, tx_fifo_long,
+                                             ARRAY_SIZE(tx_fifo_long), &cnt_long) == MDC1200_ERROR_NONE);
+        TEST_ASSERT(cnt_short != cnt_long);
+        TEST_ASSERT_EQ_INT(cnt_long - cnt_short, MDC1200_PRETIME_LENGTH / 2u);   /* 20 - 10 = 10 words */
+        TEST_ASSERT(cnt_long > cnt_short);
+
+        /* On-air 0x55 preamble: standard = HW(7+4 sync) + 1 pad = 12 bytes;
+         * long = HW(7+4) + pretime(20) + 1 pad = 32 bytes. The "L" leads with
+         * exactly MDC1200_PRETIME_LENGTH more 0x55 bytes. */
+        preamble_short = 7u + 4u + 1u;                 /* HW preamble + HW sync + pad */
+        preamble_long  = 7u + 4u + MDC1200_PRETIME_LENGTH + 1u;
+        TEST_ASSERT(preamble_long > preamble_short);
+        TEST_ASSERT_EQ_INT(preamble_long - preamble_short, MDC1200_PRETIME_LENGTH); /* 20 */
+    }
+
+    /*
      * === Length / parameter validation ===
      */
     /* Non-standard lengths are rejected by every public entry point. */

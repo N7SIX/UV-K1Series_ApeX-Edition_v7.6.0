@@ -138,6 +138,56 @@ MDC1200_Error_t MDC1200_BuildFifoWords(const uint8_t *frame,
                                        size_t *fifo_word_count_out);
 
 /**
+ * Build TX FIFO words from an MDC-1200 frame, **stripping the preamble**.
+ *
+ * Unlike MDC1200_BuildFifoWords() — which includes the preamble for RX-side
+ * round-trip symmetry — this function removes the leading 0x55 preamble bytes
+ * before converting to FIFO words.  This is required because the BK4819
+ * hardware automatically generates a 7-byte 0x55 preamble followed by a 4-byte
+ * sync word (all 0x55 when REG_5B = 0x5555) immediately before the FIFO data.
+ *
+ * Loading the preamble into the FIFO would create a double preamble:
+ *   - Standard: 7 (HW) + 4 (sync) + 7 (FIFO) = 18 bytes of 0x55
+ *   - Long:     7 (HW) + 4 (sync) + 27 (FIFO) = 38 bytes of 0x55
+ *
+ * Genuine Motorola transmit only 7 (standard) or 27 (long) bytes of preamble.
+ * The excess length and — with the old REG_5B = 0x55AA — an embedded 0xAA
+ * phase reversal made the preamble sound broken ("off") to genuine Motorola
+ * radio users.
+ *
+ * Frame layout after stripping:
+ *   Standard (26-byte input):  5-byte leader + 14-byte payload = 19 bytes
+ *   Long    (46-byte input):   20-byte pretime + 5-byte leader + 14-byte payload = 39 bytes
+ * Both are odd, so one 0x55 pad byte is appended for 16-bit FIFO word alignment.
+ *
+ * Output word counts:
+ *   Standard: 10 words (20 bytes: leader + payload + pad)
+ *   Long:     20 words (40 bytes: pretime + leader + payload + pad)
+ *
+ * Total on-air preamble (HW + FIFO):
+ *   Standard: 11 (HW preamble+sync) + 1 (pad) = 12 bytes of 0x55  (genuine:  7)
+ *   Long:     11 (HW) + 20 (pretime) + 1 (pad) = 32 bytes of 0x55 (genuine: 27)
+ *
+ * **MDC-1200 vs MDC-1200L distinction is preserved:** only the trailing 7-byte
+ * sync preamble of the long frame is stripped (the FIFO itself starts with the
+ * 20-byte extended pretime), so MDC-1200L keeps a preamble that is exactly
+ * MDC1200_PRETIME_LENGTH bytes longer than standard MDC-1200 (32 vs 12 bytes of
+ * 0x55 on air).  The two modes never collapse into the same burst length.
+ *
+ * @param frame              - Full frame including preamble (26 or 46 bytes)
+ * @param frame_len          - Frame length (must be MDC1200_FRAME_LENGTH or MDC1200L_FRAME_LENGTH)
+ * @param fifo_words         - Output buffer for 16-bit FIFO words
+ * @param fifo_word_capacity - Capacity of fifo_words array
+ * @param fifo_word_count_out - Output: number of FIFO words written
+ * @return MDC1200_ERROR_NONE on success, negative MDC1200_Error_t code on failure.
+ */
+MDC1200_Error_t MDC1200_BuildTxFifoWords(const uint8_t *frame,
+                                          size_t frame_len,
+                                          uint16_t *fifo_words,
+                                          size_t fifo_word_capacity,
+                                          size_t *fifo_word_count_out);
+
+/**
  * Decode a raw MDC-1200 frame back into its logical fields.
  *
  * This is a reference-side validation helper: it reverses the payload bit
@@ -217,7 +267,7 @@ MDC1200_Error_t MDC1200_Transmit(const MDC1200_Params_t *params);
 /**
  * Transmit a single MDC-1200L frame (long burst, 46 bytes) with the given
  * parameters. Identical to MDC1200_Transmit() except it emits the 27-byte
- * composite preamble. Corresponds to the ROGER_MODE_MDC_1200L menu option.
+ * composite preamble. Corresponds to the PTT_ID_MDC1200L menu option.
  *
  * @param params - Pointer to MDC1200_Params_t (unit_id, op, arg)
  * @return MDC1200_ERROR_NONE (0) on success, negative MDC1200_Error_t code on failure.

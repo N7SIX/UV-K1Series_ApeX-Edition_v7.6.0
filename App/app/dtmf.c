@@ -473,7 +473,9 @@ void DTMF_Reply(void)
 #endif
                 gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_APOLLO ||
                 gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_OFF    ||
-                gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_TX_DOWN)
+                gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_TX_DOWN ||
+                gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200 ||
+                gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200L)
             {
                 gDTMF_ReplyState = DTMF_REPLY_NONE;
                 return;

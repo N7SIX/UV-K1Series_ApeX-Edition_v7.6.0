@@ -215,7 +215,7 @@ extern const char* const            gSubMenu_D_RSP[4];
     #endif
 #endif
 
-extern const char* const gSubMenu_PTT_ID[5];
+extern const char* const gSubMenu_PTT_ID[7];
 #ifdef ENABLE_FEAT_N7SIX
     #ifdef ENABLE_FEAT_N7SIX_LOGO
         extern const char* const    gSubMenu_PONMSG[6];
@@ -226,7 +226,7 @@ extern const char* const gSubMenu_PTT_ID[5];
     extern const char* const        gSubMenu_PONMSG[4];
 #endif
 
-extern const char* const            gSubMenu_ROGER[6];
+extern const char* const            gSubMenu_ROGER[3];
 extern const char* const            gSubMenu_RESET[2];
 extern const char* const            gSubMenu_F_LOCK[F_LOCK_LEN];
 extern const char* const            gSubMenu_RX_TX[4];

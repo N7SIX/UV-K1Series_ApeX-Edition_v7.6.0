@@ -16,8 +16,8 @@
  * MDC-1200 Full Implementation: v7.6.10A
  *
  * Protocol-layer implementation supporting two transmission profiles:
- * - MDC1200_BuildFrame():  26-byte standard frame (7-byte preamble)        -> ROGER_MODE_MDC_1200
- * - MDC1200_BuildFrameLong(): 46-byte long frame (27-byte composite preamble)-> ROGER_MODE_MDC_1200L
+ * - MDC1200_BuildFrame():  26-byte standard frame (7-byte preamble)        -> PTT_ID_MDC1200
+ * - MDC1200_BuildFrameLong(): 46-byte long frame (27-byte composite preamble)-> PTT_ID_MDC1200L
  * - MDC1200_DecodeFrame(): bit-exact decode + CRC + Viterbi ECC for both lengths
  *
  * The encoded payload (leader + 14 payload bytes + CRC + ECC + interleaving)
@@ -268,6 +268,72 @@ MDC1200_Error_t MDC1200_BuildFifoWords(const uint8_t *frame,
     }
 
     *fifo_word_count_out = words;
+    return MDC1200_ERROR_NONE;
+}
+
+MDC1200_Error_t MDC1200_BuildTxFifoWords(const uint8_t *frame,
+                                          size_t frame_len,
+                                          uint16_t *fifo_words,
+                                          size_t fifo_word_capacity,
+                                          size_t *fifo_word_count_out)
+{
+    size_t i;
+    size_t data_len;
+    size_t word_count;
+    uint8_t tx_buf[MDC1200L_FRAME_LENGTH];  /* holds stripped frame + pad */
+
+    if (frame == NULL || fifo_words == NULL || fifo_word_count_out == NULL)
+        return MDC1200_ERROR_INVALID_PARAMS;
+
+    if (frame_len != MDC1200_FRAME_LENGTH && frame_len != MDC1200L_FRAME_LENGTH)
+        return MDC1200_ERROR_FRAME_BUILD_FAILED;
+
+    if (frame_len == MDC1200_FRAME_LENGTH) {
+        /*
+         * Standard frame: [7-byte preamble][5-byte leader][14-byte payload]
+         * The BK4819 generates its own 7-byte preamble + 4-byte sync (all 0x55)
+         * before the FIFO data, so we strip the frame's 7-byte preamble to
+         * avoid a double preamble and match genuine Motorola's 7-byte run.
+         *
+         * Stripped: 5 + 14 = 19 bytes (odd) → pad 1×0x55 → 20 bytes → 10 words
+         */
+        memcpy(tx_buf,
+               &frame[MDC1200_PREAMBLE_LENGTH],
+               MDC1200_LEADER_LENGTH + MDC1200_PAYLOAD_LENGTH);
+        data_len = MDC1200_LEADER_LENGTH + MDC1200_PAYLOAD_LENGTH;  /* 19 */
+        tx_buf[data_len] = MDC1200_PREAMBLE_BYTE;  /* pad for word alignment */
+        data_len++;                                    /* 20 */
+    } else {
+        /*
+         * Long frame: [20-byte pretime][7-byte sync preamble][5-byte leader][14-byte payload]
+         * Strip the 7-byte sync preamble only (keep the 20-byte pretime for weak-signal
+         * reach).  The hardware adds 11 bytes (7 preamble + 4 sync, all 0x55), giving a
+         * total preamble of 11 + 20 + 1(pad) = 32 bytes vs genuine Motorola's 27.
+         *
+         * Non-contiguous copy: pretime (bytes 0-19) + leader+payload (bytes 27-45)
+         * Stripped: 20 + 5 + 14 = 39 bytes (odd) → pad 1×0x55 → 40 bytes → 20 words
+         */
+        memcpy(tx_buf, frame, MDC1200_PRETIME_LENGTH);
+        memcpy(tx_buf + MDC1200_PRETIME_LENGTH,
+               &frame[MDC1200_COMPOSITE_PREAMBLE_LENGTH],
+               MDC1200_LEADER_LENGTH + MDC1200_PAYLOAD_LENGTH);
+        data_len = MDC1200_PRETIME_LENGTH +
+                   MDC1200_LEADER_LENGTH +
+                   MDC1200_PAYLOAD_LENGTH;  /* 39 */
+        tx_buf[data_len] = MDC1200_PREAMBLE_BYTE;  /* pad for word alignment */
+        data_len++;                                    /* 40 */
+    }
+
+    /* Convert bytes to 16-bit FIFO words (MSB first, as BK4819 expects) */
+    word_count = data_len / 2u;
+    if (word_count > fifo_word_capacity)
+        return MDC1200_ERROR_FIFO_WRITE_FAILED;
+
+    for (i = 0u; i < word_count; i++) {
+        fifo_words[i] = ((uint16_t)tx_buf[i * 2u] << 8u) | (uint16_t)tx_buf[i * 2u + 1u];
+    }
+
+    *fifo_word_count_out = word_count;
     return MDC1200_ERROR_NONE;
 }
 
@@ -624,7 +690,7 @@ MDC1200_Error_t MDC1200_Transmit(const MDC1200_Params_t *params)
  * Identical to MDC1200_Transmit() except it emits the 27-byte composite
  * preamble (20-byte extended pretime + 7-byte standard sync) as a 46-byte
  * frame. This is the longer, weak-signal-friendly burst exposed by the
- * ROGER_MODE_MDC_1200L menu option.
+ * PTT_ID_MDC1200L menu option.
  *
  * @param params - MDC1200_Params_t (unit_id, op, arg)
  * @return MDC1200_ERROR_NONE on success, negative error code otherwise.

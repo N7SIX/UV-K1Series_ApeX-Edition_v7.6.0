@@ -1822,7 +1822,7 @@ void BK4819_PlayRogerMDC(void)
         { BK4819_REG_59, 0x8068 },  // 4 byte sync length, 6 byte preamble, clear TX FIFO
         { BK4819_REG_59, 0x0068 },  // Same, but clear TX FIFO is now unset (clearing done)
         { BK4819_REG_5A, 0x5555 },  // First two sync bytes
-        { BK4819_REG_5B, 0x55AA },  // End of sync bytes. Total 4 bytes: 555555aa
+        { BK4819_REG_5B, 0x5555 },  // End of sync bytes. Total 4 bytes: 5555 5555 (no phase reversal)
         { BK4819_REG_5C, 0xAA30 },  // Disable CRC
     };
 
@@ -1880,18 +1880,24 @@ int BK4819_TransmitMDC1200Frame(const uint8_t *frame, size_t frame_len)
     if (frame == NULL)
         return MDC1200_ERROR_INVALID_PARAMS;
     if (frame_len == MDC1200_FRAME_LENGTH) {           /* 7-byte preamble */
-        reg_5d  = 0x1A00;                              /* 0x1A = 26 */
-        tx_ms   = 280;                                 /* 26*8/1200 ~= 173 ms + ramp */
+        /* TX FIFO holds the preamble-stripped frame (leader + payload + pad)
+         * = 20 bytes; HW adds a 7-byte 0x55 preamble + 4-byte sync (all 0x55),
+         * so on-air total = 11 + 20 = 31 bytes ~= 207 ms + ramp. */
+        reg_5d  = 0x1400;                              /* 0x14 = 20 TX FIFO bytes */
+        tx_ms   = 260;                                 /* on-air ~207 ms + ramp */
     } else if (frame_len == MDC1200L_FRAME_LENGTH) {  /* 27-byte composite preamble */
-        reg_5d  = 0x2E00;                              /* 0x2E = 46 */
-        tx_ms   = 400;                                 /* 46*8/1200 ~= 307 ms + ramp */
+        /* TX FIFO holds pretime (20) + leader + payload + pad = 40 bytes;
+         * HW adds 11 bytes of 0x55, on-air total = 11 + 40 = 51 bytes ~= 340 ms. */
+        reg_5d  = 0x2800;                              /* 0x28 = 40 TX FIFO bytes */
+        tx_ms   = 400;                                 /* on-air ~340 ms + ramp */
     } else {
         return MDC1200_ERROR_INVALID_LENGTH;
     }
 
-    /* Convert frame bytes to FIFO words (internal conversion) */
-    status = MDC1200_BuildFifoWords(frame, frame_len, fifo_words,
-                                   ARRAY_SIZE(fifo_words), &fifo_word_count);
+    /* Convert frame bytes to TX FIFO words, stripping the preamble so the
+     * hardware-generated 0x55 preamble+sync is not duplicated. */
+    status = MDC1200_BuildTxFifoWords(frame, frame_len, fifo_words,
+                                      ARRAY_SIZE(fifo_words), &fifo_word_count);
     if (status != 0) {
         return MDC1200_ERROR_FIFO_WRITE_FAILED;
     }
@@ -1904,18 +1910,17 @@ int BK4819_TransmitMDC1200Frame(const uint8_t *frame, size_t frame_len)
      * - REG_58 (0x37C3): FSK enable, RX/TX bandwidth FFSK 1200/1800
      * - REG_72 (0x3065): Tone-2 frequency = 1200 Hz (calculation: 1200 * 65536 / 13MHz)
      * - REG_70 (0x00E0): Tone-2 gain and enable
-     * - REG_5D (0x2E00): Frame size = 46 bytes (0x2E = 46)
+     * - REG_5D: TX FIFO byte count, set per-frame below (0x1400 / 0x2800)
      * - REG_5A/5B/5C: FIFO sync patterns for frame detection
      */
     struct reg_value RogerMDC1200_Configuration[] = {
         { BK4819_REG_58, 0x37C3 },  // FSK Enable, RX Bandwidth FFSK 1200/1800 (see doc)
         { BK4819_REG_72, 0x3065 },  // Set Tone-2 to 1200Hz (doc ref: REG_72 calculation)
         { BK4819_REG_70, 0x00E0 },  // Enable Tone-2 and Set Tone2 Gain (doc ref: REG_70)
-        { BK4819_REG_5D, 0x2E00 },  // 46 bytes frame: 27 preamble + 5 leader + 14 encoded payload
         { BK4819_REG_59, 0x8068 },  // Clear TX FIFO
         { BK4819_REG_59, 0x0068 },  // Clear TX FIFO bit unset
         { BK4819_REG_5A, 0x5555 },  // Standard MDC-1200 sync prefix pattern (doc ref)
-        { BK4819_REG_5B, 0x55AA },  // Standard MDC-1200 sync prefix pattern (doc ref)
+        { BK4819_REG_5B, 0x5555 },  // Sync word ends as 0x55 (5555 5555) - no 0xAA phase reversal
         { BK4819_REG_5C, 0xAA30 },  // FIFO/sync configuration (doc ref: REG_5C)
     };
 
@@ -1927,20 +1932,21 @@ int BK4819_TransmitMDC1200Frame(const uint8_t *frame, size_t frame_len)
                            RogerMDC1200_Configuration[i].value);
     }
 
-    /* Load frame into TX FIFO */
+    /* Load preamble-stripped frame into TX FIFO */
     for (i = 0; i < fifo_word_count; ++i) {
         BK4819_WriteRegister(BK4819_REG_5F, fifo_words[i]);
     }
 
-    /* Select the hardware packet length for this frame size. */
+    /* Select the hardware packet length (TX FIFO bytes, preamble excluded). */
     BK4819_WriteRegister(BK4819_REG_5D, reg_5d);
 
     SYSTEM_DelayMs(20);
     BK4819_WriteRegister(BK4819_REG_59, 0x0868);  // Enable TX
 
     /*
-     * Single-burst TX timing: frame_len * 8 / 1200 bps + RF ramp/guard.
-     * 26 bytes ~= 173 ms (280 ms w/ ramp); 46 bytes ~= 307 ms (400 ms w/ ramp).
+     * Single-burst TX timing: on-air bytes * 8 / 1200 bps + RF ramp/guard.
+     * Standard: HW(11) + FIFO(20) = 31 bytes ~= 207 ms (260 ms w/ ramp);
+     * Long:     HW(11) + FIFO(40) = 51 bytes ~= 340 ms (400 ms w/ ramp).
      */
     SYSTEM_DelayMs(tx_ms);
     BK4819_WriteRegister(BK4819_REG_59, 0x0068);  // Disable TX
@@ -1949,38 +1955,6 @@ int BK4819_TransmitMDC1200Frame(const uint8_t *frame, size_t frame_len)
     BK4819_WriteRegister(BK4819_REG_58, 0x0000);  // Disable FSK
 
     return MDC1200_ERROR_NONE;
-}
-
-// DEPRECATED: Backward-compatible wrapper - use MDC1200_Transmit() instead
-// v7.6.10A: Now returns int for error reporting
-int BK4819_PlayRogerMDC1200(void)
-{
-    uint8_t frame[MDC1200_FRAME_LENGTH];
-    size_t frame_len;
-    
-    /* Build frame with radio's configured MDC parameters */
-    if (MDC1200_BuildFrame(gEeprom.MDC_DefaultOp, gEeprom.MDC_DefaultArg,
-                           gEeprom.MDC_UnitID, frame, sizeof(frame), &frame_len) != 0) {
-        return MDC1200_ERROR_FRAME_BUILD_FAILED;
-    }
-    
-    return BK4819_TransmitMDC1200Frame(frame, frame_len);
-}
-
-// DEPRECATED: Backward-compatible wrapper - use MDC1200_Transmit() instead
-// v7.6.10A: Now returns int for error reporting
-int BK4819_PlayRogerMDC1200L(void)
-{
-    /* Build an MDC-1200L long-burst frame (27-byte composite preamble). */
-    uint8_t frame[MDC1200L_FRAME_LENGTH];
-    size_t frame_len;
-
-    if (MDC1200_BuildFrameLong(gEeprom.MDC_DefaultOp, gEeprom.MDC_DefaultArg,
-                               gEeprom.MDC_UnitID, frame, sizeof(frame), &frame_len) != 0) {
-        return MDC1200_ERROR_FRAME_BUILD_FAILED;
-    }
-
-    return BK4819_TransmitMDC1200Frame(frame, frame_len);
 }
 
 // Updated dispatcher - v7.6.10A: returns int for error reporting
@@ -1992,10 +1966,6 @@ int BK4819_PlayRoger(BK4819_FilterBandwidth_t Bandwidth)
     } else if (gEeprom.ROGER == ROGER_MODE_MDC) {
         BK4819_PlayRogerMDC();
         return MDC1200_ERROR_NONE;
-    } else if (gEeprom.ROGER == ROGER_MODE_MDC_1200) {
-        return BK4819_PlayRogerMDC1200();
-    } else if (gEeprom.ROGER == ROGER_MODE_MDC_1200L) {
-        return BK4819_PlayRogerMDC1200L();
     }
     return MDC1200_ERROR_NONE;
 }

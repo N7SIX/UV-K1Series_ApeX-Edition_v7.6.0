@@ -39,7 +39,9 @@ enum PTT_ID_t {
     PTT_ID_TX_UP,      // BEGIN OF TX
     PTT_ID_TX_DOWN,    // END OF TX
     PTT_ID_BOTH,       // BOTH
-    PTT_ID_APOLLO      // Apolo quindar tones
+    PTT_ID_APOLLO,      // Apolo quindar tones
+    PTT_ID_MDC1200,     // MDC-1200 PTT-ID (key-up burst)
+    PTT_ID_MDC1200L     // MDC-1200L PTT-ID (key-up burst)
 };
 typedef enum PTT_ID_t PTT_ID_t;
 

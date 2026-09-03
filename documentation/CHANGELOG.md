@@ -1,5 +1,33 @@
 # Changelog
 
+## Post-v7.6.10C — MDC-1200 Relocated from Roger Menu to Per-Channel PTT-ID
+
+- **Files:** `App/radio.h`, `App/settings.h`, `App/ui/menu.c`, `App/ui/menu.h`, `App/app/dtmf.c`, `App/radio.c`, `App/app/app.c`, `App/settings.c`, `App/driver/bk4819.c`, `App/driver/bk4829.c`, `App/mdc1200.c`, `App/mdc1200.h`, `CHIRP/n7six.ApeX.chirp.v7.6.10A.py`, `documentation/MDC1200_MENU.md`
+- **PTT-ID menu extended:** `PTT_ID_t` gains `PTT_ID_MDC1200` (5) and `PTT_ID_MDC1200L` (6); `gSubMenu_PTT_ID` grows to `OFF / UP CODE / DOWN CODE / UP+DOWN CODE / APOLLO QUINDAR / MDC-1200 / MDC-1200L`. The 3-bit per-channel `dtmf_pttid` field already stores 0–7, so the channel EEPROM layout is unchanged.
+- **Roger menu reduced:** `ROGER_Mode_t` no longer contains `ROGER_MODE_MDC_1200`/`ROGER_MODE_MDC_1200L`; `gSubMenu_ROGER` is now `OFF / ROGER / MDC`. Settings load clamps legacy EEPROM values 3/4 to `ROGER_MODE_OFF` (`ARRAY_SIZE(gSubMenu_ROGER)` bound) so saved upgrades cannot index past the menu.
+- **TX:** selecting MDC-1200 / MDC-1200L as the channel PTT-ID sends the configured MDC frame (`gEeprom.MDC_UnitID` / `MDC_DefaultOp` / `MDC_DefaultArg`) at end-of-transmission from `RADIO_SendEndOfTransmission()` via `MDC1200_Transmit()` / `MDC1200_TransmitLong()` — same on-air behavior as the former Roger placement, without any auto-firing of the DTMF UP code (`DTMF_Reply()` now skips DTMF for MDC PTT-ID modes).
+- **RX / display:** `RADIO_SetupRegisters()` and the `fskRxFinied` handler in `app.c` now gate the FSK/MDC-1200 demodulator and the decode-display alert pipeline on the RX VFO's PTT-ID mode instead of the global Roger setting, so MDC decode/display follows the channel that selected it.
+- **Chirp:** `PTTID_LIST` and the PTT-ID doc string updated with the two new options (values 5/6).
+- **Result:** full firmware builds & links cleanly (`ApeX` preset, `arm-none-eabi-gcc` 14.3.1, EXIT=0); FLASH 114,408 B (94.68 %).
+
+## Post-v7.6.10C — CW Subsystem Audit, Bug Fixes & Footprint Reduction
+
+- **Files:** `App/app/cw.c`, `App/app/cw.h`, `App/app/cwdecoder.c`, `App/CMakeLists.txt`; deleted `App/app/cwkeyer.c/.h`, `App/app/cwapp.c/.h`, `App/app/cwhardware.c/.h`, `App/app/cwmacro.c/.h`; docs updated (`documentation/CW_IMPLEMENTATION.md` rewritten, stale `CW_DEEP_AUDIT_REPORT.md` retired).
+- **Scope decision:** CW reduced to the core **encode / decode / display** feature set — keyboard-typed message TX and on-air Morse RX decode with text display.
+- **PTT fix:** `CW_ProcessKeys()` no longer sends on press. A PTT tracker (`CW_HandlePttKey()`) reconstructs short/long press from the press/release pair (PTT is handled out-of-band in `app.c` and never produces held events): short press (release < 400 ms, threshold aligned with the keypad's `key_repeat_delay_10ms`) sends on release; long press is ignored; nothing re-fires after transmission. This also eliminates the release-routed TX-abort that cut short-press transmissions.
+- **Decoder fix:** word-gap space flood eliminated via a one-shot `gCW_RxWordGapEmitted` flag (previously one extra space per 10 ms tick during any pause, plus a redundant space on tone rise).
+- **Robustness:** typed-message playback now aborts immediately on TOT (`gTxTimeoutReached`/`gFlagEndTransmission`) instead of re-keying past the timeout; the CW overlay renders the TX snapshot (not the live-editable message) and edit keys are gated while sending.
+- **Footprint reduction:** removed the unreachable macro subsystem (`cwmacro.c` — zero callers for `CW_StartMacroPlayback`/`CW_StartRecording`), the external-paddle keyer stack (`cwkeyer.c`/`cwapp.c`/`cwhardware.c` — iambic A/B, ultimatic, bug, straight key; paddle GPIO/ADC hardware; 1 ms app glue), the semi-automatic bug keyer FSM, dead write-only globals (`gCW_TxDisplayHoldoff_10ms`, `gCW_KeyerManagesPtt`, `gCW_KeyerUsingSD1`, `gCW_FlashlightSending`), unreferenced `CW_PlayDit`/`CW_PlayDah`/`CW_GetTxDisplayTail`, and keyer-only types from `cw.h`. EEPROM layout unchanged; `CW_KEY_INPUT`/`CW_KEYER_MODE` bytes are retained but ignored.
+- **Result:** FLASH 117,372 B (97.14 %) → **114,380 B (94.66 %)**, −2,992 B; RAM 14,656 B (89.45 %) → **14,592 B (89.06 %)**, −64 B. Full firmware builds & links cleanly (`ApeX` preset, `arm-none-eabi-gcc` 14.3.1): EXIT=0.
+
+## Post-v7.6.10C — MDC-1200 Roger Preamble Fix (genuine Motorola sound)
+
+- **Files:** `App/mdc1200.h`, `App/mdc1200.c`, `App/driver/bk4819.c`, `App/driver/bk4829.c`, `tests/test_mdc1200.c`, `documentation/MDC1200_PREAMBLE_ROGER_FIX.md`
+- **Phase-reversal fix (primary):** the FSK sync word `REG_5B` was `0x55AA`; the `0xAA` byte is the 180° phase inversion of `0x55`, embedding a phase flip in the middle of the Roger preamble tone. Real Motorola MDC-1200 decoders read that as end-of-preamble/corruption and fail to lock. All `REG_5B` values are now `0x5555` so the 4-byte sync is phase-continuous `55 55 55 55`.
+- **Double-preamble fix (secondary):** the TX path reloaded the frame's own preamble into the FIFO on top of the 11-byte (7 preamble + 4 sync) the hardware generates, producing 18 (standard) / 38 (long) bytes of `0x55` vs. genuine 7 / 27. New `MDC1200_BuildTxFifoWords()` strips the preamble and appends one `0x55` pad for 16-bit alignment: standard FIFO = 20 bytes (10 words), long FIFO = 40 bytes (20 words).
+- **RF config:** `BK4819_TransmitMDC1200Frame()` in both drivers now uses `MDC1200_BuildTxFifoWords()`; `REG_5D` set per-frame (0x1400 standard / 0x2800 long) and TX hold time adjusted for the corrected on-air length.
+- **Tests:** `tests/test_mdc1200.c` validates `MDC1200_BuildTxFifoWords()` output (leader/payload placement, trailing `0x55` pad, no `0xAA`, word counts, invalid-input errors).
+
 ## Beta v7.6.10C (2026-08-22)
 
 ### MDC-1200 RX Robustness Upgrades

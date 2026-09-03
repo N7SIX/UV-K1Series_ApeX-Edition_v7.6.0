@@ -23,8 +23,6 @@
 #include "scheduler.h"
 #include "globals/ui_globals.h"
 #include "ui/main.h"
-#include <stdio.h>
-#include <string.h>
 
 /* ============================================================================
  * Global State
@@ -52,17 +50,6 @@ MDC_DisplayState_t g_MDC_DisplayState = {
     .dismiss_time = 0,
     .is_emergency = false
 };
-
-/**
- * Status message buffer for UI display.
- * Displayed in status bar, auto-clears after timeout.
- */
-static struct {
-    char message[48];
-    uint32_t timeout_ms;
-    uint32_t expire_time;
-    bool active;
-} g_MDC_StatusMessage = {0};
 
 /**
  * Handler function pointers (dispatch table).
@@ -100,17 +87,6 @@ const char *MDC_GetOpcodeString(uint8_t opcode)
         return opcode_names[opcode];
     }
     return "Unknown";
-}
-
-/* ============================================================================
- * Handler Registration
- * ============================================================================ */
-
-void MDC_RegisterHandler(uint8_t opcode, MDC_OpcodeHandler_t handler)
-{
-    if (opcode < sizeof(g_MDC_Handlers) / sizeof(g_MDC_Handlers[0])) {
-        g_MDC_Handlers[opcode] = handler;
-    }
 }
 
 /* ============================================================================
@@ -172,28 +148,6 @@ static void MDC_TriggerDisplay(bool is_emergency, uint32_t timeout_ms)
 /* ============================================================================
  * Display & Audio Utilities
  * ============================================================================ */
-
-void MDC_DisplayStatusUpdate(const char *message, uint32_t timeout_ms)
-{
-    strncpy(g_MDC_StatusMessage.message, message, sizeof(g_MDC_StatusMessage.message) - 1);
-    g_MDC_StatusMessage.message[sizeof(g_MDC_StatusMessage.message) - 1] = '\0';
-    g_MDC_StatusMessage.timeout_ms = timeout_ms;
-    g_MDC_StatusMessage.expire_time = gGlobalSysTickCounter + (timeout_ms / 10u);
-    g_MDC_StatusMessage.active = true;
-    gUpdateDisplay = true;
-}
-
-void MDC_ShowModal(const char *title, const char *message, uint32_t timeout_ms)
-{
-    /* 
-     * Note: Full modal implementation would go here.
-     * For now, display as status message.
-     * In Phase 3, integrate with UI framework for true modal.
-     */
-    char combined[96];
-    snprintf(combined, sizeof(combined), "%s: %s", title, message);
-    MDC_DisplayStatusUpdate(combined, timeout_ms ? timeout_ms : 3000u);  /* 3s default */
-}
 
 void MDC_PlayAlert(int alert_type)
 {
@@ -284,14 +238,6 @@ void MDC_Handle_Unknown(uint16_t unit_id, uint8_t arg)
 
 void MDC_TimeSlice500ms(void)
 {
-    /* Check if status message should expire */
-    if (g_MDC_StatusMessage.active) {
-        if (gGlobalSysTickCounter >= g_MDC_StatusMessage.expire_time) {
-            g_MDC_StatusMessage.active = false;
-            gUpdateDisplay = true;
-        }
-    }
-
     /* Clear "is_new" flag after display update */
     if (g_MDC_LastRxFrame.is_new) {
         g_MDC_LastRxFrame.is_new = false;
@@ -314,18 +260,6 @@ void MDC_UITimeSlice500ms(void)
         center_line = g_MDC_DisplayState.previous_mode;
         gUpdateDisplay = true;
     }
-}
-
-/* ============================================================================
- * UI Integration (status bar display)
- * ============================================================================ */
-
-const char *MDC_GetStatusMessage(void)
-{
-    if (g_MDC_StatusMessage.active) {
-        return g_MDC_StatusMessage.message;
-    }
-    return NULL;
 }
 
 /* ============================================================================

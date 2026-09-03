@@ -33,6 +33,7 @@
 #include "frequencies.h"
 #include "functions.h"
 #include "helper/battery.h"
+#include "mdc1200.h"
 #include "misc.h"
 #include "radio.h"
 #include "settings.h"
@@ -921,7 +922,8 @@ void RADIO_SetupRegisters(bool switchToForeground)
     // RX expander
     BK4819_SetCompander((gRxVfo->Modulation == MODULATION_FM && gRxVfo->Compander >= 2) ? gRxVfo->Compander : 0);
 
-    if (gEeprom.ROGER == ROGER_MODE_MDC_1200 || gEeprom.ROGER == ROGER_MODE_MDC_1200L)
+    if (gRxVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200 ||
+        gRxVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200L)
     {
         /* Configure BK4819 FSK demodulator for MDC-1200 1200-baud receive */
         BK4819_EnableMDC1200RX();
@@ -1031,7 +1033,7 @@ void RADIO_SetTxParameters(void)
 
     // Clear any FSK/MDC-1200 RX configuration left over from receive mode so the
     // normal FM audio path (REG_58 / REG_70 / REG_59) is restored for TX.
-    // Without this, TX with ROGER_MODE_MDC_1200 produces no audio because the
+    // Without this, TX with PTT_ID_MDC1200 produces no audio because the
     // FSK modulator/Tone-2 path intercepts the mic audio.
     BK4819_DisableMDC1200RX();
 
@@ -1351,6 +1353,27 @@ void RADIO_SendEndOfTransmission(void)
 {
     BK4819_PlayRoger(BK4819_FILTER_BW_NARROW);
     DTMF_SendEndOfTransmission();
+
+    // MDC-1200 PTT-ID (relocated from the Roger menu to the per-channel PTT-ID menu).
+    // Transmit the configured MDC frame at the end of the transmission.
+    if (gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200)
+    {
+        const MDC1200_Params_t mdcParams = {
+            .unit_id = gEeprom.MDC_UnitID,
+            .op      = gEeprom.MDC_DefaultOp,
+            .arg     = gEeprom.MDC_DefaultArg,
+        };
+        MDC1200_Transmit(&mdcParams);
+    }
+    else if (gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200L)
+    {
+        const MDC1200_Params_t mdcParams = {
+            .unit_id = gEeprom.MDC_UnitID,
+            .op      = gEeprom.MDC_DefaultOp,
+            .arg     = gEeprom.MDC_DefaultArg,
+        };
+        MDC1200_TransmitLong(&mdcParams);
+    }
 
     // send the CTCSS/DCS tail tone - allows the receivers to mute the usual FM squelch tail/crash
     RADIO_SendCssTail();

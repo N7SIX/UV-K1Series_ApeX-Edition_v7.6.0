@@ -36,7 +36,7 @@ display alert, and plays an audio alert.
 | 0x06 | Emergency + Opcode | `MDC_Handle_Emergency_WithOp` |
 | 0x07 | Emergency + Acknowledge | `MDC_Handle_Emergency_WithAck` |
 
-Custom handlers can be installed at runtime via `MDC_RegisterHandler(opcode, fn)`.
+Frames are dispatched through a static table in `mdc_handler.c` (`g_MDC_Handlers[]`).
 
 ---
 

@@ -293,22 +293,55 @@ The MDC-1200 menu implementation is complete, safe, and production-ready.
 
 ## Roger Bell Options
 
-The radio exposes Roger Bell behavior via the Roger submenu. These modes share the same 5-byte leader (`07 09 2A 44 6F`) and 14-byte encoded payload; they differ in preamble length and tone:
+The radio exposes Roger Bell behavior via the Roger submenu. As of v7.6.11 the
+MDC-1200 / MDC-1200L signaling modes have been **moved out of the Roger menu** and
+into the per-channel **PTT-ID** menu (see "PTT-ID Options" below). The Roger menu
+now only selects the courtesy-tone behavior:
 
 | Menu entry | EEPROM value | On-air burst |
 |------------|--------------|--------------|
 | `OFF`      | 0            | No courtesy tone |
 | `ROGER`    | 1            | Legacy tone only |
-| `MDC`      | 2            | Status frame + tone |
-| `MDC-1200` | 3            | Standard **26-byte** MDC-1200 burst — 7-byte `0x55` preamble (~37 ms sync) + leader + payload |
-| `MDC-1200L`| 4            | **Long-burst** MDC-1200L — 27-byte composite `0x55` preamble (20-byte extended pretime + 7-byte sync, ~180 ms) + leader + payload (46-byte / 23 FIFO-word frame) |
+| `MDC`      | 2            | Legacy Motorola-style status frame + tone |
 
-### When to use MDC-1200 vs MDC-1200L
+> **Upgrade note:** existing saved configurations with `ROGER` EEPROM value `3`
+> (old `MDC-1200`) or `4` (old `MDC-1200L`) are now clamped to `OFF` on load.
+> Re-select `MDC-1200` / `MDC-1200L` per-channel from the `PTT-ID` menu.
 
-- **`MDC-1200`** (26 B, EEPROM 3): the protocol-minimum burst. Use on local/correlated links where the remote receiver locks quickly; keeps on-air time and spectral occupancy minimal.
-- **`MDC-1200L`** (46 B, EEPROM 4): identical leader + payload, only the `0x55` run is 20 bytes longer. Use for distant repeaters or weak-signal paths where the receiver's hardware sync detector needs extra preamble time to acquire lock.
+## PTT-ID Options
 
-The encoder (`MDC1200_BuildFrame` / `MDC1200_BuildFrameLong`) and decoder (`MDC1200_DecodeFrame`, `MDC1200_DecodeFrameWords`, `MDC1200_VerifyCRC`) handle both lengths. The RF driver (`BK4819_TransmitMDC1200Frame`) programs `REG_5D` (`0x1A` = 26, `0x2E` = 46) and selects TX timing from the frame length automatically.
+MDC-1200 signaling now lives in the PTT-ID submenu (per channel). The new
+options reuse the existing MDC-1200 encoder/decoder and display pipeline:
+
+| Menu entry | EEPROM value | Behavior |
+|------------|--------------|----------|
+| `OFF`      | 0            | No PTT-ID |
+| `UP CODE`  | 1            | Send DTMF UP code at start of TX |
+| `DOWN CODE`| 2            | Send DTMF DOWN code at end of TX |
+| `UP+DOWN CODE` | 3        | Send DTMF UP + DOWN codes |
+| `APOLLO QUINDAR` | 4       | Send Apollo quindar sine tones at start/end |
+| `MDC-1200` | 5            | Send standard **26-byte** MDC-1200 PTT-ID burst at end of TX |
+| `MDC-1200L`| 6            | Send **46-byte** long-burst MDC-1200L PTT-ID at end of TX |
+
+When `MDC-1200` or `MDC-1200L` is selected on a channel, the BK4819 FSK
+demodulator is enabled for that channel's receive path, so incoming MDC frames
+are decoded and displayed (Unit ID / opcode / argument) via the Phase-2/3 MDC
+alert pipeline. The frames are built with the `MDC ID` (Unit ID), opcode and
+argument configured under the `MDC-ID` menu, using `MDC1200_Transmit()` /
+`MDC1200_TransmitLong()` at end-of-transmission.
+
+- **`MDC-1200`** (26 B, EEPROM 5): the protocol-minimum burst. Use on
+  local/correlated links where the remote receiver locks quickly; keeps on-air
+  time and spectral occupancy minimal.
+- **`MDC-1200L`** (46 B, EEPROM 6): identical leader + payload, only the `0x55`
+  run is 20 bytes longer. Use for distant repeaters or weak-signal paths where
+  the receiver's hardware sync detector needs extra preamble time to lock.
+
+The encoder (`MDC1200_BuildFrame` / `MDC1200_BuildFrameLong`) and decoder
+(`MDC1200_DecodeFrame`, `MDC1200_DecodeFrameWords`, `MDC1200_VerifyCRC`)
+handle both lengths. The RF driver (`BK4819_TransmitMDC1200Frame`) programs
+`REG_5D` (`0x14` = 20, `0x28` = 40 TX FIFO bytes) and selects TX timing from the
+frame length automatically.
 
 ---
 

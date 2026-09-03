@@ -388,7 +388,9 @@ const char* const gSubMenu_PTT_ID[] =
     "UP CODE",
     "DOWN CODE",
     "UP+DOWN\nCODE",
-    "APOLLO\nQUINDAR"
+    "APOLLO\nQUINDAR",
+    "MDC-1200",
+    "MDC-1200L"
 };
 
 const char* const gSubMenu_PONMSG[] =
@@ -421,9 +423,7 @@ const char* const gSubMenu_ROGER[] =
 {
     "OFF",
     "ROGER",
-    "MDC",
-    "MDC-1200",
-    "MDC-1200L"
+    "MDC"
 };
 
 const char* const gSubMenu_RESET[] =
