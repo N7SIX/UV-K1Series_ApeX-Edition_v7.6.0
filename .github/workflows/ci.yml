@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential cmake cppcheck clang-tidy
+
+      - name: Configure tests
+        run: cmake -S tests -B build/tests -G "Unix Makefiles"
+
+      - name: Build unit tests
+        run: cmake --build build/tests
+
+      - name: Run unit tests
+        run: ctest --test-dir build/tests --output-on-failure
+
+      - name: Run static analysis
+        run: cmake --build build/tests --target static-analysis

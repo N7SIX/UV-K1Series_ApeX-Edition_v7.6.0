@@ -1,0 +1,32 @@
+# Build outputs (compiled firmware, maps, linker output)
+build/
+*.elf
+*.hex
+*.map
+
+# Native tool artifacts (regenerable from sources in tools/misc)
+*.exe
+
+# IDE / editor
+.vscode/*.json
+.vscode/ipch/
+.idea/
+
+# CMake
+compile_commands.json
+CMakeLists.txt.user
+cmake-build-*/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Archive snapshots (regenerable build artifacts / duplicated source trees — keep only assets/reference/)
+archive/
+
+# NOTE: reference .bin assets ARE deliberately tracked:
+#   assets/reference/stock-firmware/   (stock firmware reference dumps)
+#   assets/reference/releases/         (archived ApeX release binaries)
+#   tools/unbrick_k5_v1/             (bootloader for the unbrick tool)
+#   tools/misc/                        (font bitmaps for the font tool)
+# Do NOT re-add a blanket *.bin ignore rule.
