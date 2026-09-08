@@ -312,6 +312,35 @@ The compiled firmware is generated in `build/ApeX/` with the following files:
 - Each build runs inside Docker, so your host environment remains clean.
 - The firmware package name follows the format: `n7six.ApeX-k1.<version>`
 
+### Restore Points
+
+Each successful build automatically creates a **restore point** — a snapshot of the source tree keyed by the build ID — under `archive/builds/`. This lets you reproduce or audit the exact source that produced a given firmware build (the build ID is visible in the radio's **SysInf → BUILD** field).
+
+To list available restore points:
+
+```bash
+ls archive/builds/
+```
+
+To restore a previous build's source snapshot into a fresh `restored/<build-id>/` directory:
+
+```bash
+tools/restore_from_build_id.sh <build-id>
+```
+
+For example, to restore the source for build ID `b1231c9`:
+
+```bash
+tools/restore_from_build_id.sh b1231c9
+```
+
+You can pass either the short hex build ID (as shown in SysInf) or the full directory name (`build_id-b1231c9`).
+
+> [!NOTE]
+> Restore points are git-ignored and never committed, so they only exist on the machine that created the build. To share a restore point with another machine, copy the corresponding `archive/builds/build_id-<id>/` directory manually.
+>
+> On Windows, these scripts require a bash environment — they work in Git Bash (bundled with [Git for Windows](https://git-scm.com/download/win)) or WSL. If using Docker, you can also run them inside the build container.
+
 ## Flashing the Firmware with UVTools2
 
 You can flash the UV-K5 V3 and UV-K1 directly from your web browser using the cross-platform WebSerial-based [UVTools2](https://armel.github.io/uvtools2/).
