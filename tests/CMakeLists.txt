@@ -62,7 +62,7 @@ add_test(NAME unit_tests COMMAND unit_tests)
 # and CMAKE_SOURCE_DIR are the same, and ../tools still resolves correctly.
 get_filename_component(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
 add_custom_target(static-analysis
-    COMMAND ${REPO_ROOT}/tools/static-analysis/run_static_analysis.sh
+    COMMAND bash ${REPO_ROOT}/tools/static-analysis/run_static_analysis.sh
     WORKING_DIRECTORY ${REPO_ROOT}
     COMMENT "Running static analysis (cppcheck/clang-tidy)..."
 )
