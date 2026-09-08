@@ -54,8 +54,15 @@ add_test(NAME unit_tests COMMAND unit_tests)
 # Static-analysis helper target.
 # Runs cppcheck/clang-tidy via tools/static-analysis/run_static_analysis.sh if available.
 # Intended for CI invocation: cmake --build build --target static-analysis
+#
+# Resolve the repository root robustly: CMAKE_SOURCE_DIR may be the tests/
+# directory (when configured standalone via `cmake -S tests -B build/tests`
+# in CI), so go one level up to locate tools/ at the repo root.
+# When included as a subdirectory of the top-level CMake, the repo root
+# and CMAKE_SOURCE_DIR are the same, and ../tools still resolves correctly.
+get_filename_component(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
 add_custom_target(static-analysis
-    COMMAND ${CMAKE_SOURCE_DIR}/tools/static-analysis/run_static_analysis.sh
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMAND ${REPO_ROOT}/tools/static-analysis/run_static_analysis.sh
+    WORKING_DIRECTORY ${REPO_ROOT}
     COMMENT "Running static analysis (cppcheck/clang-tidy)..."
 )
