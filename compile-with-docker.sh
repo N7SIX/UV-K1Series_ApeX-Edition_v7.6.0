@@ -50,6 +50,7 @@ build_preset() {
   echo "---------------------------------------------"
   docker run --rm \
     -u $(id -u):$(id -g) \
+    -e BUILD_COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)" \
     -it -v "$PWD":/src -w /src "$IMAGE" \
     bash -c "which arm-none-eabi-gcc && arm-none-eabi-gcc --version && \
              cmake --preset ${preset} ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} && \

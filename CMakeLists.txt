@@ -34,6 +34,14 @@ if(GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
     endif()
 endif()
 
+# Allow the build script to inject the commit hash explicitly (e.g. Docker
+# containers where git is not installed): BUILD_COMMIT env var wins over
+# local git detection. Without this, Docker builds fall back to a hex
+# timestamp and the resulting BUILD_ID never matches any git commit.
+if(DEFINED ENV{BUILD_COMMIT} AND NOT "$ENV{BUILD_COMMIT}" STREQUAL "" AND NOT "$ENV{BUILD_COMMIT}" STREQUAL "unknown")
+    set(BUILD_COMMIT "$ENV{BUILD_COMMIT}")
+endif()
+
 if(BUILD_COMMIT STREQUAL "unknown")
     # Use Python to generate a hex timestamp that looks like a git commit hash
     execute_process(
