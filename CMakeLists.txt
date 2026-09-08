@@ -128,6 +128,14 @@ else()
     message("WFI idle sleep disabled")
 endif()
 
+option(ENABLE_FLASH_WRITE_BATCHING "Coalesce settings-save SPI-flash sector writes into a single erase+program (bit-identical flash contents; EEPROM data untouched)" ON)
+if(ENABLE_FLASH_WRITE_BATCHING)
+    target_compile_definitions(${EXE_NAME} PRIVATE ENABLE_FLASH_WRITE_BATCHING)
+    message("Flash write batching (settings save) enabled")
+else()
+    message("Flash write batching (settings save) disabled")
+endif()
+
 # Generate map file using the firmware package file name
 set_target_properties(${EXE_NAME} PROPERTIES OUTPUT_NAME ${FIRMWARE_PACKAGE_NAME})
 target_link_options(${EXE_NAME} PRIVATE "-Wl,-Map=${FIRMWARE_PACKAGE_NAME}.map")

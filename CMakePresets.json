@@ -83,6 +83,7 @@
                 "ENABLE_PA_PROTECTION": true,
                 "ENABLE_FAST_BK4819_SPI": true,
                 "ENABLE_WFI_IDLE": true,
+                "ENABLE_FLASH_WRITE_BATCHING": true,
                 "VERSION_STRING_1": "v0.22",
                 "VERSION_STRING_2": "v7.6.10D",
                 "EDITION_STRING": "ApeX",

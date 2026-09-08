@@ -970,6 +970,14 @@ void SETTINGS_SaveSettings(void)
     uint8_t tmp = 0;
     uint8_t SecBuf[0x50];
 
+#ifdef ENABLE_FLASH_WRITE_BATCHING
+    // Coalesce all SPI-flash sector writes of this save into ONE
+    // erase+program (see PY25Q16_BeginBatch). On-flash bytes and the CRC
+    // are bit-identical to the immediate path; only the number of full
+    // sector erases drops (2-6 today -> 1), cutting save latency and wear.
+    PY25Q16_BeginBatch();
+#endif
+
     // ----------------------
     // 0e70 - 0e80
 
@@ -1260,6 +1268,11 @@ void SETTINGS_SaveSettings(void)
 
 #ifdef ENABLE_FEAT_N7SIX_VOL
     SETTINGS_WriteCurrentVol();
+#endif
+
+#ifdef ENABLE_FLASH_WRITE_BATCHING
+    // Commit the single merged sector erase+program (see SaveSettings top).
+    PY25Q16_EndBatch();
 #endif
 }
 

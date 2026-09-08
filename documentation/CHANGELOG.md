@@ -27,7 +27,8 @@ Performance release from a full deep audit of the driver hot paths: 8× faster d
 
 ### 🔧 Build System
 
-- New CMake options **`ENABLE_FAST_BK4819_SPI`** and **`ENABLE_WFI_IDLE`** (both default ON, added to `CMakePresets.json`). Disabling both rebuilds to the byte-identical v7.6.10C footprint (110,508 B FLASH / 14,144 B RAM).
+- New CMake options **`ENABLE_FAST_BK4819_SPI`**, **`ENABLE_WFI_IDLE`** and **`ENABLE_FLASH_WRITE_BATCHING`** (all default ON, added to `CMakePresets.json`). Disabling them rebuilds to the byte-identical v7.6.10C/v7.6.10D footprints (110,508 B / 110,548 B FLASH · 14,144 B RAM).
+- **Settings-save flash batching (`ENABLE_FLASH_WRITE_BATCHING`, ON):** `SETTINGS_SaveSettings()` now wraps its SPI-flash sector writes in `PY25Q16_BeginBatch()/EndBatch()` (`App/driver/py25q16.c`). All changed blocks of a save are staged in the existing sector cache and committed with a **single** sector erase+program on `EndBatch()` instead of one erase per changed block (2–6 × ~300 ms before → 1 × ~350 ms). Reads of the dirty cached sector are served from RAM so the settings CRC (computed mid-save) sees the in-flight bytes. **On-flash bytes and the CRC are bit-identical** to the immediate path; no EEPROM address, value, layout, or the I²C EEPROM driver are changed — only the number of erase cycles drops (also extends flash life). Power loss mid-save reverts to the last consistent CRC-valid state, same as before.
 - Full audit report: `documentation/PERFORMANCE_AUDIT_v7.6.10D.md` (methodology, hot-path analysis, hardware-validation checklist and additional repository findings).
 
 ### 🧹 Code Hygiene

@@ -24,5 +24,16 @@ void PY25Q16_Init();
 void PY25Q16_ReadBuffer(uint32_t Address, void *pBuffer, uint32_t Size);
 void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, bool Append);
 void PY25Q16_SectorErase(uint32_t Address);
+#ifdef ENABLE_FLASH_WRITE_BATCHING
+// Write-batching helpers (settings-save coalescing).
+// While a batch is open, sectors that would need an erase are only marked
+// dirty in RAM; the erase+program is deferred and performed once by
+// PY25Q16_EndBatch(). This collapses the 2-6 independent sector erases a
+// multi-region settings save used to trigger into a single erase+program.
+// On-flash bytes are bit-identical to the unbatched path; no EEPROM
+// address, value or layout is affected.
+void PY25Q16_BeginBatch(void);
+void PY25Q16_EndBatch(void);
+#endif
 
 #endif

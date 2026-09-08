@@ -103,6 +103,16 @@ Status after the v7.6.10D hygiene pass:
 | 5.4 | Low | Stale Docker-built `build/ApeX` cache (`/src` paths) blocked local configure until deleted | ✅ Resolved — `build/` added to `.gitignore` |
 | 5.5 | Info | `st7565.c`: non-static global `map()` (collision-prone name) and non-static `cmds[]` | ✅ Resolved — `cmds[]` is `static const`, `map()` is `static`, stale public declaration removed from `st7565.h` |
 
+### ⚡ Follow-up (post-v7.6.10D) — two audit items re-examined on request
+
+| # | Severity | Finding (re-verified) | Verdict | Action |
+|---|---|---|---|
+| A1 | High | **Settings save triggers 2–6 full sector erases (~300 ms each).** Re-verified: `SETTINGS_SaveSettings()` writes 5+ blocks + CRC, all inside the same 4-KB sector (`EEPROM_ADDR_*` = `0x00A000–0x00A170`); each changed block erased one by one (the sector cache only coalesces *within* a single `PY25Q16_WriteBuffer` call). No documented "intentional" rationale exists for the multi-erase. | **Real, not intentional** (side effect of write-through design) | ✅ **Implemented** — new `PY25Q16_BeginBatch()/EndBatch()` API + `ENABLE_FLASH_WRITE_BATCHING` CMake option (default ON): a save now stages all writes in the sector cache and commits with **1 erase + 1 program** at `EndBatch()`. Reads of the dirty cached sector are served from RAM so `SETTINGS_UpdateCRC()` sees in-flight bytes. **On-flash bytes/CRC bit-identical; EEPROM (I²C driver, addresses, layout) untouched; power-loss → last CRC-valid state (same as before).** Build-verified: ON = 110,848 B FLASH (+300 B), OFF = 110,548 B (= baseline); RAM unchanged 14,144 B. |
+| A2 | High | **K5Viewer streaming blocks the main loop ~424 ms every 2 s** (1,629 B @ 38,400 baud, per-byte TXE-poll send). | **Intentional & documented** — `App/app/app.c:1682-1688` states a 2 KB TX ring buffer was *evaluated and REJECTED*: "pushed RAM to 99%+ and risked stack overflow on the 16 KB PY32F071. The 2-second signature rate-limit is the approved mitigation." | ⏸️ **Left as designed** — buffered chunking is RAM-infeasible, and a no-buffer "rebuild rows from flash per tick" streamer is a protocol-adjacent rewrite that needs on-hardware validation; recommended as future work with hardware. |
+
+### 5.1 addendum — `archive/` recurred
+`archive/` reappeared on disk (50.8 MB, `build_id-6a9ee5e7` — a *different* build id than the deleted eight, timestamped after the cleanup). It stays **untracked/ignored** (`git ls-files` empty, repo clean); likely a sync/backup tool that should be pointed away from `archive/`.
+
 ---
 
 ## 6. Files changed in v7.6.10D
@@ -123,3 +133,6 @@ Status after the v7.6.10D hygiene pass:
 | `documentation/PERFORMANCE_AUDIT_v7.6.10D.md` | This report |
 | `assets/reference/stock-firmware/` | 3 stock firmware reference dumps moved from `archive/` root |
 | `assets/reference/logos/` | 2 logo PNGs moved from `archive/` root |
+| `App/driver/py25q16.c` / `py25q16.h` | New `PY25Q16_BeginBatch()/EndBatch()` + deferred dirty-sector flush (settings-save batching, `ENABLE_FLASH_WRITE_BATCHING`) |
+| `App/settings.c` | `SETTINGS_SaveSettings()` wrapped in `PY25Q16_BeginBatch()/EndBatch()` |
+| `CMakeLists.txt` / `CMakePresets.json` | New `ENABLE_FLASH_WRITE_BATCHING` option (default ON) |
