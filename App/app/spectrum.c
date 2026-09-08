@@ -2313,12 +2313,33 @@ static bool NextScanStepInterlaced()
 }
 #endif
 
+#ifdef ENABLE_WATERFALL_SMOOTH
+// Push a waterfall row from the current rssiHistory snapshot, gated by the
+// configured row interval. Called at every half-sweep boundary: each half-
+// sweep is a complete pass over the measured range (rssiHistory is indexed
+// by position, not direction), so rows are always coherent full snapshots
+// while the cadence tracks the sweep period instead of the full round trip.
+static void PushWaterfallRow()
+{
+    if (gGlobalSysTickCounter - scanWfLastTick < WATERFALL_GetRowInterval())
+        return;
+    scanWfLastTick = gGlobalSysTickCounter;
+
+    uint16_t wfBars = scanInfo.measurementsCount;
+    if (wfBars == 0)
+        return;
+    if (wfBars > 128)
+        wfBars = 128;
+    WATERFALL_PushRow(rssiHistory, wfBars);
+    redrawScreen = true;
+}
+#endif
+
 static void FinalizeCompletedSweep()
 {
     if (! (scanInfo.measurementsCount >> 7)) // if (scanInfo.measurementsCount < 128)
         memset(&rssiHistory[scanInfo.measurementsCount], 0,
                sizeof(rssiHistory) - scanInfo.measurementsCount * sizeof(rssiHistory[0]));
-
     // Auto-adjust dbMax unless the user has overridden it manually.
     if (manualDbMaxTimer > 0) {
         if (--manualDbMaxTimer == 0)
@@ -2339,20 +2360,10 @@ static void FinalizeCompletedSweep()
     // continuously — kills the gradual brightness "breathing".
     WATERFALL_SetDbRange(settings.dbMin, settings.dbMax);
 
-    // Push the waterfall row HERE, now that rssiHistory holds a COMPLETE
-    // sweep (this restores the design documented in waterfall.h).  The
-    // previous wall-clock timer pushed mid-sweep snapshots: rows containing
-    // half-previous/half-current sweep data, visible as horizontal seams.
-    // The interval gate still paces rows when sweeps complete faster than
-    // the configured row interval.
-    if (gGlobalSysTickCounter - scanWfLastTick >= WATERFALL_GetRowInterval())
-    {
-        scanWfLastTick = gGlobalSysTickCounter;
-        uint16_t wfBars = scanInfo.measurementsCount;
-        if (wfBars > 128) wfBars = 128;
-        WATERFALL_PushRow(rssiHistory, wfBars);
-        redrawScreen = true;
-    }
+    // Second half-sweep (or interlaced sweep) complete: push the row here.
+    // The first half-sweep push happens in UpdateScan(); this covers the
+    // return half and the interlaced path.
+    PushWaterfallRow();
 #endif
 
     // Next full sweep starts from the opposite side to avoid directional bias.
@@ -2411,6 +2422,15 @@ static void UpdateScan()
 
     // End of half-sweep: unlock keypad; Render() fires on its own timer.
     preventKeypress = false;
+
+#ifdef ENABLE_WATERFALL_SMOOTH
+    // First (forward) half-sweep just completed: rssiHistory now holds a
+    // coherent full-range snapshot. Push it so the idle scroll cadence
+    // tracks the half-sweep period (~250 ms) instead of the full round
+    // trip (~500 ms), matching the listen-mode row rate.
+    if (scanReturnPending)
+        PushWaterfallRow();
+#endif
 
     UpdatePeakInfo();
     if (IsPeakOverOpenLevel())
@@ -2616,8 +2636,9 @@ static void Tick()
                 redrawScreen = true;
             }
 #endif
-            // With ENABLE_WATERFALL_SMOOTH, rows are pushed from
-            // FinalizeCompletedSweep() using complete-sweep data instead.
+            // With ENABLE_WATERFALL_SMOOTH, rows are pushed at each
+            // half-sweep boundary (UpdateScan / FinalizeCompletedSweep)
+            // using complete-sweep data instead of this wall-clock timer.
             UpdateScan();
         }
         else if (currentState == STILL)
