@@ -136,3 +136,22 @@ Status after the v7.6.10D hygiene pass:
 | `App/driver/py25q16.c` / `py25q16.h` | New `PY25Q16_BeginBatch()/EndBatch()` + deferred dirty-sector flush (settings-save batching, `ENABLE_FLASH_WRITE_BATCHING`) |
 | `App/settings.c` | `SETTINGS_SaveSettings()` wrapped in `PY25Q16_BeginBatch()/EndBatch()` |
 | `CMakeLists.txt` / `CMakePresets.json` | New `ENABLE_FLASH_WRITE_BATCHING` option (default ON) |
+| `App/app/spectrum.c` | Waterfall smoothing: complete-sweep row pushes, proportional row interval, per-sweep dB remap, atomic waterfall page blit (`ENABLE_WATERFALL_SMOOTH`) |
+| `CMakeLists.txt` / `CMakePresets.json` | New `ENABLE_WATERFALL_SMOOTH` option (default ON) |
+
+---
+
+## 7. Waterfall audit (second pass — UI/UX smoothness)
+
+Full trace of the pipeline: `WATERFALL_PushRow/PushRowListen` → packed 4-bit circular history (128×16) → 4×4 Bayer dither into `gFrameBuffer[5]/[6]` → 1-page-per-tick `ST7565_BlitLine` cycle. The core rendering is sound (Q8 interpolation, listen-mode persistence decay, documented no-ISR invariant). The four issues found were all in the **timing/mapping layers**:
+
+| # | Finding | Root cause | Fix |
+|---|---|---|---|
+| W1 | Mid-sweep tearing: rows pushed on a wall-clock timer independent of sweep position, interpolating across a buffer that is half previous / half current sweep → horizontal seams (worsened by the 3× BK4819 speedup shortening sweeps) | Timer push deviated from the design documented in `waterfall.h` ("Called from FinalizeCompletedSweep()") | Push from `FinalizeCompletedSweep()` using complete-sweep data; interval gate retained for pacing |
+| W2 | Inverted adaptive interval: `DEFAULT × 128 / steps` contradicted its own comment — narrow scans (≤64 steps) got 640 ms/row and repeated identical sweep data | Multiplication/division swapped | `DEFAULT × steps / 128` (320 ms @128 steps → 160 ms @16 steps), same clamps |
+| W3 | Brightness "breathing": `WATERFALL_SetDbRange` applied on *every* new RSSI minimum while history levels are baked at push time → noise floor brightens in visible steps | Continuous remap vs. baked row encoding | Remap applied once per completed sweep (old rows fade out within ~5 s anyway) |
+| W4 | Cross-page tearing: waterfall spans `gFrameBuffer[5]`+`[6]`, blitted 1 page/tick — a render landing between the two page blits shows mixed snapshots for one tick | Incremental blit cycle | Both pages blitted back-to-back immediately after each render (~+0.35 ms) |
+
+**Intentional designs reviewed and left untouched:** listen-mode persistence falloff, `GetRssi()` glitch guard, 1-page/tick incremental blit (cadence), Bayer (vs temporal) dither, 16-row history cap (RAM-bound at 86.33 %), STILL-mode waterfall skip.
+
+**Verified builds:** ON = 110,840 B FLASH (91.73 %) / 14,144 B RAM; OFF = 110,848 B (byte-identical to the pre-waterfall-work baseline). Hardware validation recommended: check waterfall scroll uniformity at narrow scan widths (W2), seam-free rows during active signals (W1), stable noise-floor brightness over a minute of scanning (W3), and sweep the full zoom range.

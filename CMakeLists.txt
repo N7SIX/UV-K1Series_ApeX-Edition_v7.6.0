@@ -136,6 +136,14 @@ else()
     message("Flash write batching (settings save) disabled")
 endif()
 
+option(ENABLE_WATERFALL_SMOOTH "Smoother spectrum waterfall: complete-sweep rows, proportional row interval, per-sweep dB remap, atomic waterfall page blit" ON)
+if(ENABLE_WATERFALL_SMOOTH)
+    target_compile_definitions(${EXE_NAME} PRIVATE ENABLE_WATERFALL_SMOOTH)
+    message("Waterfall smoothing enabled")
+else()
+    message("Waterfall smoothing disabled")
+endif()
+
 # Generate map file using the firmware package file name
 set_target_properties(${EXE_NAME} PROPERTIES OUTPUT_NAME ${FIRMWARE_PACKAGE_NAME})
 target_link_options(${EXE_NAME} PRIVATE "-Wl,-Map=${FIRMWARE_PACKAGE_NAME}.map")

@@ -5,12 +5,12 @@ Release: v7.6.10D — Performance: 8× faster LCD, fast BK4819 I/O, WFI idle sle
 **Target:** UV-K1 Series (BK4819 / BK4829)
 **Toolchain:** arm-none-eabi-gcc 14.3, Release + LTO
 **Base:** v7.6.10C
-**Firmware:** `n7six.ApeX-k1.v7.6.10D.bin` (110,552 B flash, 14,144 B RAM)
+**Firmware:** `n7six.ApeX-k1.v7.6.10D.bin` (110,840 B flash, 14,144 B RAM)
 
 ## [v7.6.10D] — Released 2026-09-07
 
 **Target:** UV-K1 Series (BK4819 / BK4829) · **Base:** v7.6.10C · **Toolchain:** arm-none-eabi-gcc 14.3 (Release, LTO)
-**Firmware:** `n7six.ApeX-k1.v7.6.10D.bin` · **FLASH 110,552 B (91.49 %)** · **RAM 14,144 B (86.33 %)**
+**Firmware:** `n7six.ApeX-k1.v7.6.10D.bin` · **FLASH 110,840 B (91.73 %)** · **RAM 14,144 B (86.33 %)**
 
 Performance release from a full deep audit of the driver hot paths: 8× faster display blits, ~2.5–3× faster BK4819 register I/O and CPU idle sleep. Net cost **+44 B flash**; both optimizations are switchable build options — disabling them rebuilds to the exact v7.6.10C footprint (110,508 B).
 
@@ -27,9 +27,20 @@ Performance release from a full deep audit of the driver hot paths: 8× faster d
 
 ### 🔧 Build System
 
-- New CMake options **`ENABLE_FAST_BK4819_SPI`**, **`ENABLE_WFI_IDLE`** and **`ENABLE_FLASH_WRITE_BATCHING`** (all default ON, added to `CMakePresets.json`). Disabling them rebuilds to the byte-identical v7.6.10C/v7.6.10D footprints (110,508 B / 110,548 B FLASH · 14,144 B RAM).
+- New CMake options **`ENABLE_FAST_BK4819_SPI`**, **`ENABLE_WFI_IDLE`**, **`ENABLE_FLASH_WRITE_BATCHING`** and **`ENABLE_WATERFALL_SMOOTH`** (all default ON, added to `CMakePresets.json`). Disabling them rebuilds to the byte-identical v7.6.10C/v7.6.10D footprints (110,508 B / 110,548 B FLASH · 14,144 B RAM).
 - **Settings-save flash batching (`ENABLE_FLASH_WRITE_BATCHING`, ON):** `SETTINGS_SaveSettings()` now wraps its SPI-flash sector writes in `PY25Q16_BeginBatch()/EndBatch()` (`App/driver/py25q16.c`). All changed blocks of a save are staged in the existing sector cache and committed with a **single** sector erase+program on `EndBatch()` instead of one erase per changed block (2–6 × ~300 ms before → 1 × ~350 ms). Reads of the dirty cached sector are served from RAM so the settings CRC (computed mid-save) sees the in-flight bytes. **On-flash bytes and the CRC are bit-identical** to the immediate path; no EEPROM address, value, layout, or the I²C EEPROM driver are changed — only the number of erase cycles drops (also extends flash life). Power loss mid-save reverts to the last consistent CRC-valid state, same as before.
 - Full audit report: `documentation/PERFORMANCE_AUDIT_v7.6.10D.md` (methodology, hot-path analysis, hardware-validation checklist and additional repository findings).
+
+### 🌊 Waterfall Smoothness (`ENABLE_WATERFALL_SMOOTH`, ON — `App/app/spectrum.c`)
+
+Dedicated waterfall audit (traced push → history → Bayer-dither render → incremental blit). Four fixes, all in the timing/mapping layers — the stored history format, render math and EEPROM layout are untouched:
+
+- **Complete-sweep rows (kills horizontal seams):** scan-mode rows are now pushed from `FinalizeCompletedSweep()` — exactly as `waterfall.h`'s own API documentation always specified — instead of a wall-clock timer that pushed **mid-sweep** snapshots (rows mixing half previous / half current sweep data). The interval gate still paces rows when sweeps complete faster than the configured row interval.
+- **Proportional row interval (fixes inverted formula):** `InitScanPosition()` computed `interval = DEFAULT × 128 / steps`, the **inverse** of its own comment ("narrower scans need *shorter* intervals"): narrow scans (≤64 steps) got the maximum 640 ms/row and repeated identical sweep data. Now `interval = DEFAULT × steps / 128` — 320 ms at 128 steps down to 160 ms at 16 steps, uniform scroll speed at every zoom level.
+- **Per-sweep dB remap (kills brightness "breathing"):** the noise-floor remap (`WATERFALL_SetDbRange`) moved from *every new RSSI minimum* to *once per completed sweep*. Before, the waterfall re-encoded continuously as `dbMin` ratcheted down mid-sweep, brightening the noise floor in visible steps.
+- **Atomic waterfall blit (kills cross-page tearing):** after each render, framebuffer pages 5 & 6 (the waterfall) are sent **back-to-back** on the SPI bus instead of waiting for the 1-page-per-tick cycle — both halves of the waterfall always show the same snapshot (cost ≈ 0.35 ms at the 6 MHz LCD clock).
+
+OFF restores the previous behavior byte-identically. See `documentation/PERFORMANCE_AUDIT_v7.6.10D.md` §7 for the full waterfall audit.
 
 ### 🧹 Code Hygiene
 
