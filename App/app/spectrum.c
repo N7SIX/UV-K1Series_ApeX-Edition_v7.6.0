@@ -125,12 +125,6 @@ static uint16_t interlacePhase = 0;
 // Incremental display: one framebuffer page sent per tick instead of a full
 // BlitFullScreen burst.
 static uint8_t renderPage = 0;
-#ifdef ENABLE_WATERFALL_SMOOTH
-// Set after Render() so the next blit sends both waterfall pages (5,6)
-// back-to-back — guarantees both halves of the waterfall show the same
-// snapshot with no cross-page tearing.
-static bool wfBlitPair = false;
-#endif
 
 // Decoupled render timer: Render() fires every RENDER_PERIOD_TICKS ticks
 // regardless of step count, keeping it above the ~9 Hz flutter-fusion
@@ -694,14 +688,7 @@ static void InitScanPosition()
         if (steps < 16) steps = 16;
         if (steps > 128) steps = 128;
         // Target: ~320ms baseline at 128 steps, scale down to ~160ms at 16 steps
-#ifdef ENABLE_WATERFALL_SMOOTH
-        // Interval proportional to step count: fewer steps = faster sweep =
-        // shorter row interval (matches the comment above; the previous
-        // formula divided instead of multiplied and made narrow scans SLOWER).
-        uint8_t interval = (uint8_t)((WATERFALL_ROW_10MS_DEFAULT * steps) / 128);
-#else
         uint8_t interval = (uint8_t)(WATERFALL_ROW_10MS_DEFAULT * 128 / steps);
-#endif
         if (interval < WATERFALL_ROW_10MS_DEFAULT / 2)
             interval = WATERFALL_ROW_10MS_DEFAULT / 2;
         if (interval > WATERFALL_ROW_10MS_DEFAULT * 2)
@@ -795,13 +782,7 @@ static void UpdateScanInfo()
         if (settings.dbMin > dbMax)
             settings.dbMin = dbMax;
         redrawStatus = true;
-#ifndef ENABLE_WATERFALL_SMOOTH
         WATERFALL_SetDbRange(settings.dbMin, settings.dbMax);
-#endif
-        // With ENABLE_WATERFALL_SMOOTH the waterfall range remap is applied
-        // once per completed sweep (FinalizeCompletedSweep) instead of on
-        // every new minimum — remapping per sample makes the whole waterfall
-        // "breathe" as the noise floor ratchets down mid-sweep.
     }
 }
 
@@ -2313,33 +2294,12 @@ static bool NextScanStepInterlaced()
 }
 #endif
 
-#ifdef ENABLE_WATERFALL_SMOOTH
-// Push a waterfall row from the current rssiHistory snapshot, gated by the
-// configured row interval. Called at every half-sweep boundary: each half-
-// sweep is a complete pass over the measured range (rssiHistory is indexed
-// by position, not direction), so rows are always coherent full snapshots
-// while the cadence tracks the sweep period instead of the full round trip.
-static void PushWaterfallRow()
-{
-    if (gGlobalSysTickCounter - scanWfLastTick < WATERFALL_GetRowInterval())
-        return;
-    scanWfLastTick = gGlobalSysTickCounter;
-
-    uint16_t wfBars = scanInfo.measurementsCount;
-    if (wfBars == 0)
-        return;
-    if (wfBars > 128)
-        wfBars = 128;
-    WATERFALL_PushRow(rssiHistory, wfBars);
-    redrawScreen = true;
-}
-#endif
-
 static void FinalizeCompletedSweep()
 {
     if (! (scanInfo.measurementsCount >> 7)) // if (scanInfo.measurementsCount < 128)
         memset(&rssiHistory[scanInfo.measurementsCount], 0,
                sizeof(rssiHistory) - scanInfo.measurementsCount * sizeof(rssiHistory[0]));
+
     // Auto-adjust dbMax unless the user has overridden it manually.
     if (manualDbMaxTimer > 0) {
         if (--manualDbMaxTimer == 0)
@@ -2353,18 +2313,6 @@ static void FinalizeCompletedSweep()
             newMax = 10;
         settings.dbMax = newMax;
     }
-
-#ifdef ENABLE_WATERFALL_SMOOTH
-    // Apply the noise-floor remap once per completed sweep (not per sample)
-    // so stored rows are re-encoded in coherent steps instead of drifting
-    // continuously — kills the gradual brightness "breathing".
-    WATERFALL_SetDbRange(settings.dbMin, settings.dbMax);
-
-    // Second half-sweep (or interlaced sweep) complete: push the row here.
-    // The first half-sweep push happens in UpdateScan(); this covers the
-    // return half and the interlaced path.
-    PushWaterfallRow();
-#endif
 
     // Next full sweep starts from the opposite side to avoid directional bias.
     scanStartFromLeft = !scanStartFromLeft;
@@ -2422,15 +2370,6 @@ static void UpdateScan()
 
     // End of half-sweep: unlock keypad; Render() fires on its own timer.
     preventKeypress = false;
-
-#ifdef ENABLE_WATERFALL_SMOOTH
-    // First (forward) half-sweep just completed: rssiHistory now holds a
-    // coherent full-range snapshot. Push it so the idle scroll cadence
-    // tracks the half-sweep period (~250 ms) instead of the full round
-    // trip (~500 ms), matching the listen-mode row rate.
-    if (scanReturnPending)
-        PushWaterfallRow();
-#endif
 
     UpdatePeakInfo();
     if (IsPeakOverOpenLevel())
@@ -2621,7 +2560,6 @@ static void Tick()
     {
         if (currentState == SPECTRUM)
         {
-#ifndef ENABLE_WATERFALL_SMOOTH
             // Waterfall row push at adaptive intervals, independent of sweep
             // completion.  Uses SysTick hardware counter for wall-clock timing
             // so scan-mode tick overhead doesn't make it slower than listen mode.
@@ -2635,10 +2573,6 @@ static void Tick()
                 WATERFALL_PushRow(rssiHistory, wfBars);
                 redrawScreen = true;
             }
-#endif
-            // With ENABLE_WATERFALL_SMOOTH, rows are pushed at each
-            // half-sweep boundary (UpdateScan / FinalizeCompletedSweep)
-            // using complete-sweep data instead of this wall-clock timer.
             UpdateScan();
         }
         else if (currentState == STILL)
@@ -2665,35 +2599,12 @@ static void Tick()
         #endif
         redrawScreen = false;
         renderTimer = 0;
-#ifdef ENABLE_WATERFALL_SMOOTH
-        wfBlitPair = true;  // push both waterfall pages to the LCD together
-#endif
     }
 
-#ifdef ENABLE_WATERFALL_SMOOTH
-    // Send one framebuffer page to the display per tick (~47 Hz full refresh).
-    // Right after a render, send BOTH waterfall pages back-to-back so the
-    // top (gFrameBuffer[5]) and bottom (gFrameBuffer[6]) halves of the
-    // waterfall can never show snapshots from different renders.
-    if (wfBlitPair)
-    {
-        wfBlitPair = false;
-        ST7565_BlitLine(WATERFALL_PAGE0_IDX);
-        ST7565_BlitLine(WATERFALL_PAGE1_IDX);
-        renderPage = (WATERFALL_PAGE1_IDX + 1) % FRAME_LINES;
-    }
-    else
-    {
-        ST7565_BlitLine(renderPage);
-        if (++renderPage >= FRAME_LINES)
-            renderPage = 0;
-    }
-#else
     // Send one framebuffer page to the display per tick (~47 Hz full refresh).
     ST7565_BlitLine(renderPage);
     if (++renderPage >= FRAME_LINES)
         renderPage = 0;
-#endif
 }
 
 void APP_RunSpectrum()

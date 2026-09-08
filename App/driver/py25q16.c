@@ -42,17 +42,6 @@ static uint32_t SectorCacheAddr = 0x1000000;
 static uint8_t SectorCache[SECTOR_SIZE];
 static uint8_t BlackHole[4] __attribute__((aligned(4)));
 static volatile bool TC_Flag;
-#ifdef ENABLE_FLASH_WRITE_BATCHING
-// Settings-save write batching: while a batch is open, changed bytes are
-// staged in SectorCache and the sector erase+program is deferred to one
-// flush (single 300 ms erase per save instead of one per changed block).
-// Reads of the cached dirty sector are served from RAM so a read-modify
-// cycle inside the batch (e.g. SETTINGS_UpdateCRC) sees the in-flight data.
-static uint8_t SectorBatchDepth;
-static bool SectorCacheDirty;
-static bool SectorCacheNeedErase;
-static void PY25Q16_FlushSector(void);
-#endif
 
 static inline void CS_Assert()
 {
@@ -238,29 +227,6 @@ void PY25Q16_Init()
 
 void PY25Q16_ReadBuffer(uint32_t Address, void *pBuffer, uint32_t Size)
 {
-#ifdef ENABLE_FLASH_WRITE_BATCHING
-    // Inside an open batch, serve reads that fall entirely within the
-    // dirty cached sector from RAM: they see exactly the bytes that will be
-    // programmed at EndBatch(). SETTINGS_UpdateCRC() depends on this to
-    // compute the CRC over the new settings before they hit the flash.
-    if (SectorBatchDepth > 0 && SectorCacheDirty)
-    {
-        if (Address >= SectorCacheAddr && Address <= SectorCacheAddr + SECTOR_SIZE &&
-            Address + Size <= SectorCacheAddr + SECTOR_SIZE)
-        {
-            memcpy(pBuffer, SectorCache + (Address - SectorCacheAddr), Size);
-            return;
-        }
-        // Partially overlapping (or spanning) read: commit the pending
-        // sector first so the flash read below never sees stale data.
-        if (Address < SectorCacheAddr + SECTOR_SIZE &&
-            Address + Size > SectorCacheAddr)
-        {
-            PY25Q16_FlushSector();
-        }
-    }
-#endif
-
     CS_Assert();
 
     SPI_WriteByte(0x03);      // Send read command
@@ -311,76 +277,44 @@ void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, b
 
         if (SecAddr != SectorCacheAddr)
         {
-#ifdef ENABLE_FLASH_WRITE_BATCHING
-            // Leaving a dirty sector (e.g. mid-batch sector switch, or an
-            // external writer racing the deferred settings save): commit it
-            // now so no pending change is silently dropped.
-            if (SectorCacheDirty)
-                PY25Q16_FlushSector();
-#endif
             PY25Q16_ReadBuffer(SecAddr, SectorCache, SECTOR_SIZE);
             SectorCacheAddr = SecAddr;
-#ifdef ENABLE_FLASH_WRITE_BATCHING
-            SectorCacheDirty = false;
-            SectorCacheNeedErase = false;
-#endif
         }
 
         if (0 != memcmp(pBuffer, (char *)SectorCache + SecOffset, SecSize))
         {
-#ifdef ENABLE_FLASH_WRITE_BATCHING
-            if (SectorBatchDepth > 0 && !Append)
+            bool Erase = false;
+            for (uint32_t i = 0; i < SecSize; i++)
             {
-                // Deferred path: stage the new bytes, remember whether any
-                // overwritten byte was already programmed (needs an erase).
-                for (uint32_t i = 0; i < SecSize; i++)
+                if (0xff != SectorCache[SecOffset + i])
                 {
-                    if (0xff != SectorCache[SecOffset + i])
-                    {
-                        SectorCacheNeedErase = true;
-                        break;
-                    }
+                    Erase = true;
+                    break;
                 }
-
-                memcpy(SectorCache + SecOffset, pBuffer, SecSize);
-                SectorCacheDirty = true;
             }
-            else
-#endif
+
+            memcpy(SectorCache + SecOffset, pBuffer, SecSize);
+
+            if (Erase)
             {
-                bool Erase = false;
-                for (uint32_t i = 0; i < SecSize; i++)
+                SectorErase(SecAddr);
+
+                // CRITICAL FIX #2: Erase takes ~300ms, must complete before program starts
+                WaitWIP();
+
+                if (Append)
                 {
-                    if (0xff != SectorCache[SecOffset + i])
-                    {
-                        Erase = true;
-                        break;
-                    }
-                }
-
-                memcpy(SectorCache + SecOffset, pBuffer, SecSize);
-
-                if (Erase)
-                {
-                    SectorErase(SecAddr);
-
-                    // CRITICAL FIX #2: Erase takes ~300ms, must complete before program starts
-                    WaitWIP();
-
-                    if (Append)
-                    {
-                        SectorProgram(SecAddr, SectorCache, SecOffset + SecSize);
-                        memset(SectorCache + SecOffset + SecSize, 0xff, SECTOR_SIZE - SecOffset - SecSize);
-                    }
-                    else
-                    {
-                        SectorProgram(SecAddr, SectorCache, SECTOR_SIZE);
-                    }
+                    SectorProgram(SecAddr, SectorCache, SecOffset + SecSize);
+                    memset(SectorCache + SecOffset + SecSize, 0xff, SECTOR_SIZE - SecOffset - SecSize);
                 }
                 else
                 {
-                    SectorProgram(Address, pBuffer, SecSize);
+                    SectorProgram(SecAddr, SectorCache, SECTOR_SIZE);
                 }
+            }
+            else
+            {
+                SectorProgram(Address, pBuffer, SecSize);
             }
         }
 
@@ -463,11 +397,6 @@ static void WriteEnable()
 
 static void SectorErase(uint32_t Addr)
 {
-#ifdef ENABLE_FLASH_WRITE_BATCHING
-    // Never erase behind a deferred settings-save sector: commit it first.
-    if (SectorCacheDirty)
-        PY25Q16_FlushSector();
-#endif
 #ifdef DEBUG
     printf("spi flash sector erase: %06x\n", Addr);
 #endif
@@ -502,50 +431,6 @@ static void SectorProgram(uint32_t Addr, const uint8_t *Buf, uint32_t Size)
         Size1 = PAGE_SIZE;
     }
 }
-
-#ifdef ENABLE_FLASH_WRITE_BATCHING
-// Commit a deferred (batched) sector: one erase (only if any overwritten
-// byte was already programmed) + one full-sector program. Programming the
-// whole 4 KB cache is idempotent for untouched pages (they are replayed
-// with their exact current bytes), so the final on-flash state is
-// bit-identical to the immediate (unbatched) write path.
-static void PY25Q16_FlushSector(void)
-{
-    if (!SectorCacheDirty)
-        return;
-
-    // Commit from here on: clear the pending state FIRST so the defensive
-    // flush guard inside SectorErase() cannot re-enter this function
-    // (single-threaded main loop, so no writer can add bytes in between).
-    SectorCacheDirty = false;
-    const bool needErase = SectorCacheNeedErase;
-    SectorCacheNeedErase = false;
-
-    WaitWIP();
-
-    if (needErase)
-    {
-        SectorErase(SectorCacheAddr);
-        WaitWIP();
-    }
-
-    SectorProgram(SectorCacheAddr, SectorCache, SECTOR_SIZE);
-
-    WaitWIP();
-}
-
-void PY25Q16_BeginBatch(void)
-{
-    if (SectorBatchDepth < 255)
-        SectorBatchDepth++;
-}
-
-void PY25Q16_EndBatch(void)
-{
-    if (SectorBatchDepth > 0 && --SectorBatchDepth == 0)
-        PY25Q16_FlushSector();
-}
-#endif
 
 static void PageProgram(uint32_t Addr, const uint8_t *Buf, uint32_t Size)
 {

@@ -103,16 +103,6 @@ Status after the v7.6.10D hygiene pass:
 | 5.4 | Low | Stale Docker-built `build/ApeX` cache (`/src` paths) blocked local configure until deleted | ✅ Resolved — `build/` added to `.gitignore` |
 | 5.5 | Info | `st7565.c`: non-static global `map()` (collision-prone name) and non-static `cmds[]` | ✅ Resolved — `cmds[]` is `static const`, `map()` is `static`, stale public declaration removed from `st7565.h` |
 
-### ⚡ Follow-up (post-v7.6.10D) — two audit items re-examined on request
-
-| # | Severity | Finding (re-verified) | Verdict | Action |
-|---|---|---|---|
-| A1 | High | **Settings save triggers 2–6 full sector erases (~300 ms each).** Re-verified: `SETTINGS_SaveSettings()` writes 5+ blocks + CRC, all inside the same 4-KB sector (`EEPROM_ADDR_*` = `0x00A000–0x00A170`); each changed block erased one by one (the sector cache only coalesces *within* a single `PY25Q16_WriteBuffer` call). No documented "intentional" rationale exists for the multi-erase. | **Real, not intentional** (side effect of write-through design) | ✅ **Implemented** — new `PY25Q16_BeginBatch()/EndBatch()` API + `ENABLE_FLASH_WRITE_BATCHING` CMake option (default ON): a save now stages all writes in the sector cache and commits with **1 erase + 1 program** at `EndBatch()`. Reads of the dirty cached sector are served from RAM so `SETTINGS_UpdateCRC()` sees in-flight bytes. **On-flash bytes/CRC bit-identical; EEPROM (I²C driver, addresses, layout) untouched; power-loss → last CRC-valid state (same as before).** Build-verified: ON = 110,848 B FLASH (+300 B), OFF = 110,548 B (= baseline); RAM unchanged 14,144 B. |
-| A2 | High | **K5Viewer streaming blocks the main loop ~424 ms every 2 s** (1,629 B @ 38,400 baud, per-byte TXE-poll send). | **Intentional & documented** — `App/app/app.c:1682-1688` states a 2 KB TX ring buffer was *evaluated and REJECTED*: "pushed RAM to 99%+ and risked stack overflow on the 16 KB PY32F071. The 2-second signature rate-limit is the approved mitigation." | ⏸️ **Left as designed** — buffered chunking is RAM-infeasible, and a no-buffer "rebuild rows from flash per tick" streamer is a protocol-adjacent rewrite that needs on-hardware validation; recommended as future work with hardware. |
-
-### 5.1 addendum — `archive/` recurred
-`archive/` reappeared on disk (50.8 MB, `build_id-6a9ee5e7` — a *different* build id than the deleted eight, timestamped after the cleanup). It stays **untracked/ignored** (`git ls-files` empty, repo clean); likely a sync/backup tool that should be pointed away from `archive/`.
-
 ---
 
 ## 6. Files changed in v7.6.10D
@@ -133,25 +123,3 @@ Status after the v7.6.10D hygiene pass:
 | `documentation/PERFORMANCE_AUDIT_v7.6.10D.md` | This report |
 | `assets/reference/stock-firmware/` | 3 stock firmware reference dumps moved from `archive/` root |
 | `assets/reference/logos/` | 2 logo PNGs moved from `archive/` root |
-| `App/driver/py25q16.c` / `py25q16.h` | New `PY25Q16_BeginBatch()/EndBatch()` + deferred dirty-sector flush (settings-save batching, `ENABLE_FLASH_WRITE_BATCHING`) |
-| `App/settings.c` | `SETTINGS_SaveSettings()` wrapped in `PY25Q16_BeginBatch()/EndBatch()` |
-| `CMakeLists.txt` / `CMakePresets.json` | New `ENABLE_FLASH_WRITE_BATCHING` option (default ON) |
-| `App/app/spectrum.c` | Waterfall smoothing: complete-sweep row pushes, proportional row interval, per-sweep dB remap, atomic waterfall page blit (`ENABLE_WATERFALL_SMOOTH`) |
-| `CMakeLists.txt` / `CMakePresets.json` | New `ENABLE_WATERFALL_SMOOTH` option (default ON) |
-
----
-
-## 7. Waterfall audit (second pass — UI/UX smoothness)
-
-Full trace of the pipeline: `WATERFALL_PushRow/PushRowListen` → packed 4-bit circular history (128×16) → 4×4 Bayer dither into `gFrameBuffer[5]/[6]` → 1-page-per-tick `ST7565_BlitLine` cycle. The core rendering is sound (Q8 interpolation, listen-mode persistence decay, documented no-ISR invariant). The four issues found were all in the **timing/mapping layers**:
-
-| # | Finding | Root cause | Fix |
-|---|---|---|---|
-| W1 | Mid-sweep tearing: rows pushed on a wall-clock timer independent of sweep position, interpolating across a buffer that is half previous / half current sweep → horizontal seams (worsened by the 3× BK4819 speedup shortening sweeps) | Timer push deviated from the design documented in `waterfall.h` (complete-sweep rows) | Push at **each half-sweep boundary** (first half in `UpdateScan()` when `scanReturnPending`, second half in `FinalizeCompletedSweep()` via `PushWaterfallRow()`); interval gate retained for pacing. *Regression note: the first fix attempt pushed only from `FinalizeCompletedSweep()` — once per full round trip (~500 ms) — which halved the idle scroll speed (observed on hardware); corrected to per-half-sweep (~250 ms), restoring listen-mode-matching cadence.* |
-| W2 | Inverted adaptive interval: `DEFAULT × 128 / steps` contradicted its own comment — narrow scans (≤64 steps) got 640 ms/row and repeated identical sweep data | Multiplication/division swapped | `DEFAULT × steps / 128` (320 ms @128 steps → 160 ms @16 steps), same clamps |
-| W3 | Brightness "breathing": `WATERFALL_SetDbRange` applied on *every* new RSSI minimum while history levels are baked at push time → noise floor brightens in visible steps | Continuous remap vs. baked row encoding | Remap applied once per completed sweep (old rows fade out within ~5 s anyway) |
-| W4 | Cross-page tearing: waterfall spans `gFrameBuffer[5]`+`[6]`, blitted 1 page/tick — a render landing between the two page blits shows mixed snapshots for one tick | Incremental blit cycle | Both pages blitted back-to-back immediately after each render (~+0.35 ms) |
-
-**Intentional designs reviewed and left untouched:** listen-mode persistence falloff, `GetRssi()` glitch guard, 1-page/tick incremental blit (cadence), Bayer (vs temporal) dither, 16-row history cap (RAM-bound at 86.33 %), STILL-mode waterfall skip.
-
-**Verified builds:** ON = 110,840 B FLASH (91.73 %) / 14,144 B RAM; OFF = 110,848 B (byte-identical to the pre-waterfall-work baseline). Hardware validation recommended: check waterfall scroll uniformity at narrow scan widths (W2), seam-free rows during active signals (W1), stable noise-floor brightness over a minute of scanning (W3), and sweep the full zoom range.
