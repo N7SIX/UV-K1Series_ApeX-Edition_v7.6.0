@@ -82,7 +82,14 @@ void    CW_Render(void);
 void    CW_SendMessage(void);
 void    CW_AppendChar(char c);
 void    CW_DeleteChar(void);
+
+#ifdef ENABLE_FEAT_N7SIX_CW
 bool    CW_IsActive(void);
+#else
+// Feature disabled: no CW state exists. Inline fallback so that the many
+// unguarded call sites compile unchanged and the checks optimize away.
+static inline bool CW_IsActive(void) { return false; }
+#endif
 
 // Global systick counter (from scheduler.c)
 extern volatile uint32_t gGlobalSysTickCounter;

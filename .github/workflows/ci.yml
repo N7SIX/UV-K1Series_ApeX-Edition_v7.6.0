@@ -1,4 +1,4 @@
-name: CI
+name: Sean, N7SIX
 
 on:
   push:
@@ -28,3 +28,40 @@ jobs:
 
       - name: Run static analysis
         run: cmake --build build/tests --target static-analysis
+
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ARM toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build gcc-arm-none-eabi python3
+
+      - name: Build firmware (ApeX full profile)
+        run: |
+          cmake --preset ApeX
+          cmake --build build/ApeX
+
+      - name: Size gate (ApeX full profile)
+        run: python3 tools/ci/check_size.py build/ApeX/*.elf
+
+      - name: Build firmware (ApeX-minimal profile)
+        run: |
+          cmake --preset ApeX-minimal
+          cmake --build build/ApeX-minimal
+
+      - name: Size gate (ApeX-minimal profile)
+        run: python3 tools/ci/check_size.py build/ApeX-minimal/*.elf
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          if-no-files-found: error
+          path: |
+            build/ApeX/*.bin
+            build/ApeX/*.hex
+            build/ApeX-minimal/*.bin
+            build/ApeX-minimal/*.hex

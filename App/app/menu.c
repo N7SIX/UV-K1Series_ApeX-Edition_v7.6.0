@@ -16,9 +16,7 @@
 
 #include <string.h>
 
-#if !defined(ENABLE_OVERLAY)
-    #include "py32f0xx.h"
-#endif
+#include "py32f0xx.h"
 #include "app/dtmf.h"
 #include "app/generic.h"
 #include "app/menu.h"
@@ -28,6 +26,9 @@
 #include "driver/backlight.h"
 #include "driver/bk4819.h"
 #include "driver/eeprom.h"
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+#include "driver/py25q16.h"
+#endif
 #include "driver/gpio.h"
 #include "driver/keyboard.h"
 #include "frequencies.h"
@@ -35,9 +36,6 @@
 #include "misc.h"
 #include "settings.h"
 #include "../driver/st7565.h"
-#if defined(ENABLE_OVERLAY)
-    #include "sram-overlay.h"
-#endif
 #include "ui/inputbox.h"
 #include "ui/menu.h"
 #include "ui/ui.h"
@@ -2054,11 +2052,11 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 
                         MENU_AcceptSetting();
 
-                        #if defined(ENABLE_OVERLAY)
-                            overlay_FLASH_RebootToBootloader();
-                        #else
-                            NVIC_SystemReset();
-                        #endif
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+                        // Persist a dirty sector before the reset.
+                        PY25Q16_FlushPendingWrite();
+#endif
+                        NVIC_SystemReset();
                     }
 
                     gFlagAcceptSetting  = true;

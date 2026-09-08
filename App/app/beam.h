@@ -49,5 +49,11 @@ void ACTION_Beam(void);
 void BEAM_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld);
 void BEAM_StorePacket(void);
 
+#else // !ENABLE_FEAT_N7SIX_BEAM
+
+// Feature disabled: fold the flag to a constant so that call sites in
+// app.c compile unchanged (the checks are optimized away entirely).
+#define gBeamActive (false)
+
 #endif // ENABLE_FEAT_N7SIX_BEAM
 #endif // APP_BEAM_H

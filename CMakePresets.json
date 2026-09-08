@@ -88,12 +88,46 @@
                 "EDITION_STRING": "ApeX",
                 "TARGET": "n7six.ApeX-k1.v7.6.10D"
             }
+        },
+        {
+            "name": "ApeX-minimal",
+            "inherits": "ApeX",
+            "binaryDir": "${sourceDir}/build/ApeX-minimal",
+            "cacheVariables": {
+                "ENABLE_SPECTRUM": false,
+                "ENABLE_KEEP_MEM_NAME": false,
+                "ENABLE_AUDIO_BAR": false,
+                "ENABLE_RSSI_BAR": false,
+                "ENABLE_FEAT_N7SIX_CW": false,
+                "ENABLE_FEAT_N7SIX_SCREENSHOT": false,
+                "ENABLE_FEAT_N7SIX_SPECTRUM": false,
+                "ENABLE_FEAT_N7SIX_AUDIO_SCOPE": false,
+                "ENABLE_FEAT_N7SIX_QRCODE": false,
+                "ENABLE_FEAT_N7SIX_RXTX_LOG": false,
+                "ENABLE_FEAT_N7SIX_RXTX_LOG_K5VIEWER": false,
+                "ENABLE_FEAT_N7SIX_K5VIEWER": false,
+                "ENABLE_FEAT_N7SIX_BEAM": false,
+                "ENABLE_FEAT_N7SIX_LOGO": false,
+                "ENABLE_FEAT_N7SIX_LOGO_SAV": false,
+                "ENABLE_USB": false
+            }
         }
     ],
     "buildPresets": [
         {
             "name": "ApeX",
             "configurePreset": "ApeX"
+        },
+        {
+            "name": "ApeX-minimal",
+            "configurePreset": "ApeX-minimal"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "host-tests",
+            "configurePreset": "ApeX",
+            "hidden": true
         }
     ]
 }

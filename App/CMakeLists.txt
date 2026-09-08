@@ -86,6 +86,11 @@ target_compile_definitions(App INTERFACE
 # EEPROM integrity: CRC-16 checksum for power-loss protection
 option(ENABLE_EEPROM_CRC "Enable CRC-16 checksum for EEPROM settings integrity" ON)
 
+# Flash writes: defer the ~300ms sector erase out of key handlers into the
+# 10ms time slice; coalesces multiple saves into a single erase cycle
+option(ENABLE_DEFERRED_FLASH_WRITES "Defer flash sector erase+program to the 10ms time slice (coalesced write-back cache)" ON)
+enable_feature(ENABLE_DEFERRED_FLASH_WRITES)
+
 if(NOT SQL_TONE)
     set(SQL_TONE 550) # For SA818, use 600 and python3 sa818.py --port /dev/ttyS2 radio --frequency 434.975 --ctcss 71.9 --tail Open
 endif()
@@ -94,7 +99,7 @@ target_compile_definitions(App INTERFACE SQL_TONE=${SQL_TONE})
 if(ENABLE_AIRCOPY OR ENABLE_UART OR ENABLE_USB OR ENABLE_EEPROM_CRC)
     target_sources(App INTERFACE 
         driver/crc.c
-        driver/eeprom_compat.c
+        driver/eeprom.c
     )
 endif()
 

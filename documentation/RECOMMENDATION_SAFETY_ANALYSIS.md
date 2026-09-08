@@ -274,7 +274,7 @@ The following recommendations were reviewed for EEPROM/calibration/logic safety 
 | Centralize frequency clamp | ✅ **IMPLEMENTED** | `FREQUENCIES_ClampGlobal()` / `FREQUENCIES_ClampToBand()` in `frequencies.c:19-30` + `F_MIN`/`F_MAX` in `frequencies.h:32-33` |
 | Stack painting | ⏳ Deferred | Requires linker script verification |
 | BK4819 readback in DEBUG | ⏳ Deferred | Requires register read-safety audit |
-| I2C EEPROM write-verify | ⏳ Deferred | Requires `eeprom_compat.c` integration + static buffer |
+| EEPROM write-verify | ⏳ Deferred | Requires `driver/eeprom.c` (flash-backed, formerly `eeprom_compat.c`) + static buffer |
 | IWDG watchdog | ⏳ Deferred | Requires timeout testing on all code paths |
 | Global accessor migration | ❌ NOT SAFE | Requires staged rollout over multiple releases |
 

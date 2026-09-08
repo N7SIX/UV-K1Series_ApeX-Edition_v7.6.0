@@ -40,6 +40,10 @@
 
 static uint32_t SectorCacheAddr = 0x1000000;
 static uint8_t SectorCache[SECTOR_SIZE];
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+static bool SectorDirty;             // SectorCache holds un-flushed data
+static bool LastFlushVerified = true;
+#endif
 static uint8_t BlackHole[4] __attribute__((aligned(4)));
 static volatile bool TC_Flag;
 
@@ -248,6 +252,27 @@ void PY25Q16_ReadBuffer(uint32_t Address, void *pBuffer, uint32_t Size)
     }
 
     CS_Release();
+
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+    // Coherency: if a deferred (not yet flushed) write modified the sector
+    // currently held in SectorCache, serve the overlapping range from the
+    // cache so callers observe the data they wrote, even though the flash
+    // still holds the old image.
+    if (SectorDirty)
+    {
+        const uint32_t CachedEnd = SectorCacheAddr + SECTOR_SIZE;
+        const uint32_t ReadEnd   = Address + Size;
+        const uint32_t Start     = (Address > SectorCacheAddr) ? Address : SectorCacheAddr;
+        const uint32_t End       = (ReadEnd < CachedEnd) ? ReadEnd : CachedEnd;
+
+        if (Start < End)
+        {
+            memcpy((uint8_t *)pBuffer + (Start - Address),
+                   SectorCache + (Start - SectorCacheAddr),
+                   End - Start);
+        }
+    }
+#endif
 }
 
 void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, bool Append)
@@ -277,6 +302,14 @@ void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, b
 
         if (SecAddr != SectorCacheAddr)
         {
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+            // Evicting a dirty sector from the cache: write it back first,
+            // otherwise the pending data would be lost.
+            if (SectorDirty)
+            {
+                PY25Q16_FlushPendingWrite();
+            }
+#endif
             PY25Q16_ReadBuffer(SecAddr, SectorCache, SECTOR_SIZE);
             SectorCacheAddr = SecAddr;
         }
@@ -297,6 +330,17 @@ void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, b
 
             if (Erase)
             {
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+                // Defer the ~300ms erase + reprogram to
+                // PY25Q16_FlushPendingWrite(). The complete new sector image
+                // is in SectorCache; all writes to this sector until the next
+                // flush are coalesced into a single erase cycle.
+                // (Append semantics collapse: the flush programs the full
+                // sector from the cache, and programming 0xff over erased
+                // cells is a no-op on NOR flash, so the resulting image is
+                // identical.)
+                SectorDirty = true;
+#else
                 SectorErase(SecAddr);
 
                 // CRITICAL FIX #2: Erase takes ~300ms, must complete before program starts
@@ -311,6 +355,7 @@ void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, b
                 {
                     SectorProgram(SecAddr, SectorCache, SECTOR_SIZE);
                 }
+#endif
             }
             else
             {
@@ -334,12 +379,87 @@ void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, b
 void PY25Q16_SectorErase(uint32_t Address)
 {
     Address -= (Address % SECTOR_SIZE);
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+    // Don't lose unrelated pending data when erasing a different sector.
+    if (SectorDirty && SectorCacheAddr != Address)
+    {
+        PY25Q16_FlushPendingWrite();
+    }
+#endif
     SectorErase(Address);
     if (SectorCacheAddr == Address)
     {
         memset(SectorCache, 0xff, SECTOR_SIZE);
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+        SectorDirty = false;    // the dirty data was intentionally wiped
+#endif
     }
 }
+
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+// Write back a dirty SectorCache to flash: one erase cycle (~300ms) +
+// full-sector program + read-back verify with one retry.
+// Called from the 10ms time slice (after UI rendering) and before
+// reboot/power-loss-critical transitions. See py25q16.h.
+void PY25Q16_FlushPendingWrite(void)
+{
+    if (!SectorDirty)
+    {
+        return;
+    }
+
+    for (uint8_t attempt = 0; attempt < 2; attempt++)
+    {
+        bool ok = true;
+        uint8_t VerifyBuf[64];  // small stack chunk: no extra static RAM
+
+        SectorErase(SectorCacheAddr);
+        WaitWIP();
+        SectorProgram(SectorCacheAddr, SectorCache, SECTOR_SIZE);
+
+        for (uint32_t Off = 0; Off < SECTOR_SIZE; Off += sizeof(VerifyBuf))
+        {
+            PY25Q16_ReadBuffer(SectorCacheAddr + Off, VerifyBuf, sizeof(VerifyBuf));
+            if (memcmp(VerifyBuf, SectorCache + Off, sizeof(VerifyBuf)) != 0)
+            {
+                ok = false;
+                break;
+            }
+        }
+
+        if (ok)
+        {
+            LastFlushVerified = true;
+            SectorDirty = false;
+            return;
+        }
+    }
+
+    LastFlushVerified = false;
+}
+
+bool PY25Q16_HasPendingWrite(void)
+{
+    return SectorDirty;
+}
+
+bool PY25Q16_LastFlushVerified(void)
+{
+    return LastFlushVerified;
+}
+#else
+void PY25Q16_FlushPendingWrite(void)
+{
+}
+bool PY25Q16_HasPendingWrite(void)
+{
+    return false;
+}
+bool PY25Q16_LastFlushVerified(void)
+{
+    return true;
+}
+#endif
 
 static inline void WriteAddr(uint32_t Addr)
 {

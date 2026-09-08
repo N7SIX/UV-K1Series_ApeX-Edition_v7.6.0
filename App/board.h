@@ -20,9 +20,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/** @brief Initialize flash memory interface. */
-void     BOARD_FLASH_Init(void);
-
 /** @brief Initialize GPIO pins. */
 void     BOARD_GPIO_Init(void);
 

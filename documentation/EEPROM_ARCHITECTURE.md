@@ -12,7 +12,7 @@
 
 This firmware has **two distinct persistent storage systems** that are often confused:
 
-### 1. I2C EEPROM (`driver/eeprom.c`)
+### 1. I2C EEPROM (legacy — original `driver/eeprom.c` I2C implementation, see git history)
 
 ```c
 EEPROM_ReadBuffer(uint16_t Address, void *pBuffer, uint8_t Size);
@@ -24,7 +24,7 @@ EEPROM_WriteBuffer(uint16_t Address, const void *pBuffer);
 - **Purpose:** Unknown — may be used for quick-access settings or boot-critical data
 - **NOT the same as PY25Q16 settings storage**
 
-### 2. PY25Q16 SPI Flash (`driver/eeprom_compat.c`)
+### 2. PY25Q16 SPI Flash (`driver/eeprom.c` — formerly `eeprom_compat.c`)
 
 ```c
 EEPROM_ReadBuffer(uint16_t Address, void *pBuffer, uint8_t Size);
@@ -66,7 +66,7 @@ Physical PY25Q16    Virtual EEPROM    Content                    Size
 
 ---
 
-## How `eeprom_compat.c` Works
+## How `eeprom.c` Works (flash-backed implementation, formerly `eeprom_compat.c`)
 
 ### AddrTranslate() — Virtual to Physical Mapping
 
@@ -127,13 +127,15 @@ Reads do take a `Size` parameter and handle cross-boundary reads correctly.
 
 ### Where to add verify
 
-**NOT in `driver/eeprom.c`** (I2C layer) — that's a separate chip of unknown purpose.
+**IN `driver/eeprom.c`** — this is where all settings writes actually go.
 
-**IN `driver/eeprom_compat.c`** — this is where all settings writes actually go.
+(The former I2C-based implementation that lived in `driver/eeprom.c` was removed on
+2026-09-08 when the flash-backed implementation was merged into it from the old
+`eeprom_compat.c`; the original I2C code is preserved in git history.)
 
 ### How it would work
 
-Since `eeprom_compat.c` already writes in fixed 8-byte chunks, verify is straightforward:
+Since `eeprom.c` already writes in fixed 8-byte chunks, verify is straightforward:
 
 ```c
 static uint8_t verify_buf[8];  // Static — no stack usage
@@ -186,11 +188,11 @@ void EEPROM_WriteBuffer(uint16_t Address, const void *pBuffer)
 
 ## Conclusion
 
-**Write-verify in `eeprom_compat.c` is SAFE and does NOT affect EEPROM mapping.**
+**Write-verify in `eeprom.c` (flash-backed implementation, formerly `eeprom_compat.c`) is SAFE and does NOT affect EEPROM mapping.**
 
 The mapping is a read-only translation table. Write-verify reads back the same physical location that was just written. The only behavioral change is:
 1. Slightly longer write time (one extra 8-byte read per save)
 2. Potential retry write on mismatch (adds at most 1 extra write per save)
 3. Persistent error counter on double-failure
 
-**Recommendation update:** The P1 recommendation should specify `eeprom_compat.c` as the target, not `eeprom.c`. The I2C EEPROM layer is a separate system of unknown purpose and should not be modified without first determining its actual role in the firmware.
+**Recommendation update:** The P1 recommendation should specify `driver/eeprom.c` as the target — it now holds the flash-backed implementation (formerly `eeprom_compat.c`). The legacy I2C EEPROM layer was removed from the source tree on 2026-09-08 (see git history); it should not be reintroduced without first determining its actual role in the firmware.

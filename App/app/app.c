@@ -26,10 +26,16 @@
 #endif
 #ifdef ENABLE_FEAT_N7SIX_BEAM
     #include "app/beam.h"
+#else
+    // beam.h provides a constant gBeamActive fallback when the feature is off
+    #include "app/beam.h"
 #endif
 #include "app/app.h"
 #include "app/chFrScanner.h"
 #ifdef ENABLE_FEAT_N7SIX_CW
+    #include "app/cw.h"
+#else
+    // cw.h provides an inline CW_IsActive() fallback when the feature is off
     #include "app/cw.h"
 #endif
 #include "app/dtmf.h"
@@ -73,6 +79,9 @@
 #endif
 #include "driver/bk4819.h"
 #include "driver/gpio.h"
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+    #include "driver/py25q16.h"
+#endif
 #include "driver/keyboard.h"
 #include "driver/st7565.h"
 #include "driver/system.h"
@@ -86,9 +95,6 @@
 #include "radio.h"
 #include "settings.h"
 
-#if defined(ENABLE_OVERLAY)
-    #include "sram-overlay.h"
-#endif
 #include "ui/battery.h"
 #include "ui/helper.h"
 #include "ui/inputbox.h"
@@ -1705,6 +1711,13 @@ void APP_TimeSlice10ms(void)
 
     SETTINGS_SaveVfoIndicesFlush();
 
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+    // Write back any dirty flash sector from a deferred settings/channel
+    // save. Runs after the VFO flush so both land in one 10ms tick; the
+    // potential ~300ms erase must not run before the UI has rendered.
+    PY25Q16_FlushPendingWrite();
+#endif
+
     BACKLIGHT_Update();
 
     gFlashLightBlinkCounter++;
@@ -1838,6 +1851,17 @@ void APP_TimeSlice10ms(void)
     // screen saver, display update) so that the potential ~300ms
     // sector erase does not stall the UI.
     RXTX_LOG_FlushPendingWrite();
+#endif
+
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+    // Write back any flash sector dirtied by a deferred save (settings,
+    // channels, VFO indices, scanlists...), also AFTER the UI rendering so
+    // the ~300ms erase never stalls the display, and skipped entirely while
+    // transmitting so TX timing is untouched.
+    if (gCurrentFunction != FUNCTION_TRANSMIT)
+    {
+        PY25Q16_FlushPendingWrite();
+    }
 #endif
 
     // Skipping authentic device checks
@@ -2134,11 +2158,10 @@ void APP_TimeSlice500ms(void)
 
         if (gBatteryCurrent > 500 || gBatteryCalibration[3] < gBatteryCurrentVoltage)
         {
-            #ifdef ENABLE_OVERLAY
-                overlay_FLASH_RebootToBootloader();
-            #else
-                NVIC_SystemReset();
-            #endif
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+            PY25Q16_FlushPendingWrite();
+#endif
+            NVIC_SystemReset();
         }
 
         return;

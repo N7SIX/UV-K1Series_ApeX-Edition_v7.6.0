@@ -52,6 +52,9 @@
 
 #ifdef ENABLE_FEAT_N7SIX_CW
     #include "app/cw.h"
+#else
+    // cw.h provides an inline CW_IsActive() fallback when the feature is off
+    #include "app/cw.h"
 #endif
 
 center_line_t center_line = CENTER_LINE_NONE;

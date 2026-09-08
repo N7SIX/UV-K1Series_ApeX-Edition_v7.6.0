@@ -21,6 +21,9 @@
 #include "driver/bk4819.h"
 #include "driver/crc.h"
 #include "driver/eeprom.h"
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+#include "driver/py25q16.h"
+#endif
 #include "frequencies.h"
 #include "misc.h"
 #include "radio.h"
@@ -291,6 +294,11 @@ void AIRCOPY_StorePacket(void)
     {
         EEPROM_WriteBuffer(Offset + (i * 8), pData + (i * 8));
     }
+
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+    // Make the received block durable before ACKing it over the air.
+    PY25Q16_FlushPendingWrite();
+#endif
 
     AIRCOPY_CheckComplete(&gAirCopyBlockNumber);
 }

@@ -17,9 +17,7 @@
 
 #include <string.h>
 
-#if !defined(ENABLE_OVERLAY)
-    #include "py32f0xx.h"
-#endif
+#include "py32f0xx.h"
 #ifdef ENABLE_FMRADIO
     #include "app/fm.h"
 #endif
@@ -30,6 +28,9 @@
 #include "driver/bk4819.h"
 #include "driver/crc.h"
 #include "driver/eeprom.h"
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+#include "driver/py25q16.h"
+#endif
 #include "driver/gpio.h"
 
 #if defined(ENABLE_UART)
@@ -44,10 +45,6 @@
 #include "misc.h"
 #include "settings.h"
 #include "version.h"
-
-#if defined(ENABLE_OVERLAY)
-    #include "sram-overlay.h"
-#endif
 
 #define UNUSED(x) (void)(x)
 
@@ -477,6 +474,12 @@ static void CMD_051D(uint32_t Port, const uint8_t *pBuffer)
             SETTINGS_InitEEPROM();
     }
 
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+    // Clone writes must be durable before the ACK leaves the radio, so the
+    // host immediately re-reads what it just wrote.
+    PY25Q16_FlushPendingWrite();
+#endif
+
     SendReply(Port, &Reply, sizeof(Reply));
 }
 
@@ -855,11 +858,10 @@ void UART_HandleCommand(uint32_t Port)
 #endif
 
         case 0x05DD: // reset
-            #if defined(ENABLE_OVERLAY)
-                overlay_FLASH_RebootToBootloader();
-            #else
-                NVIC_SystemReset();
-            #endif
+#ifdef ENABLE_DEFERRED_FLASH_WRITES
+            PY25Q16_FlushPendingWrite();
+#endif
+            NVIC_SystemReset();
             break;
 
 #ifdef ENABLE_UART_RW_BK_REGS

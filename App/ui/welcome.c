@@ -61,12 +61,16 @@ void UI_DisplayLogo(void)
 }
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX_QRCODE
+#if defined(ENABLE_FEAT_N7SIX_QRCODE) || defined(ENABLE_FEAT_N7SIX_MEM)
 // QR code (version 4, 33x33 modules, EC level L) encoding:
 // https://n7six.github.io/MyProfile/
 // Stored in framebuffer column-major format: 5 fb-lines x 33 columns.
 // Each byte packs 8 vertical pixels (bit 0 = top). Last fb-line uses
 // only bit 0 (row 32); bits 1..7 are always 0.
+
+// NOTE: this whole region (QR bitmaps + flash/RAM usage helpers +
+// UI_GetMemPercents) is shared with the ENABLE_FEAT_N7SIX_MEM menu page,
+// which calls UI_GetMemPercents(). Guarded for either feature.
 
 static const uint8_t BITMAP_QR_GitHub_Compressed[137] = {
     0x7F, 0x41, 0x5D, 0x5D, 0x5D, 0x41, 0x7F, 0x00, 0x6F, 0x8B, 0x47,

@@ -166,9 +166,11 @@ KEY_Code_t KEYBOARD_Poll(void)
     // Note: gKeyFromSerial is NOT cleared here — it stays set so that
     // CheckKeys() can see it for multiple polls (needed for debounce).
     // CheckKeys() clears it via KEYBOARD_ConsumeSerialKey() after processing.
+#ifdef ENABLE_FEAT_N7SIX_SCREENSHOT
     if (gKeyFromSerial != KEY_INVALID) {
         return gKeyFromSerial;
     }
+#endif
 
     // Scan all 5 columns - j=0 reads side keys (all columns high),
     // j=1..4 scans the 4x4 key matrix columns.

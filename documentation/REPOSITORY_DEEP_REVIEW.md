@@ -224,14 +224,14 @@ SRAM Layout:
   0x20002000  - C stack (grows downward, total 16 KB SRAM)
 ```
 
-### 4.6 I2C EEPROM (driver/eeprom.c)
+### 4.6 EEPROM (update 2026-09-08: driver/eeprom.c now holds the flash-backed impl, formerly eeprom_compat.c; see git history for the original I2C code)
 
 An **external I2C EEPROM** (address 0xA0 read=0xA1, 2-byte addressing) stores persistent settings:
 ```c
 EEPROM_ReadBuffer(uint16_t Address, void *pBuffer, uint8_t Size);
 EEPROM_WriteBuffer(uint16_t Address, const void *pBuffer);
 ```
-There is also `eeprom_compat.c` bridging the I2C EEPROM API to the internal `SETTINGS_*` API.
+> **2026-09-08 update:** `driver/eeprom.c` now contains the flash-backed implementation (merged from the former `eeprom_compat.c`); the I2C-EEPROM code is preserved in git history.
 
 ### 4.7 External SPI Flash (PY25Q16)
 
