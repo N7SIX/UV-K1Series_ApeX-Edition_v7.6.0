@@ -26,6 +26,7 @@
 #include "driver/backlight.h"
 #include "scheduler.h"
 #include "frequencies.h"
+#include "helper/battery.h"
 #include "ui/helper.h"
 #include "ui/main.h"
 
@@ -1580,9 +1581,11 @@ static void DrawStatus()
     BOARD_ADC_GetBatteryInfo(&gBatteryVoltages[gBatteryCheckCounter++ % 4],
                              &gBatteryCurrent);
 
-    uint16_t voltage = (gBatteryVoltages[0] + gBatteryVoltages[1] +
-                        gBatteryVoltages[2] + gBatteryVoltages[3]) /
-                       4 * 760 / gBatteryCalibration[3];
+    const uint16_t raw_voltage = (gBatteryVoltages[0] + gBatteryVoltages[1] +
+                                  gBatteryVoltages[2] + gBatteryVoltages[3]) / 4;
+    const uint16_t voltage = BATTERY_CalibrateRaw(raw_voltage,
+                                                  gBatteryCalibration[0],
+                                                  gBatteryCalibration[3]);
 
     unsigned perc = BATTERY_VoltsToPercent(voltage);
 

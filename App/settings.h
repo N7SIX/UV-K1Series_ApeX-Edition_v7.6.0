@@ -32,7 +32,8 @@
 #define EEPROM_ADDR_FM_SETTINGS        0x00A020u  // FM settings (4 bytes)
 #define EEPROM_ADDR_FM_CHANNELS        0x00A028u  // FM memory channels (128 bytes)
 #define EEPROM_ADDR_EXTENDED_SETTINGS  0x00A0A8u  // Extended settings (128 bytes)
-#define EEPROM_ADDR_BATTERY_CALIB      0x00A0B9u  // Battery calibration (7 bytes)
+#define BATTERY_CALIB_FLASH_ADDR       0x010140u  // PY25Q16 physical address (12 bytes)
+#define BATTERY_CALIB_FLASH_SIZE       12u
 #define EEPROM_ADDR_LOGO_LINES         0x00A0C8u  // Logo/display lines (32 bytes)
 #define EEPROM_ADDR_WELCOME0           0x00A0C8u  // Welcome string 0 (16 bytes, alias)
 #define EEPROM_ADDR_WELCOME1           0x00A0D8u  // Welcome string 1 (16 bytes)

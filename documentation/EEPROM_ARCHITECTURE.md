@@ -64,6 +64,20 @@ Physical PY25Q16    Virtual EEPROM    Content                    Size
 0x011000-0x012000  (unmapped)          Boot logo (128×64 bitmap)   1 KB
 ```
 
+BatCal uses the existing calibration region without changing its address:
+
+```text
+Physical PY25Q16 address: 0x010140
+Calibration-region offset: 0x0140
+Mapped virtual address:    0x00B140 (when using the virtual calibration map)
+Record size:               12 bytes (0x010140-0x01014B)
+```
+
+The old `EEPROM_ADDR_BATTERY_CALIB` definition at virtual address `0x00A0B9`
+was stale metadata and did not match the firmware read/write path. It has been
+removed from the active settings header; the physical address above is the
+authoritative BatCal mapping.
+
 ---
 
 ## How `eeprom.c` Works (flash-backed implementation, formerly `eeprom_compat.c`)

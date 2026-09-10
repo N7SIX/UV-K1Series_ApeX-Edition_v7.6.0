@@ -51,6 +51,21 @@ target_compile_definitions(unit_tests PRIVATE
 
 add_test(NAME unit_tests COMMAND unit_tests)
 
+add_executable(batcal_math_tests
+    test_batcal_math.c
+    ../App/helper/battery_calibration.c
+)
+
+target_include_directories(batcal_math_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../App/helper
+)
+
+target_compile_options(batcal_math_tests PRIVATE
+    -Wall -Wextra -Wconversion -Wshadow
+)
+
+add_test(NAME batcal_math_tests COMMAND batcal_math_tests)
+
 # Static-analysis helper target.
 # Runs cppcheck/clang-tidy via tools/static-analysis/run_static_analysis.sh if available.
 # Intended for CI invocation: cmake --build build --target static-analysis

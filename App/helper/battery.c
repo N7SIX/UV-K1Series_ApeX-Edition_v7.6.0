@@ -129,18 +129,39 @@ unsigned int BATTERY_VoltsToPercent(const unsigned int voltage_10mV)
     return 0;
 }
 
+bool BATTERY_IsCriticalVoltage(const BATTERY_Type_t battery_type,
+                               const uint16_t voltage_10mV)
+{
+    switch (battery_type)
+    {
+        case BATTERY_TYPE_1600_MAH:
+        case BATTERY_TYPE_2200_MAH:
+        case BATTERY_TYPE_1500_MAH:
+            return voltage_10mV <= 630;
+
+        case BATTERY_TYPE_3500_MAH:
+            return voltage_10mV <= 600;
+
+        case BATTERY_TYPE_2500_MAH:
+            return voltage_10mV <= 623;
+
+        default:
+            return false;
+    }
+}
+
 void BATTERY_GetReadings(const bool bDisplayBatteryLevel)
 {
     const uint8_t  PreviousBatteryLevel = gBatteryDisplayLevel;
     const uint16_t Voltage              = (gBatteryVoltages[0] + gBatteryVoltages[1] + gBatteryVoltages[2] + gBatteryVoltages[3]) / 4;
 
-    gBatteryVoltageAverage = (Voltage * 760) / gBatteryCalibration[3];
+    gBatteryVoltageAverage = BATTERY_CalibrateRaw(Voltage,
+                                                  gBatteryCalibration[0],
+                                                  gBatteryCalibration[3]);
 
     if(gBatteryVoltageAverage > 890)
         gBatteryDisplayLevel = 7; // battery overvoltage
-    else if(gBatteryVoltageAverage < 630 && (gEeprom.BATTERY_TYPE == BATTERY_TYPE_1600_MAH || gEeprom.BATTERY_TYPE == BATTERY_TYPE_2200_MAH))
-        gBatteryDisplayLevel = 0; // battery critical
-    else if(gBatteryVoltageAverage < 600 && (gEeprom.BATTERY_TYPE == BATTERY_TYPE_3500_MAH))
+    else if(BATTERY_IsCriticalVoltage(gEeprom.BATTERY_TYPE, gBatteryVoltageAverage))
         gBatteryDisplayLevel = 0; // battery critical
     else {
         gBatteryDisplayLevel = 1;

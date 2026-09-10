@@ -621,13 +621,47 @@ void SETTINGS_LoadCalibration(void)
     memcpy(gEEPROM_RSSI_CALIB[1], gEEPROM_RSSI_CALIB[0], 8);
     memcpy(gEEPROM_RSSI_CALIB[2], gEEPROM_RSSI_CALIB[0], 8);
 
-    // 0x1F40
-    PY25Q16_ReadBuffer(0x010000 + 0x140, gBatteryCalibration, 12);
-    if (gBatteryCalibration[0] >= 5000)
+    // Physical PY25Q16: 0x010140 (offset 0x140 in the calibration region)
+    PY25Q16_ReadBuffer(BATTERY_CALIB_FLASH_ADDR,
+                       gBatteryCalibration, BATTERY_CALIB_FLASH_SIZE);
+
+    // ---- Battery calibration format migration (V1 -> V2) ----
+    // V1 (legacy single-point) stored slot3 = raw ADC at ~7.6V and displayed
+    // `raw * 760 / slot3`. The 2-point model needs slot3 = raw ADC at ~8.4V.
+    // The swap is one-time (guarded by a marker in slot2, which legacy code
+    // never used) and preserves every existing calibration: for the linear
+    // divider, raw(8.4V) = raw(7.6V) * 840/760 exactly.
+    bool batteryCalibrationChanged = false;
+
+    if (gBatteryCalibration[2] != BATCAL_FORMAT_V2)
     {
-        gBatteryCalibration[0] = 1900;
-        gBatteryCalibration[1] = 2000;
+        if (gBatteryCalibration[3] == 0 || gBatteryCalibration[3] >= 5000)
+            gBatteryCalibration[3] = 2210;      // ~8.4V equivalent of the ~2000@7.6V factory default
+        else
+            gBatteryCalibration[3] = (uint16_t)((840ul * gBatteryCalibration[3]) / 760);
+
+        gBatteryCalibration[0] = 0;             // V1 slot0 was never a real 6.0V calibration
+        gBatteryCalibration[2] = BATCAL_FORMAT_V2;
+        batteryCalibrationChanged = true;
     }
+
+    if (gBatteryCalibration[3] < BATCAL_HIGH_MIN_RAW ||
+        gBatteryCalibration[3] > BATCAL_HIGH_MAX_RAW)
+    {
+        gBatteryCalibration[3] = 2210;
+        batteryCalibrationChanged = true;
+    }
+
+    if (gBatteryCalibration[0] != 0 &&
+        !BATTERY_CalibrationPointsValid(gBatteryCalibration[0], gBatteryCalibration[3]))
+    {
+        gBatteryCalibration[0] = 0;
+        batteryCalibrationChanged = true;
+    }
+
+    if (batteryCalibrationChanged)
+        SETTINGS_SaveBatteryCalibration(gBatteryCalibration);
+
     gBatteryCalibration[5] = 2300;
 
     #ifdef ENABLE_VOX
@@ -1336,8 +1370,9 @@ void SETTINGS_SaveChannel(uint16_t Channel, uint8_t VFO, const VFO_Info_t *pVFO,
 
 void SETTINGS_SaveBatteryCalibration(const uint16_t * batteryCalibration)
 {
-    // 0x1F40
-    PY25Q16_WriteBuffer(0x010000 + 0x140, batteryCalibration, 12, false);
+    // Physical PY25Q16: 0x010140 (offset 0x140 in the calibration region)
+    PY25Q16_WriteBuffer(BATTERY_CALIB_FLASH_ADDR,
+                        batteryCalibration, BATTERY_CALIB_FLASH_SIZE, false);
 }
 
 void SETTINGS_SaveChannelName(uint16_t channel, const char * name)

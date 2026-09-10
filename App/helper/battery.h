@@ -20,7 +20,22 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "battery_calibration.h"
+
 extern uint16_t          gBatteryCalibration[6];
+/*
+ * gBatteryCalibration[] storage format (V2).
+ *   [0]  raw ADC at ~6.0V   (0 = low point not calibrated -> single-point fallback)
+ *   [1]  reserved
+ *   [2]  BATCAL_FORMAT_V2 marker (format sentinel - legacy code never used slot 2)
+ *   [3]  raw ADC at ~8.4V   (high point reference)
+ *   [4]  reserved
+ *   [5]  legacy, forced to 2300 on load
+ * Legacy (V1) firmware stored slot3 as the raw ADC at ~7.6V under the old
+ * `raw * 760 / slot3` display formula. SETTINGS_LoadCalibration() migrates
+ * V1 blocks to V2 once (slot3 *= 840/760, slot0 cleared) so existing
+ * calibrations keep reading correctly in the 2-point model.
+ */
 extern uint16_t          gBatteryCurrentVoltage;
 extern uint16_t          gBatteryCurrent;
 extern uint16_t          gBatteryVoltages[4];
@@ -45,6 +60,7 @@ typedef enum {
 
 
 unsigned int BATTERY_VoltsToPercent(unsigned int voltage_10mV);
+bool BATTERY_IsCriticalVoltage(BATTERY_Type_t battery_type, uint16_t voltage_10mV);
 void BATTERY_GetReadings(bool bDisplayBatteryLevel);
 void BATTERY_TimeSlice500ms(void);
 

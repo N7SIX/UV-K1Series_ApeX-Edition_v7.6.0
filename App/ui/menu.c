@@ -748,6 +748,13 @@ uint8_t UI_MENU_GetMenuIdx(uint8_t id)
 
 int32_t gSubMenuSelection;
 
+// BatCal is a 2-in-1 nested editor: "Cal Lo" (~6.0V) and "Cal Hi" (~8.4V)
+// are selected INSIDE the MENU_BATCAL sub-menu. gBatCalStage walks the user
+// picker(0) -> Factory/Custom picker(1) -> numeric value edit(2);
+// gBatCalTarget selects which calibration slot the numeric stage edits.
+uint8_t gBatCalStage;     // 0 = Lo/Hi picker, 1 = Factory/Custom picker (Lo only), 2 = numeric edit
+uint8_t gBatCalTarget;    // 0 = Cal Lo (gBatteryCalibration[0], ~6.0V), 1 = Cal Hi (gBatteryCalibration[3], ~8.4V)
+
 // edit box
 char    edit_original[17]; // a copy of the text before editing so that we can easily test for changes/difference
 char    edit[17];
@@ -809,6 +816,47 @@ static void UI_MENU_DrawTopRightRoundedBadge(const char *text, const uint8_t lin
     }
 
     UI_PrintStringSmallNormalInverse(text, text_x, 0, line);
+}
+
+// Menus whose value is a plain number quantity (not a string list). While the
+// user is typing digits in one of these, the value display is replaced with a
+// "1__0"-style fill-in template so partial input is obvious and the expected
+// digit count is visible.
+static bool UI_MENU_IsNumericEntry(const int menu_id)
+{
+    switch (menu_id)
+    {
+        case MENU_SQL:
+        case MENU_MIC:
+        case MENU_SAVE:
+        case MENU_VOX:
+        case MENU_TOT:
+        case MENU_AUTOLK:
+        case MENU_SC_REV:
+        case MENU_RP_STE:
+        case MENU_ABR:
+        case MENU_ABR_MIN:
+        case MENU_ABR_MAX:
+        case MENU_BATCAL:
+        case MENU_D_PRE:
+        #ifdef ENABLE_DTMF_CALLING
+        case MENU_D_HOLD:
+        case MENU_D_LIST:
+        #endif
+        #ifdef ENABLE_FEAT_N7SIX_SLEEP
+        case MENU_SET_OFF:
+        #endif
+        #ifdef ENABLE_FEAT_N7SIX_VOL
+        case MENU_SET_VOL:
+        #endif
+        #ifdef ENABLE_FEAT_N7SIX_CTR
+        case MENU_SET_CTR:
+        #endif
+            return true;
+
+        default:
+            return false;
+    }
 }
 
 void UI_DisplayMenu(void)
@@ -970,7 +1018,12 @@ void UI_DisplayMenu(void)
             }
             else
             {
+                // F-2: gSubMenu_SET_PWR[] only exists in N7SIX builds
+#ifdef ENABLE_FEAT_N7SIX
                 sprintf(String, "%s\n%sW", gSubMenu_TXP[gSubMenuSelection], gSubMenu_SET_PWR[gSubMenuSelection - 1]);
+#else
+                strcpy(String, gSubMenu_TXP[gSubMenuSelection]);
+#endif
             }
             break;
 
@@ -1352,7 +1405,10 @@ void UI_DisplayMenu(void)
             if (!gIsDtmfContactValid)
                 strcpy(String, "NULL");
             else
+            {
                 memcpy(String, Contact, 8);
+                String[8] = '\0';   // F-5: contact name may fill all 8 bytes - keep String terminated
+            }
             break;
 #endif
 
@@ -1520,8 +1576,79 @@ void UI_DisplayMenu(void)
 
         case MENU_BATCAL:
         {
-            const uint16_t vol = (uint32_t)gBatteryVoltageAverage * gBatteryCalibration[3] / gSubMenuSelection;
-            sprintf(String, "%u.%02uV\n%u", vol / 100, vol % 100, gSubMenuSelection);
+            if (!gIsInSubMenu)
+            {   // menu-list preview: live calibrated voltage and high-point value
+                sprintf(String, "%u.%02uV\n%u", gBatteryVoltageAverage / 100,
+                        gBatteryVoltageAverage % 100, gSubMenuSelection);
+                break;
+            }
+
+            if (gBatCalStage == 0)
+            {   // Pick the reference point to edit.
+                const uint16_t loVal     = (gBatteryCalibration[0] > 0) ? gBatteryCalibration[0] : MENU_BatCalLowPreset();
+                const bool     loFactory = (loVal == MENU_BatCalLowPreset());
+                sprintf(String, "%cHi 8.40V", gSubMenuSelection == 0 ? '>' : ' ');
+                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 1);
+                sprintf(String, " %4u", gBatteryCalibration[3]);
+                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 2);
+                sprintf(String, "%cLo 6.00V", gSubMenuSelection == 1 ? '>' : ' ');
+                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 4);
+                sprintf(String, " %4u %s", loVal, loFactory ? "AUTO" : "CUST");
+                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 5);
+                already_printed = true;
+                break;
+            }
+            if (gBatCalStage == 1)
+            {   // Choose the factory preset or custom low-point value.
+                const uint16_t loVal = (gBatteryCalibration[0] > 0)
+                                      ? gBatteryCalibration[0]
+                                      : MENU_BatCalLowPreset();
+                sprintf(String, "%cAuto-Cal", gSubMenuSelection == 0 ? '>' : ' ');
+                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 1);
+                sprintf(String, " 6.0V %4u", loVal);
+                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 2);
+                sprintf(String, "%cCustom", gSubMenuSelection == 1 ? '>' : ' ');
+                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 4);
+                sprintf(String, " Edit %4u", loVal);
+                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 5);
+                already_printed = true;
+                break;
+            }
+            // Stage 2: numeric value editing
+            {
+                // Both reference editors share the same compact three-row layout.
+                uint16_t live_voltage = gBatteryVoltageAverage;
+                const char *reference = "Ref  6.00V";
+                char setText[6];
+
+                if (gBatCalTarget != 0)
+                {
+                    const uint16_t raw_voltage = (gBatteryVoltages[0] + gBatteryVoltages[1] +
+                                                  gBatteryVoltages[2] + gBatteryVoltages[3]) / 4;
+                    live_voltage = BATTERY_CalibrateRaw(raw_voltage,
+                                                        gBatteryCalibration[0],
+                                                        gSubMenuSelection);
+                    reference = "Ref  8.40V";
+                }
+
+                if (gInputBoxIndex > 0)
+                {
+                    for (uint8_t i = 0; i < 4; i++)
+                        setText[i] = (i < gInputBoxIndex) ? (char)('0' + gInputBox[i]) : '_';
+                    setText[4] = '\0';
+                }
+                else
+                {
+                    sprintf(setText, "%4u", gSubMenuSelection);
+                }
+
+                sprintf(String, "Live %u.%02uV", live_voltage / 100, live_voltage % 100);
+                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 2);
+                sprintf(String, "Set  %s", setText);
+                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 4);
+                UI_PrintStringSmallNormal(reference, menu_item_x1, 0, 5);
+            }
+            already_printed = true;
             break;
         }
 
@@ -1672,6 +1799,28 @@ void UI_DisplayMenu(void)
         #endif
 #endif
 
+    }
+
+    // Numeric entry preview: while digits are being typed in a numeric menu,
+    // show a fill-in template ("1__0") instead of the clamped interim value,
+    // so the user can see what has been typed and how many digits are expected.
+    if (gIsInSubMenu && gInputBoxIndex > 0 && UI_MENU_IsNumericEntry(m))
+    {
+        int32_t nMin;
+        int32_t nMax;
+
+        if (MENU_GetLimits((uint8_t)m, &nMin, &nMax) == 0)
+        {
+            const unsigned int digits = (nMax >= 1000) ? 4u : (nMax >= 100) ? 3u : (nMax >= 10) ? 2u : 1u;
+            char               tmpl[6];
+            unsigned int       i;
+
+            for (i = 0; i < digits; i++)
+                tmpl[i] = (i < (unsigned int)gInputBoxIndex) ? (char)('0' + gInputBox[i]) : '_';
+            tmpl[i] = '\0';
+
+            strcpy(String, tmpl);
+        }
     }
 
     //#if !defined(ENABLE_SPECTRUM) || !defined(ENABLE_FMRADIO)

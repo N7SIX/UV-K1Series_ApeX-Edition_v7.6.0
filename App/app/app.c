@@ -1440,7 +1440,7 @@ void APP_Update(void)
         // to prevent premature lock activation during RX monitoring
         #ifdef ENABLE_FEAT_N7SIX
         if (gEeprom.AUTO_KEYPAD_LOCK)
-            gKeyLockCountdown = gEeprom.AUTO_KEYPAD_LOCK * 30;
+            gKeyLockCountdown = (uint16_t)gEeprom.AUTO_KEYPAD_LOCK * 1500u;
         #endif
 
         static bool goToSleep;
@@ -2424,7 +2424,7 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
     // Reset auto-keypad-lock countdown on wake from sleep/screensaver
     // and on every key press to prevent premature lock activation
     if (gEeprom.AUTO_KEYPAD_LOCK)
-        gKeyLockCountdown = gEeprom.AUTO_KEYPAD_LOCK * 30;     // 15 seconds step
+    gKeyLockCountdown = (uint16_t)gEeprom.AUTO_KEYPAD_LOCK * 1500u;
 
     if (!bKeyPressed) { // key released
         if (flagSaveVfo) {

@@ -36,6 +36,7 @@ target_sources(App INTERFACE
     mdc1200.c
     mdc_handler.c
     helper/battery.c
+    helper/battery_calibration.c
     helper/boot.c
     misc.c
     radio.c

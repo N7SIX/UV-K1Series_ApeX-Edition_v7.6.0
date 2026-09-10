@@ -21,7 +21,8 @@
 #include <stdint.h>
 
 extern uint8_t               gKeyInputCountdown;
-extern uint8_t               gKeyLockCountdown;
+// 15-second KeyLck steps, counted in 10 ms scheduler ticks.
+extern uint16_t              gKeyLockCountdown;
 extern uint8_t               gRTTECountdown_10ms;
 extern bool                  bIsInLockScreen;
 extern uint8_t               gUpdateStatus;

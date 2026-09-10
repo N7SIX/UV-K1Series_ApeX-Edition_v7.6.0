@@ -308,7 +308,7 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
         case MENU_S_PRI_CH_1:
         case MENU_S_PRI_CH_2:
             //*pMin = 0;
-            *pMax = MR_CHANNEL_LAST + 2;
+            *pMax = MR_CHANNELS_MAX;    // F-6: allow the "None" sentinel, nothing beyond it
             break;
 
         case MENU_SAVE:
@@ -371,9 +371,12 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
                 break;
         #endif
 
-        case MENU_BATCAL:
-            *pMin = 1500;
-            *pMax = 3500;
+        case MENU_BATCAL:                                       // BatCal (nested: low ~6.0V / high ~8.4V)
+            // V2: slot3 is the raw ADC at 8.4V. The legacy 1500..3500 window
+            // covered raw@7.6V; mapped by *840/760 it is 1658..3869, so the
+            // editable window is widened to keep every migrated value editable.
+            *pMin = 1650;
+            *pMax = 3900;
             break;
 
         case MENU_BATTYP:
@@ -510,6 +513,15 @@ void MENU_AcceptSetting(void)
 
     if (!MENU_GetLimits(UI_MENU_GetCurrentMenuId(), &Min, &Max))
     {
+        // BatCal is a nested menu: UI_MENU_GetCurrentMenuId() always reports
+        // MENU_BATCAL, but gBatCalTarget selects which reference (Lo 6.0V or
+        // Hi 8.4V) is being edited - use the reference-specific bounds.
+        if (UI_MENU_GetCurrentMenuId() == MENU_BATCAL && gBatCalTarget == 0)
+        {
+            Min = 1000;
+            Max = 4000;
+        }
+
         if (gSubMenuSelection < Min) gSubMenuSelection = Min;
         else
         if (gSubMenuSelection > Max) gSubMenuSelection = Max;
@@ -723,7 +735,7 @@ void MENU_AcceptSetting(void)
 
         case MENU_AUTOLK:
             gEeprom.AUTO_KEYPAD_LOCK = gSubMenuSelection;
-            gKeyLockCountdown        = gEeprom.AUTO_KEYPAD_LOCK * 30; // 15 seconds step
+            gKeyLockCountdown        = (uint16_t)gEeprom.AUTO_KEYPAD_LOCK * 1500u;
             break;
 
         case MENU_LIST_CH:
@@ -854,6 +866,13 @@ void MENU_AcceptSetting(void)
             gRequestSaveSettings = true;
             break;
 
+#ifdef ENABLE_DTMF_CALLING
+        case MENU_ANI_ID:
+            /* ANI ID is edited directly in the DTMF digit handler. */
+            gRequestSaveSettings = true;
+            break;
+#endif
+
         case MENU_AM:
             gTxVfo->Modulation     = gSubMenuSelection;
             gRequestSaveChannel = 1;
@@ -942,14 +961,26 @@ void MENU_AcceptSetting(void)
         #endif
 
         case MENU_BATCAL:
-        {                                                                   // voltages are averages between discharge curves of 1600 and 2200 mAh
-            // gBatteryCalibration[0] = (520ul * gSubMenuSelection) / 760;  // 5.20V empty, blinking above this value, reduced functionality below
-            // gBatteryCalibration[1] = (689ul * gSubMenuSelection) / 760;  // 6.89V,  ~5%, 1 bars above this value
-            // gBatteryCalibration[2] = (724ul * gSubMenuSelection) / 760;  // 7.24V, ~17%, 2 bars above this value
-            gBatteryCalibration[3] =          gSubMenuSelection;            // 7.6V,  ~29%, 3 bars above this value
-            // gBatteryCalibration[4] = (771ul * gSubMenuSelection) / 760;  // 7.71V, ~65%, 4 bars above this value
-            // gBatteryCalibration[5] = 2300;
+        {   // Nested BatCal: gBatCalTarget selects the reference being written.
+            const uint16_t candidate = (uint16_t)gSubMenuSelection;
+
+            if (gBatCalTarget == 0)
+            {
+                if (!BATTERY_CalibrationPointsValid(candidate, gBatteryCalibration[3]))
+                    return;
+                gBatteryCalibration[0] = candidate;
+            }
+            else
+            {
+                if (candidate < BATCAL_HIGH_MIN_RAW || candidate > BATCAL_HIGH_MAX_RAW ||
+                    (gBatteryCalibration[0] != 0 &&
+                     !BATTERY_CalibrationPointsValid(gBatteryCalibration[0], candidate)))
+                    return;
+                gBatteryCalibration[3] = candidate;
+            }
             SETTINGS_SaveBatteryCalibration(gBatteryCalibration);
+            gBatCalStage  = 0;
+            gBatCalTarget = 0;
             return;
         }
 
@@ -985,8 +1016,7 @@ void MENU_AcceptSetting(void)
 
 #ifdef ENABLE_FEAT_N7SIX
         case MENU_SET_PWR:
-            gSetting_set_pwr = gSubMenuSelection;
-            gRequestSaveChannel = 1;
+            gSetting_set_pwr = gSubMenuSelection;   // F-7: global setting - no per-channel save needed
             break;
         case MENU_SET_PTT:
             gSetting_set_ptt = gSubMenuSelection;
@@ -1078,6 +1108,11 @@ static void MENU_ClampSelection(int8_t Direction)
         if (Selection > Max) Selection = Max;
         gSubMenuSelection = NUMBER_AddWithWraparound(Selection, Direction, Min, Max);
     }
+}
+
+uint16_t MENU_BatCalLowPreset(void)
+{
+    return BATTERY_CalibrationLowPreset(gBatteryCalibration[3]);
 }
 
 void MENU_ShowCurrentSetting(void)
@@ -1422,6 +1457,8 @@ void MENU_ShowCurrentSetting(void)
         #endif
 
         case MENU_BATCAL:
+            // List-view entry: the nested picker stages are initialized in
+            // MENU_Key_MENU() when the sub-menu is entered.
             gSubMenuSelection = gBatteryCalibration[3];
             break;
 
@@ -1446,6 +1483,10 @@ void MENU_ShowCurrentSetting(void)
                 &gEeprom.KEY_2_LONG_PRESS_ACTION,
                 &gEeprom.KEY_M_LONG_PRESS_ACTION};
             uint8_t id = *fun[UI_MENU_GetCurrentMenuId()-MENU_F1SHRT];
+
+            // F-9: default to "NONE" when the stored action id isn't in the
+            // side-function list, so accepting the menu can't write a stale value
+            gSubMenuSelection = 0;
 
             for(int i = 0; i < gSubMenu_SIDEFUNCTIONS_size; i++) {
                 if(gSubMenu_SIDEFUNCTIONS[i].id==id) {
@@ -1764,7 +1805,56 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         return;
     }
 
-    Offset = (Max >= 100) ? 3 : (Max >= 10) ? 2 : 1;
+    if (UI_MENU_GetCurrentMenuId() == MENU_BATCAL)
+    {
+        if (gBatCalStage < 2)
+        {   // picker stages only respond to arrows / MENU
+            gInputBoxIndex = 0;
+            gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+            return;
+        }
+        if (gBatCalTarget == 0)
+        {   // Cal Lo reference range
+            Min = 1000;
+            Max = (gBatteryCalibration[3] > BATCAL_LOW_MIN_RAW)
+                ? MIN(4000, gBatteryCalibration[3] - 1)
+                : 4000;
+        }
+        else
+        {
+            Min = (gBatteryCalibration[0] >= BATCAL_HIGH_MIN_RAW)
+                ? MAX(BATCAL_HIGH_MIN_RAW, gBatteryCalibration[0] + 1)
+                : BATCAL_HIGH_MIN_RAW;
+            Max = BATCAL_HIGH_MAX_RAW;
+        }
+
+        if (gInputBoxIndex < 4)
+        {
+            gRequestDisplayScreen = DISPLAY_MENU;
+            return;
+        }
+
+        Value = 0;
+        for (uint8_t i = 0; i < 4; i++)
+            Value = (Value * 10) + gInputBox[i];
+
+        gInputBoxIndex = 0;
+        if (Value >= Min && Value <= Max)
+        {
+            gSubMenuSelection = Value;
+            gRequestDisplayScreen = DISPLAY_MENU;
+        }
+        else
+        {
+            gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+        }
+        return;
+    }
+
+    // F-1/F-4 follow-up: digit-count must cover 4-digit menus too.
+    // BatCal (1500..3500) previously got a 3-digit buffer, so the 4th keystroke
+    // started a new entry and landed below Min - the only Max >= 1000 menu.
+    Offset = (Max >= 1000) ? 4 : (Max >= 100) ? 3 : (Max >= 10) ? 2 : 1;
 
     /*
     switch (gInputBoxIndex)
@@ -1790,6 +1880,14 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 
     if (Value <= Max)
     {
+        // F-1/F-4: never commit a value below the menu's minimum.
+        // Previously typing "0" in BatCal (min 1500) fed 0 straight into the
+        // display's "/ gSubMenuSelection" divider (division by zero), and
+        // below-min values were silently accepted on other menus until the
+        // accept-path clamp.
+        if (Value < Min)
+            Value = Min;
+
         gSubMenuSelection = Value;
         return;
     }
@@ -1857,7 +1955,38 @@ Skip:
         {
             const int menu_id = UI_MENU_GetCurrentMenuId();
 
-            if (menu_id == MENU_UPCODE || menu_id == MENU_DWCODE)
+            /* BatCal nested editor: EXIT walks back one level instead of
+             * leaving the sub-menu (stage 0 = Lo/Hi picker exits normally). */
+            if (menu_id == MENU_BATCAL && gBatCalStage > 0)
+            {
+                if (gBatCalStage == 2)
+                {
+                    if (gBatCalTarget == 0)
+                    {   // value edit -> back to Factory/Custom picker
+                        gBatCalStage      = 1;
+                        gSubMenuSelection = 1;   // "Custom"
+                    }
+                    else
+                    {   // value edit -> back to Lo/Hi picker
+                        gBatCalStage      = 0;
+                        gSubMenuSelection = 1;   // "Cal Hi"
+                    }
+                }
+                else
+                {   // Factory/Custom -> back to Lo/Hi picker
+                    gBatCalStage      = 0;
+                    gSubMenuSelection = 0;       // "Cal Lo"
+                }
+                gInputBoxIndex        = 0;
+                gRequestDisplayScreen = DISPLAY_MENU;
+                return;
+            }
+
+            if (menu_id == MENU_UPCODE || menu_id == MENU_DWCODE
+#ifdef ENABLE_DTMF_CALLING
+                || menu_id == MENU_ANI_ID
+#endif
+            )
             {
                 /* DTMF code backspace: clear the character under the cursor */
                 if (gInputBoxIndex == 0)
@@ -1870,7 +1999,15 @@ Skip:
                     goto Skip;
                 }
                 {
-                    char *code = (menu_id == MENU_UPCODE) ? gEeprom.DTMF_UP_CODE : gEeprom.DTMF_DOWN_CODE;
+                    char *code;
+                    if (menu_id == MENU_UPCODE)
+                        code = gEeprom.DTMF_UP_CODE;
+                    else if (menu_id == MENU_DWCODE)
+                        code = gEeprom.DTMF_DOWN_CODE;
+#ifdef ENABLE_DTMF_CALLING
+                    else
+                        code = gEeprom.ANI_DTMF_ID;
+#endif
                     code[--gInputBoxIndex] = '\0';
                     gDTMFCodeDirty    = true;
                     edit_last_key     = 255;
@@ -1936,8 +2073,12 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
         const int m = UI_MENU_GetCurrentMenuId();
 
                 #ifdef ENABLE_VOICE
+            // MENU_SCR only exists in non-N7SIX builds - keep the VOICE
+            // combination buildable under ENABLE_FEAT_N7SIX (F-3 follow-up).
+            #ifndef ENABLE_FEAT_N7SIX
             if (m != MENU_SCR)
-                gAnotherVoiceID = MenuList[gMenuCursor].voice_id;
+            #endif
+                gAnotherVoiceID = VOICE_ID_CONFIRM; // F-3: t_menu_item has no voice_id field
         #endif
         #if 1
             if (m == MENU_DEL_CH || m == MENU_MEM_NAME)
@@ -1947,6 +2088,14 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 
         gAskForConfirmation = 0;
         gIsInSubMenu        = true;
+
+        // BatCal is a nested editor: always start on the Cal Lo / Cal Hi picker.
+        if (m == MENU_BATCAL)
+        {
+            gBatCalStage      = 0;
+            gBatCalTarget     = 0;
+            gSubMenuSelection = 0;   // start on "Cal Lo"
+        }
 
 //      if (m != MENU_D_LIST)
         {
@@ -1959,10 +2108,26 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 
         // DTMF code editor: start the cursor at the end of the existing
         // code so typing appends to it.
-        if (m == MENU_UPCODE || m == MENU_DWCODE)
+        if (m == MENU_UPCODE || m == MENU_DWCODE
+#ifdef ENABLE_DTMF_CALLING
+            || m == MENU_ANI_ID
+#endif
+        )
         {
-            char *code = (m == MENU_UPCODE) ? gEeprom.DTMF_UP_CODE : gEeprom.DTMF_DOWN_CODE;
+            char *code;
+            if (m == MENU_UPCODE)
+                code = gEeprom.DTMF_UP_CODE;
+            else if (m == MENU_DWCODE)
+                code = gEeprom.DTMF_DOWN_CODE;
+#ifdef ENABLE_DTMF_CALLING
+            else
+                code = gEeprom.ANI_DTMF_ID;
+#endif
             gInputBoxIndex = (uint8_t)strlen(code);
+#ifdef ENABLE_DTMF_CALLING
+            if (m == MENU_ANI_ID && gInputBoxIndex > 7)
+                gInputBoxIndex = 7;
+#endif
             if (gInputBoxIndex > 15)
                 gInputBoxIndex = 15;
             gDTMFCodeDirty    = false;
@@ -2027,6 +2192,51 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
     {
         const int m = UI_MENU_GetCurrentMenuId();
 
+        if (m == MENU_BATCAL)
+        {   // Nested BatCal navigation - MENU advances one level:
+            // picker(0) -> Factory/Custom or value(2) -> accept.
+            if (gBatCalStage == 0)
+            {
+                if (gSubMenuSelection == 0)
+                {   // Cal Hi -> straight into numeric value editing
+                    gBatCalStage      = 2;
+                    gBatCalTarget     = 1;
+                    gSubMenuSelection = (gBatteryCalibration[3] > 0) ? gBatteryCalibration[3] : 1900;
+                }
+                else
+                {   // Cal Lo -> Auto-Cal / Custom picker
+                    gBatCalStage      = 1;
+                    gBatCalTarget     = 0;
+                    gSubMenuSelection = 0;   // start on "Auto-Cal"
+                }
+                gInputBoxIndex        = 0;
+                gRequestDisplayScreen = DISPLAY_MENU;
+                return;
+            }
+            if (gBatCalStage == 1)
+            {
+                if (gSubMenuSelection == 0)
+                {   // Factory preset: apply the derived low point and leave.
+                    gBatCalTarget      = 0;
+                    gSubMenuSelection  = MENU_BatCalLowPreset();
+                    gFlagAcceptSetting = true;
+                    gIsInSubMenu       = false;
+                }
+                else
+                {   // Custom: edit the low-point value numerically.
+                    gBatCalStage      = 2;
+                    gBatCalTarget     = 0;
+                    gSubMenuSelection = (gBatteryCalibration[0] > 0)
+                                        ? gBatteryCalibration[0]
+                                        : MENU_BatCalLowPreset();
+                }
+                gInputBoxIndex        = 0;
+                gRequestDisplayScreen = DISPLAY_MENU;
+                return;
+            }
+            // Stage 2 (numeric edit) falls through to the generic accept below.
+        }
+
         if (m == MENU_RESET  ||
             m == MENU_MEM_CH ||
             m == MENU_DEL_CH ||
@@ -2074,10 +2284,14 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
     SCANNER_Stop();
 
     #ifdef ENABLE_VOICE
+        #ifdef ENABLE_FEAT_N7SIX
+        gAnotherVoiceID = VOICE_ID_CONFIRM;
+        #else
         if (UI_MENU_GetCurrentMenuId() == MENU_SCR)
             gAnotherVoiceID = (gSubMenuSelection == 0) ? VOICE_ID_SCRAMBLER_OFF : VOICE_ID_SCRAMBLER_ON;
         else
             gAnotherVoiceID = VOICE_ID_CONFIRM;
+        #endif
     #endif
 
     gInputBoxIndex = 0;
@@ -2217,6 +2431,38 @@ static void MENU_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
     
     const int m = UI_MENU_GetCurrentMenuId();
 
+    /* Nested BatCal navigation (in sub-menu only): picker stages toggle the
+     * highlighted item, the numeric stage adjusts the value with the
+     * reference-specific limits. */
+    if (m == MENU_BATCAL && gIsInSubMenu)
+    {
+        if (gBatCalStage <= 1)
+        {
+            gSubMenuSelection = NUMBER_AddWithWraparound(gSubMenuSelection, Direction, 0, 1);
+        }
+        else
+        {
+            int32_t Min = BATCAL_HIGH_MIN_RAW, Max = BATCAL_HIGH_MAX_RAW;
+
+            if (gBatCalTarget == 0)
+            {
+                Min = BATCAL_LOW_MIN_RAW;
+                Max = (gBatteryCalibration[3] > BATCAL_LOW_MIN_RAW)
+                    ? MIN(BATCAL_LOW_MAX_RAW, gBatteryCalibration[3] - 1)
+                    : BATCAL_LOW_MAX_RAW;
+            }
+            else if (gBatteryCalibration[0] >= BATCAL_HIGH_MIN_RAW)
+            {
+                Min = MAX(BATCAL_HIGH_MIN_RAW, gBatteryCalibration[0] + 1);
+            }
+
+            gSubMenuSelection = NUMBER_AddWithWraparound(gSubMenuSelection, Direction, Min, Max);
+        }
+        gInputBoxIndex        = 0;
+        gRequestDisplayScreen = DISPLAY_MENU;
+        return;
+    }
+
     /* Handle MDC_ID hex digit cycling via arrow keys */
     if (m == MENU_MDC_ID && gIsInSubMenu && gInputBoxIndex > 0)
     {
@@ -2247,6 +2493,15 @@ static void MENU_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
     if(m == MENU_S_PRI_CH_1 || m == MENU_S_PRI_CH_2)
     {
         static int16_t last;
+        static uint8_t last_menu_id = 0xFF;
+
+        // F-8: restart wrap tracking when switching between PriCh1/PriCh2 so
+        // the stale 'last' from the other menu can't spuriously wrap to "None"
+        if (last_menu_id != (uint8_t)m)
+        {
+            last_menu_id = (uint8_t)m;
+            last         = (int16_t)gSubMenuSelection;
+        }
 
         if(gSubMenuSelection == MR_CHANNELS_MAX) {
             if(Direction > 0)
@@ -2309,7 +2564,26 @@ static void MENU_Key_DTMFCode(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         return;
 
     const int menu_id = UI_MENU_GetCurrentMenuId();
-    char *code = (menu_id == MENU_UPCODE) ? gEeprom.DTMF_UP_CODE : gEeprom.DTMF_DOWN_CODE;
+    char *code;
+    uint8_t max_length;
+
+    if (menu_id == MENU_UPCODE)
+    {
+        code = gEeprom.DTMF_UP_CODE;
+        max_length = 15;
+    }
+    else if (menu_id == MENU_DWCODE)
+    {
+        code = gEeprom.DTMF_DOWN_CODE;
+        max_length = 15;
+    }
+#ifdef ENABLE_DTMF_CALLING
+    else
+    {
+        code = gEeprom.ANI_DTMF_ID;
+        max_length = 7;
+    }
+#endif
 
     if (Key == KEY_UP || Key == KEY_DOWN)
     {   // '<' / '>' alphabet selector: cycle 'A'..'D' at the current position
@@ -2326,7 +2600,7 @@ static void MENU_Key_DTMFCode(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         }
         else
         {   // first press: place 'A' at the cursor
-            if (gInputBoxIndex >= 15)
+            if (gInputBoxIndex >= max_length)
                 return;                 // code is full
 
             code[gInputBoxIndex++] = 'A';
@@ -2346,7 +2620,7 @@ static void MENU_Key_DTMFCode(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         return;
 
     // Max 15 chars + null terminator inside the 16-byte array
-    if (gInputBoxIndex >= 15)
+    if (gInputBoxIndex >= max_length)
         return;                     // code is full
 
     code[gInputBoxIndex++] = Character;
@@ -2360,7 +2634,7 @@ static void MENU_Key_DTMFCode(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
     #endif
 
     // Reached maximum length -> auto-commit (like MDC-ID on its 4th digit)
-    if (gInputBoxIndex == 15)
+    if (gInputBoxIndex == max_length)
     {
         gRequestSaveSettings = true;
         gDTMFCodeDirty       = false;
@@ -2435,7 +2709,11 @@ void MENU_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
     // KEY_MENU is deliberately NOT intercepted: it falls through to the
     // standard "accept setting" path which saves the code and exits.
     // KEY_EXIT stays with MENU_Key_EXIT() for backspace / submenu exit.
-    if (gIsInSubMenu && (menu_id == MENU_UPCODE || menu_id == MENU_DWCODE))
+    if (gIsInSubMenu && (menu_id == MENU_UPCODE || menu_id == MENU_DWCODE
+#ifdef ENABLE_DTMF_CALLING
+                         || menu_id == MENU_ANI_ID
+#endif
+                        ))
     {
         switch (Key)
         {

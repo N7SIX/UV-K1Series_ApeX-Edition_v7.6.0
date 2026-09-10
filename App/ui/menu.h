@@ -158,7 +158,8 @@ enum
         MENU_SET_AUD,
     #endif
 #endif
-    MENU_BATCAL,  // battery voltage calibration
+    MENU_BATCAL_LOW,  // inert placeholder - Cal Lo/Hi handled inside MENU_BATCAL nested editor
+    MENU_BATCAL,       // battery calibration: high reference (~8.4V)
     MENU_F1SHRT,
     MENU_F1LONG,
     MENU_F2SHRT,
@@ -251,6 +252,9 @@ extern bool              gIsInSubMenu;
 extern uint8_t           gMenuCursor;
 
 extern int32_t           gSubMenuSelection;
+                         
+extern uint8_t           gBatCalStage;     // 0 = Lo/Hi picker, 1 = Factory/Custom picker, 2 = numeric edit
+extern uint8_t           gBatCalTarget;    // 0 = Cal Lo (6.0V), 1 = Cal Hi (8.4V)
                          
 extern char              edit_original[17];
 extern char              edit[17];

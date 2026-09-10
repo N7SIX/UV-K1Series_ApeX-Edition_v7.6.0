@@ -1,18 +1,88 @@
 # Changelog
+*> ⚠️ v7.6.10D is pending release — the performance release and menu/BatCal hardening are implemented in source, but the final firmware package has not been released.*
 Release: v7.6.10D — Performance: 8× faster LCD, fast BK4819 I/O, WFI idle sleep
 
-**Date:** 2026-09-07
+**Date:** 2026-09-10 (pending release)
 **Target:** UV-K1 Series (BK4819 / BK4829)
 **Toolchain:** arm-none-eabi-gcc 14.3, Release + LTO
 **Base:** v7.6.10C
-**Firmware:** `n7six.ApeX-k1.v7.6.10D.bin` (110,552 B flash, 14,144 B RAM)
+**Firmware (pending release):** `n7six.ApeX-k1.v7.6.10D.bin` (112,536 B flash, 14,144 B RAM) — final source changes require a fresh v7.6.10D build and reflash
 
-## [v7.6.10D] — Released 2026-09-07
+## [v7.6.10D] — Pending Release (base 2026-09-07; menu addendum 2026-09-09)
 
 **Target:** UV-K1 Series (BK4819 / BK4829) · **Base:** v7.6.10C · **Toolchain:** arm-none-eabi-gcc 14.3 (Release, LTO)
-**Firmware:** `n7six.ApeX-k1.v7.6.10D.bin` · **FLASH 110,552 B (91.49 %)** · **RAM 14,144 B (86.33 %)**
+**Firmware (pending release):** `n7six.ApeX-k1.v7.6.10D.bin` · **FLASH 112,536 B (93.14 %)** · **RAM 14,144 B (86.33 %)**
 
-Performance release from a full deep audit of the driver hot paths: 8× faster display blits, ~2.5–3× faster BK4819 register I/O and CPU idle sleep. Net cost **+44 B flash**; both optimizations are switchable build options — disabling them rebuilds to the exact v7.6.10C footprint (110,508 B).
+### 🔄 Current pending-source update (2026-09-10)
+
+The following changes are included in the pending v7.6.10D source and must be included
+in the final release build:
+
+- BatCal uses one shared production calibration helper for normal battery readings,
+  spectrum status, and UI previews; the EEPROM address remains `0x010140` with a
+  12-byte record and V1-to-V2 migration.
+- BatCal UI is Hi-first, uses `Auto-Cal`/`AUTO` and `CUST` labels, keeps the Hi block
+  in its original position, and uses fixed left-aligned small-font rows.
+- BatCal numeric entry requires four digits and accepts only values within the active
+  ADC limits, with Lo/Hi cross-validation.
+- KeyLck now uses a 16-bit 10-ms countdown (`15 seconds × 1500 ticks`), fixing the
+  previous `uint8_t` overflow and incorrect `×30` timing.
+- Battery Type critical-voltage handling is centralized for all five supported types
+  and operates on BatCal-calibrated voltage.
+- `ANI ID` now uses the DTMF editor and persists changes when DTMF calling is enabled.
+- BatCal edit rendering was deduplicated without changing calibration math or UI behavior,
+  reducing the measured flash footprint by 108 bytes.
+
+Performance release from a full deep audit of the driver hot paths (pending release): 8× faster display blits, ~2.5–3× faster BK4819 register I/O and CPU idle sleep. Net cost **+44 B flash**; both optimizations are switchable build options — disabling them rebuilds to the exact v7.6.10C footprint (110,508 B).
+
+### 🔄 Addendum — Menu System Deep Audit (2026-09-09)
+
+A full deep audit of the menu system — every item in `MenuList[]` (~75 entries, visible + hidden) cross-checked against all four pillars (`MENU_GetLimits()`, `MENU_ShowCurrentSetting()`, `MENU_AcceptSetting()`, `UI_DisplayMenu()`) plus all key handlers. Nine defects fixed (including one crash path and two latent build breaks), one long-standing broken input path repaired, flash-wear reduction, and a fill-in-template numeric-entry UX. Part of the v7.6.10D release: no EEPROM layout change — existing settings remain fully compatible, and behavior differs from the 2026-09-07 build only in edge cases. Full report: `documentation/MENU_SYSTEM_DEEP_AUDIT.md`.
+
+#### 🐛 Fixed
+
+**Menu stability — `App/app/menu.c`, `App/ui/menu.c`**
+- **BatCal division-by-zero / partial-entry commit (audit F-1):** the generic numeric entry path (`MENU_Key_0_to_9()`) committed values as soon as `Value <= Max`, with no minimum check — typing `0` in the hidden `BatCal` menu fed `0` straight into the display's voltage divider (`gBatteryVoltageAverage * gBatteryCalibration[3] / gSubMenuSelection`), producing garbage or a software-divide hang. Values are now clamped to the menu's minimum before commit (`Value < Min → Min`).
+- **Numeric entry ignored `Min` (audit F-4):** below-minimum values were silently accepted on `TxTOut` (min 5), `D Hold` (min 5), `D Prel` (min 3), `BLMax` (min 1) and only clamped later at `MENU_AcceptSetting()`. Root cause shared with the BatCal fix; display now always shows a legal value.
+- **BatCal 4-digit entry was never functional (hardware-verified follow-up):** the digit-count heuristic had no `Max >= 1000` tier, so `BatCal` (1500–3500) got a 3-digit input buffer — the 4th keystroke reset the entry and landed below minimum. In all prior versions typed entry silently failed (ending in `0` = the crash above); only arrow keys worked. The heuristic now selects 4 digits for `Max >= 1000` (BatCal is the only menu in that class); typed 4-digit entry works.
+- **`D List` display could read an unterminated string (audit F-5):** `memcpy(String, Contact, 8)` left `String` without a NUL when the DTMF contact name filled all 8 bytes, so the later `strlen()` walked into uninitialized stack. Now explicitly terminated (`String[8] = '\0'`). (DTMF-calling builds only.)
+- **`PriCh1`/`PriCh2` limit allowed an invalid sentinel (audit F-6):** `*pMax = MR_CHANNEL_LAST + 2` (1025) tightened to `MR_CHANNELS_MAX` (1024, the "None" sentinel) — defense in depth for `SCANLIST_PRIORITY_CH[]`.
+- **Stale wrap tracker shared between `PriCh1`/`PriCh2` (audit F-8):** the `static last` in `MENU_Key_UP_DOWN()` persisted across the two priority-channel menus and could spuriously wrap to "None" on the first press after switching. It now re-initializes when the menu id changes.
+- **Key-action menus could show/accept a stale selection (audit F-9):** if the stored action id was not present in `gSubMenu_SIDEFUNCTIONS[]` (e.g. from a feature built out), `F1Shrt…MLong` left the previous menu's value on screen and accepting it rebound the key to that stale action. Now defaults to `NONE` when the lookup fails.
+
+#### 🔧 Changed
+
+- **`SetPwr` no longer triggers a per-channel flash save (audit F-7):** accepting the global power-level setting previously also issued `gRequestSaveChannel` — a wasted VFO/channel sector write on every accept. The global-settings save is sufficient; one flash write instead of two.
+- **`MENU_TXP` display guarded for non-N7SIX builds (audit F-2):** the `Power` display referenced `gSubMenu_SET_PWR[]` unguarded, but that array only compiles under `ENABLE_FEAT_N7SIX` — any non-N7SIX build failed to compile. Now `#ifdef`-guarded with a plain-label fallback; the `#ifndef ENABLE_FEAT_N7SIX` code paths are buildable again.
+- **Phantom `voice_id` field reference removed (audit F-3):** `MENU_Key_MENU()` read `MenuList[gMenuCursor].voice_id`, but `t_menu_item` has no such field — dormant inside `#ifdef ENABLE_VOICE`, so enabling voice prompts broke the build. Replaced with `VOICE_ID_CONFIRM`; `ENABLE_VOICE=ON` builds compile again.
+- **`BatCal`/`TxTOut`/`D Prel` spot-check note:** partial digit entry now previews the clamped minimum instead of committing interim values (see the fill-in template below).
+- **KeyLck timing and range:** the auto-keypad-lock countdown is now a 16-bit 10-ms tick counter using `AUTO_KEYPAD_LOCK × 1500`, so all 15-second steps through the 10-minute maximum work without `uint8_t` overflow.
+
+#### ✨ Added
+
+**Keyboard / UI**
+- **Fill-in numeric-entry template:** while digits are being typed in a numeric menu, the value line now shows a fill-in pattern — `2___` → `20__` → `200_` → `2000` — instead of the clamped interim value, making partial input and the expected digit count obvious. Implemented in `UI_DisplayMenu()` via the new `UI_MENU_IsNumericEntry()` helper; template width adapts per menu from its limits (4 digits for `BatCal`, 3 for `TxTOut`/`ScnRev`, 2/1 for smaller ranges). Applies to: Sql, Mic, BatSav, VOX, TxTOut, KeyLck, ScnRev, RP STE, BLTime/BLMin/BLMax, BatCal, D Prel, D Hold, D List, SetOff, SetVol, SetCtr. String-list menus intentionally excluded (their live value preview is already meaningful).
+- **`ENABLE_VOICE` + `ENABLE_FEAT_N7SIX` builds compile again (audit F-3 follow-up):** two remaining `MENU_SCR` references in `MENU_Key_MENU()` (the voice-confirm prompts) were only guarded by `ENABLE_VOICE`, but `MENU_SCR` is a non-N7SIX-only enum — enabling voice on an N7SIX build failed to compile. Both are now `#ifdef ENABLE_FEAT_N7SIX`-split (N7SIX uses `VOICE_ID_CONFIRM`; the scrambler-specific prompt is kept for non-N7SIX builds). Verified with the host toolchain: `app/menu.c` + `ui/menu.c` pass `-fsyntax-only` with `ENABLE_FEAT_N7SIX + ENABLE_VOICE + ENABLE_DTMF_CALLING` active.
+
+**Battery / Calibration (2-point)** — `App/helper/battery.c`, `App/app/menu.c`, `App/ui/menu.c`, `App/ui/menu.h`
+- **Professional 2-point battery calibration with Auto-Cal preset:** the live voltage path now runs a piecewise-linear interpolation between a **low point** (`gBatteryCalibration[0]`, ~6.0 V) and a **high point** (`gBatteryCalibration[3]`, ~8.4 V), clamped to the calibrated range.
+- **`BatCal` is now a nested editor (in accordance with the agreed design):** entering `BatCal` opens a **Hi / Lo** picker inside the same menu — no separate top-level entry:
+  - **Hi** is presented first and opens numeric editing of the 8.4 V reference. **Lo** then offers **`Auto-Cal`** (applies the derived preset `(600 × slot-3) / 840` = `slot-3 × 5/7` and exits) or **`Custom`** (numeric editing of the 6.0 V reference, range 1000–4000). `EXIT` walks back one level: value → picker → menu list. The preset scales from the 8.4 V high-point reference (`slot-3 × 5/7`); e.g. after migration a 2192 legacy high point becomes 2422 and the preset is `2422 × 5/7 = 1730`.
+- **`Cal Hi`** numeric editing of the 8.4 V reference with the live "what voltage would this report" preview; `EXIT` returns to the Lo/Hi picker. Its window is widened from the legacy **1500–3500** (which covered raw @ 7.6 V) to **1650–3900** — the same window mapped by `×840/760` to the 8.4 V V2 scale, so every migrated value (e.g. 2192 → 2422, or a legacy top-of-range 3500 → 3869) remains editable.
+- **The Hi/Lo picker** displays both values live, with an **`AUTO`** (value = Auto-Cal preset) / **`CUST`** (custom) suffix on the Lo line, and a `>` marker on the active item.
+- **Auto-Cal preset by default:** if slot 0 is unset (0), the picker still shows the derived preset so users without a multimeter need do nothing — selecting `Auto-Cal` stores it in one press.
+- **V1 → V2 calibration-format migration (hardware-verified fix):** the legacy single-point firmware stored `slot-3` as the raw ADC at **7.6 V** (display used `raw × 760 / slot-3`), while the 2-point model needs the raw ADC at **8.4 V**. Interpreting the legacy value as-is made every reading over-report by `840/760` (+10.5 %) and clamp used batteries at a false 8.40 V. Fixed with a one-time, marker-guarded migration in `SETTINGS_LoadCalibration()` (marker `BATCAL_FORMAT_V2 = 0xB5F2` in slot-2, a slot legacy code never used): `slot-3 ×= 840/760`, `slot-0` cleared (legacy slot-0 was never a real 6.0 V calibration), persisted immediately. Consequences:
+  - Existing calibrations stay accurate with **no user action** — e.g. a legacy 2192 migrates to 2422, and a used ~8.0 V battery now reads **8.00 V** (was a clamped 8.40 V).
+  - The single-point fallback (`slot-0 == 0`) is re-anchored to **840** in `BATTERY_GetReadings()`, and the spectrum status-bar battery readout (`App/app/spectrum.c`) likewise (the legacy 760 belonged to the 7.6 V reference).
+- **Battery Type policy:** `BATTERY_IsCriticalVoltage()` now centralizes calibrated-voltage thresholds for all five supported battery types: 6.30 V for 1600/2200/1500 mAh, 6.00 V for 3500 mAh, and 6.23 V for 2500 mAh.
+- **ANI ID menu repair:** when DTMF calling is enabled, `ANI ID` now uses the DTMF editor, enforces its 7-character storage limit, supports EXIT backspace, and persists through the normal settings path.
+- **EEPROM compatibility:** no EEPROM layout change; BatCal retains the historical physical `0x010140` 12-byte block and the marker prevents double-migration.
+- **Backward compatible:** with `slot 0` invalid (0 or otherwise malformed) the interpolator falls back to the single-point formula using `slot 3` — now correctly scaled post-migration. Limit/value validation uses the reference-specific bounds (1000–4000 for Lo, 1650–3900 for Hi) while the nested flow reports `MENU_BATCAL`.
+- **Verdict:** the earlier revision surfaced `Cal Lo` as a *separate* hidden menu item with no Auto-Cal/Custom choice — that deviated from the agreed design and was reworked. The current nested editor lives entirely inside `MENU_BATCAL` (stage machine `0` Hi/Lo picker → `1` Auto-Cal/Custom → `2` value edit, driven by `gBatCalStage`/`gBatCalTarget` in `App/app/menu.c` + `App/ui/menu.c`); the stray `MENU_BATCAL_LOW` enum remains only as an inert placeholder.
+
+#### 📚 Documentation
+
+- **New audit report:** `documentation/MENU_SYSTEM_DEEP_AUDIT.md` — per-menu verification table (limits / show / accept / display for every entry), findings F-1…F-14 with severity, fix status and recommended fix order; all F-1…F-9 marked applied.
 
 ### ⚡ Performance
 
