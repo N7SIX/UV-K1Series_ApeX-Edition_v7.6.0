@@ -1,0 +1,85 @@
+Start testing: Sep 10 13:32 Malay Peninsula Standard Time
+----------------------------------------------------------
+1/2 Testing: unit_tests
+1/2 Test: unit_tests
+Command: "C:/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0/tests/build_win/unit_tests.exe"
+Directory: C:/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0/tests/build_win
+"unit_tests" start time: Sep 10 13:32 Malay Peninsula Standard Time
+Output:
+----------------------------------------------------------
+Running unit tests...
+frequencies:
+  test_GetBand
+    OK
+  test_ClampGlobal
+    OK
+  test_ClampToBand
+    OK
+  test_RoundToStep
+    OK
+  test_StepIndexMapping
+    OK
+  test_CalculateOutputPower
+    OK
+  test_RX_freq_check
+    OK
+  test_TX_freq_check
+    OK
+dcs:
+  test_CTCSS_Options_Size
+    OK
+  test_CTCSS_Options_Sorted
+    OK
+  test_DCS_Options_Unique
+    OK
+  test_GetCtcssCode
+    OK
+  test_GetGolayCodeWord
+    OK
+  test_GetCdcssCode
+    OK
+  test_GetCtcssApprovedIndex
+    OK
+  test_GetDcsApprovedIndex
+    OK
+crc:
+  test_CRC_Empty
+    OK
+  test_CRC_KnownVectors
+    OK
+  test_CRC_Deterministic
+    OK
+  test_CRC_ByteSensitivity
+    OK
+  test_CRC_LengthSensitivity
+    OK
+mdc1200:
+mdc fuzz:
+  miscorrections (beyond dfree/2): 0
+
+17556 checks, 0 failures
+<end of output>
+Test time =   0.18 sec
+----------------------------------------------------------
+Test Passed.
+"unit_tests" end time: Sep 10 13:32 Malay Peninsula Standard Time
+"unit_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/2 Testing: batcal_math_tests
+2/2 Test: batcal_math_tests
+Command: "C:/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0/tests/build_win/batcal_math_tests.exe"
+Directory: C:/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0/tests/build_win
+"batcal_math_tests" start time: Sep 10 13:32 Malay Peninsula Standard Time
+Output:
+----------------------------------------------------------
+ALL PASS
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"batcal_math_tests" end time: Sep 10 13:32 Malay Peninsula Standard Time
+"batcal_math_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 10 13:32 Malay Peninsula Standard Time

@@ -41,7 +41,7 @@ implementation pillars in `App/app/menu.c` + `App/ui/menu.c`:
 | VOX | 0..10 | ✅ `VOX_SWITCH ? LEVEL+1 : 0` | ✅ + `LoadCalibration` + reconfig | ✅ | |
 | RxMode (TDR) | 0..3 | ✅ bit-composed from DUAL_WATCH/CROSS_BAND | ✅ inverse mapping + `gDW/gCB` state | ✅ 4 strings | |
 | Beep | 0..1 | ✅ | ✅ | ✅ | |
-| KeyLck | 0..40 (×15 s) | ✅ | ✅ `gKeyLockCountdown = ×1500` (10 ms units, 16-bit) | ✅ m:ss | overflow/timing fixed |
+| KeyLck | 0..40 (×15 s) | ✅ | ✅ `gKeyLockCountdown = ×30` (500 ms units, 16-bit) | ✅ m:ss | overflow fixed |
 | Mode (AM) | 0..`MODULATION_UKNOWN-1` | ✅ | ✅ saves channel | ✅ | |
 | RxDCS/TxDCS | 0..208 | ✅ (norm 1..104, inv 105..208) | ✅ correct `CodeType/Code`, keeps CTCSS when set to 0 | ✅ `D%03oN/I` | 104-entry `DCS_Options` exact |
 | RxCTCS/TxCTCS | 0..50 | ✅ | ✅ symmetric to DCS | ✅ Hz | 50-entry `CTCSS_Options`, `pMax=50` → last index 49 ✔ |
@@ -258,8 +258,9 @@ strings are consistently wrapped — no dangling references found **except F-2 a
 
 ## 6. Pending v7.6.10D implementation status
 
-- **KeyLck:** `gKeyLockCountdown` is now a 16-bit 10-ms counter using
-  `AUTO_KEYPAD_LOCK × 1500`, fixing the previous overflow and incorrect timing.
+- **KeyLck:** `gKeyLockCountdown` is now a 16-bit counter using
+  `AUTO_KEYPAD_LOCK × 30`, decremented every 500 ms in `APP_TimeSlice500ms()`
+  (15 s per step), fixing the previous `uint8_t` overflow above ~8 steps.
 - **ANI ID:** when DTMF calling is enabled, the menu uses the bounded DTMF editor
   and persists the 7-character identifier through the normal settings path.
 - **Battery Type:** critical-voltage decisions are centralized on calibrated

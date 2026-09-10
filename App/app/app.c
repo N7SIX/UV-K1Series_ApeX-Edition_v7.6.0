@@ -1436,11 +1436,16 @@ void APP_Update(void)
         && gVoiceWriteIndex == 0
 #endif
     ) {
-        // Reset auto-keypad-lock countdown on wake from power save
-        // to prevent premature lock activation during RX monitoring
+        // Reset auto-keypad-lock countdown on wake from power save only
+        // while a signal is actually being received (squelch open), so the
+        // 15-second inactivity timer is not defeated by the power-save
+        // wake/sleep cycling: otherwise any BATTERY_SAVE > 0 re-arms the
+        // countdown every BATTERY_SAVE * 100 ms (<= 500 ms for levels 1-5),
+        // which is faster than the 500 ms decrement in APP_TimeSlice500ms(),
+        // so the keypad could never auto-lock while the radio idles.
         #ifdef ENABLE_FEAT_N7SIX
-        if (gEeprom.AUTO_KEYPAD_LOCK)
-            gKeyLockCountdown = (uint16_t)gEeprom.AUTO_KEYPAD_LOCK * 1500u;
+        if (gEeprom.AUTO_KEYPAD_LOCK && g_SquelchLost)
+            gKeyLockCountdown = (uint16_t)gEeprom.AUTO_KEYPAD_LOCK * 30u;
         #endif
 
         static bool goToSleep;
@@ -2424,7 +2429,7 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
     // Reset auto-keypad-lock countdown on wake from sleep/screensaver
     // and on every key press to prevent premature lock activation
     if (gEeprom.AUTO_KEYPAD_LOCK)
-    gKeyLockCountdown = (uint16_t)gEeprom.AUTO_KEYPAD_LOCK * 1500u;
+    gKeyLockCountdown = (uint16_t)gEeprom.AUTO_KEYPAD_LOCK * 30u; // 500ms ticks, 15s/step
 
     if (!bKeyPressed) { // key released
         if (flagSaveVfo) {

@@ -53,6 +53,8 @@ Physical PY25Q16    Virtual EEPROM    Content                    Size
   0x00A020-0x00A028  FM settings                                   8 bytes
   0x00A028-0x00A0A8  FM memory channels                            128 bytes
   0x00A0A8-0x00A0F8  Extended settings                             80 bytes
+   (in extended blk)  0x00A0B4-0x00A0B8  MDC-1200 config          4 bytes
+                                         (Unit ID + default op + arg)
   0x00A0F8-0x00A130  More extended settings                        56 bytes
   0x00A130-0x00A138  Scan list settings                            8 bytes
   0x00A138-0x00A148  AES settings                                  16 bytes
@@ -60,6 +62,9 @@ Physical PY25Q16    Virtual EEPROM    Content                    Size
   0x00A150-0x00A158  (more settings)                              8 bytes
   0x00A158-0x00A160  N7SIX custom settings                         8 bytes
   0x00A160-0x00A170  Version/build info                            16 bytes
+0x00A170-0x00A172  (outside virtual map)  Settings CRC-16       2 bytes
+                   (physical address only, written/read directly via
+                    PY25Q16; used when ENABLE_EEPROM_CRC is ON)
 0x010000-0x010200  0x00B000-0x00B200  Calibration data            512 bytes
 0x011000-0x012000  (unmapped)          Boot logo (128×64 bitmap)   1 KB
 ```

@@ -55,7 +55,7 @@ ENTRY(Reset_Handler)
 /* Highest address of the user mode stack */
 _estack = ORIGIN(RAM) + LENGTH(RAM);    /* end of RAM */
 /* Generate a link error if heap and stack don't fit into RAM */
-_Min_Heap_Size = 0x100;      /* required amount of heap (malloc only used by non-compiled CherryUSB classes) */
+_Min_Heap_Size = 0x0;        /* no heap: nothing in the firmware calls malloc/calloc/realloc */
 _Min_Stack_Size = 0x300; /* required amount of stack */
 
 /* Specify the memory areas */

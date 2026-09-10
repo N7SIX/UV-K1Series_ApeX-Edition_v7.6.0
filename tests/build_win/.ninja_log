@@ -1,0 +1,16 @@
+# ninja log v7
+79	457	8107215301725660	CMakeFiles/unit_tests.dir/test_stubs.c.obj	5f448cd5de5489f5
+41	672	8107215301345653	CMakeFiles/unit_tests.dir/test_dcs.c.obj	6fc579b76a82b6e
+102	762	8107215301955753	CMakeFiles/unit_tests.dir/C_/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0/App/dcs.c.obj	b191828afab4834f
+50	837	8107215301435670	CMakeFiles/unit_tests.dir/test_crc.c.obj	5abe9decace57997
+69	851	8107215301615671	CMakeFiles/unit_tests.dir/test_mdc_fuzz.c.obj	19e110c0148b568d
+92	857	8107215301845650	CMakeFiles/unit_tests.dir/C_/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0/App/frequencies.c.obj	601fcad27d08a27e
+113	858	8107215302060978	CMakeFiles/unit_tests.dir/C_/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0/App/mdc1200.c.obj	bee615a07d9c99ee
+24	895	8107215301175845	CMakeFiles/unit_tests.dir/test_main.c.obj	784c7e5f9182914c
+34	898	8107215301265720	CMakeFiles/unit_tests.dir/test_frequencies.c.obj	9695bdb00ed3ad2a
+59	988	8107215301525665	CMakeFiles/unit_tests.dir/test_mdc1200.c.obj	d677194c84cc238b
+478	999	8107215305714032	CMakeFiles/unit_tests.dir/C_/Users/sebue/Documents/N7SIX/Software/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0/App/driver/crc.c.obj	b775db9b5acfeda4
+763	1065	8107215308560722	CMakeFiles/batcal_math_tests.dir/83ff61e8eed9ba4865a2d7b9b1463038/Quansheng/UV-K1Series_ApeX-Edition_v7.6.0/App/helper/battery_calibration.c.obj	fd8bb6a39e6962e4
+673	1088	8107215307663263	CMakeFiles/batcal_math_tests.dir/test_batcal_math.c.obj	65a39cefcf6ceba9
+999	1314	8107215310920137	unit_tests.exe	1aeee5e945b7d351
+1088	1323	8107215311811971	batcal_math_tests.exe	4daea7fce8d845f8

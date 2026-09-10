@@ -313,7 +313,7 @@ void Main(void)
         // Without this, gKeyLockCountdown is 0 after BSS init, so the
         // auto-keypad-lock feature never activates after a power cycle.
         if (gEeprom.AUTO_KEYPAD_LOCK)
-            gKeyLockCountdown = (uint16_t)gEeprom.AUTO_KEYPAD_LOCK * 1500u;
+            gKeyLockCountdown = (uint16_t)gEeprom.AUTO_KEYPAD_LOCK * 30u; // 500ms ticks, 15s/step
     #endif
         
     while (true) {

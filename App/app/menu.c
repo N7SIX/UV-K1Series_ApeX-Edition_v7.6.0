@@ -735,7 +735,7 @@ void MENU_AcceptSetting(void)
 
         case MENU_AUTOLK:
             gEeprom.AUTO_KEYPAD_LOCK = gSubMenuSelection;
-            gKeyLockCountdown        = (uint16_t)gEeprom.AUTO_KEYPAD_LOCK * 1500u;
+            gKeyLockCountdown        = (uint16_t)gEeprom.AUTO_KEYPAD_LOCK * 30u; // 500ms ticks, 15s/step
             break;
 
         case MENU_LIST_CH:

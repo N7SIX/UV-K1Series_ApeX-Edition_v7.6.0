@@ -143,7 +143,15 @@ static void build_usage(uint32_t* ram_used, uint32_t* flash_used)
 
 static inline uint16_t pct_x100(uint32_t used, uint32_t total)
 {
-    return (uint16_t)((used * 10000u) / total); // 7559 => 75.59%
+    // Percent × 100 (9335 => 93.35%), ROUNDED to the nearest hundredth
+    // (round-half-up) so the on-screen readout matches the linker's
+    // "Memory region ... %age Used" build summary, which also rounds to
+    // 2 decimal places. 32-bit safe: used <= total (120832), so
+    // used * 10000 <= 1.21e9 < UINT32_MAX.
+    const uint32_t scaled = used * 10000u;
+    const uint32_t q      = scaled / total;
+    const uint32_t r      = scaled % total;
+    return (uint16_t)(q + ((r * 2u >= total) ? 1u : 0u));
 }
 
 void UI_GetMemPercents(uint16_t *flash_pct_x100, uint16_t *ram_pct_x100)

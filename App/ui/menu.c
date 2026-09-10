@@ -1514,12 +1514,14 @@ void UI_DisplayMenu(void)
                 strcpy(top_right_badge, "MEMORY");
 
                 // Flash + SRAM values stacked below, normal small font, with a fb-line of breathing space.
-                sprintf(val, "FLASH %u.%u%%",
-                        (unsigned)(flash_pct / 100), (unsigned)((flash_pct / 10) % 10));
+                // 2 decimals, rounded — matches the linker's
+                // "Memory region ... %age Used" build summary exactly.
+                sprintf(val, "FLASH %u.%02u%%",
+                        (unsigned)(flash_pct / 100), (unsigned)(flash_pct % 100));
                 UI_PrintStringSmallNormal(val, menu_item_x1 - 1, menu_item_x2, 3);
 
-                sprintf(val, "SRAM  %u.%u%%",
-                        (unsigned)(ram_pct / 100), (unsigned)((ram_pct / 10) % 10));
+                sprintf(val, "SRAM  %u.%02u%%",
+                        (unsigned)(ram_pct / 100), (unsigned)(ram_pct % 100));
                 UI_PrintStringSmallNormal(val, menu_item_x1 - 1, menu_item_x2, 5);
 
                 already_printed = true;
@@ -1587,29 +1589,29 @@ void UI_DisplayMenu(void)
             {   // Pick the reference point to edit.
                 const uint16_t loVal     = (gBatteryCalibration[0] > 0) ? gBatteryCalibration[0] : MENU_BatCalLowPreset();
                 const bool     loFactory = (loVal == MENU_BatCalLowPreset());
-                sprintf(String, "%cHi 8.40V", gSubMenuSelection == 0 ? '>' : ' ');
-                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 1);
+                sprintf(String, "%cHI 8.40V", gSubMenuSelection == 0 ? '>' : ' ');
+                UI_PrintStringSmallBold(String, menu_item_x1, 0, 1);
                 sprintf(String, " %4u", gBatteryCalibration[3]);
                 UI_PrintStringSmallNormal(String, menu_item_x1, 0, 2);
-                sprintf(String, "%cLo 6.00V", gSubMenuSelection == 1 ? '>' : ' ');
-                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 4);
+                sprintf(String, "%cLOW 6.00V", gSubMenuSelection == 1 ? '>' : ' ');
+                UI_PrintStringSmallBold(String, menu_item_x1, 0, 4);
                 sprintf(String, " %4u %s", loVal, loFactory ? "AUTO" : "CUST");
                 UI_PrintStringSmallNormal(String, menu_item_x1, 0, 5);
                 already_printed = true;
                 break;
             }
             if (gBatCalStage == 1)
-            {   // Choose the factory preset or custom low-point value.
+            {   // Choose the automatic preset or custom low-point value.
                 const uint16_t loVal = (gBatteryCalibration[0] > 0)
                                       ? gBatteryCalibration[0]
                                       : MENU_BatCalLowPreset();
-                sprintf(String, "%cAuto-Cal", gSubMenuSelection == 0 ? '>' : ' ');
-                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 1);
-                sprintf(String, " 6.0V %4u", loVal);
+                sprintf(String, "%cAUTO-CAL", gSubMenuSelection == 0 ? '>' : ' ');
+                UI_PrintStringSmallBold(String, menu_item_x1, 0, 1);
+                sprintf(String, "6.00V %u", loVal);
                 UI_PrintStringSmallNormal(String, menu_item_x1, 0, 2);
-                sprintf(String, "%cCustom", gSubMenuSelection == 1 ? '>' : ' ');
-                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 4);
-                sprintf(String, " Edit %4u", loVal);
+                sprintf(String, "%cCUSTOM", gSubMenuSelection == 1 ? '>' : ' ');
+                UI_PrintStringSmallBold(String, menu_item_x1, 0, 4);
+                sprintf(String, "6.00V %u", loVal);
                 UI_PrintStringSmallNormal(String, menu_item_x1, 0, 5);
                 already_printed = true;
                 break;
@@ -1618,7 +1620,7 @@ void UI_DisplayMenu(void)
             {
                 // Both reference editors share the same compact three-row layout.
                 uint16_t live_voltage = gBatteryVoltageAverage;
-                const char *reference = "Ref  6.00V";
+                const char *reference = "REF  6.00V";
                 char setText[6];
 
                 if (gBatCalTarget != 0)
@@ -1628,7 +1630,7 @@ void UI_DisplayMenu(void)
                     live_voltage = BATTERY_CalibrateRaw(raw_voltage,
                                                         gBatteryCalibration[0],
                                                         gSubMenuSelection);
-                    reference = "Ref  8.40V";
+                    reference = "REF  8.40V";
                 }
 
                 if (gInputBoxIndex > 0)
@@ -1642,9 +1644,9 @@ void UI_DisplayMenu(void)
                     sprintf(setText, "%4u", gSubMenuSelection);
                 }
 
-                sprintf(String, "Live %u.%02uV", live_voltage / 100, live_voltage % 100);
-                UI_PrintStringSmallNormal(String, menu_item_x1, 0, 2);
-                sprintf(String, "Set  %s", setText);
+                sprintf(String, "LIVE %u.%02uV", live_voltage / 100, live_voltage % 100);
+                UI_PrintStringSmallBold(String, menu_item_x1, 0, 2);
+                sprintf(String, "SET  %s", setText);
                 UI_PrintStringSmallNormal(String, menu_item_x1, 0, 4);
                 UI_PrintStringSmallNormal(reference, menu_item_x1, 0, 5);
             }

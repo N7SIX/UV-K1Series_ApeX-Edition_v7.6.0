@@ -92,7 +92,7 @@ bugs created maintenance hazards that could mislead future developers.
 
 ### Verification
 
-- All code functionally correct � no code changes needed
+- All code functionally correct — no code changes needed
 - All documentation now accurately reflects the implementation
 
 ## Fourth-Pass: Simulation Tests

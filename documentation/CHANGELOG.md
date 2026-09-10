@@ -25,8 +25,12 @@ in the final release build:
   in its original position, and uses fixed left-aligned small-font rows.
 - BatCal numeric entry requires four digits and accepts only values within the active
   ADC limits, with Lo/Hi cross-validation.
-- KeyLck now uses a 16-bit 10-ms countdown (`15 seconds × 1500 ticks`), fixing the
-  previous `uint8_t` overflow and incorrect `×30` timing.
+- The `MEMORY` status page now rounds the FLASH/SRAM usage to **2 decimals**
+  (was: 1 decimal, truncated), so the on-screen readout matches the linker's
+  `Memory region ... %age Used` build summary exactly (e.g. `93.36%` on both).
+- KeyLck's countdown is now `uint16_t` instead of `uint8_t` (`AUTO_KEYPAD_LOCK × 30`,
+  decremented every 500 ms in `APP_TimeSlice500ms()`), fixing an overflow that
+  corrupted timing for settings above about two minutes (steps > 8).
 - Battery Type critical-voltage handling is centralized for all five supported types
   and operates on BatCal-calibrated voltage.
 - `ANI ID` now uses the DTMF editor and persists changes when DTMF calling is enabled.
@@ -34,6 +38,14 @@ in the final release build:
   reducing the measured flash footprint by 108 bytes.
 
 Performance release from a full deep audit of the driver hot paths (pending release): 8× faster display blits, ~2.5–3× faster BK4819 register I/O and CPU idle sleep. Net cost **+44 B flash**; both optimizations are switchable build options — disabling them rebuilds to the exact v7.6.10C footprint (110,508 B).
+
+### 📖 New Documentation — BatCal Guide
+
+A combined technical + step-by-step user guide for the 2-point battery calibration
+feature: `documentation/BATCAL_GUIDE.md`. Integrates the findings from
+`documentation/BATCAL_DEEP_AUDIT.md` with a practical Hi-then-Lo calibration
+procedure (power supply or a fully charged reference battery), verification
+steps, a troubleshooting table, and the current Hi/Lo ADC limits.
 
 ### 🔄 Addendum — Menu System Deep Audit (2026-09-09)
 
@@ -56,7 +68,20 @@ A full deep audit of the menu system — every item in `MenuList[]` (~75 entries
 - **`MENU_TXP` display guarded for non-N7SIX builds (audit F-2):** the `Power` display referenced `gSubMenu_SET_PWR[]` unguarded, but that array only compiles under `ENABLE_FEAT_N7SIX` — any non-N7SIX build failed to compile. Now `#ifdef`-guarded with a plain-label fallback; the `#ifndef ENABLE_FEAT_N7SIX` code paths are buildable again.
 - **Phantom `voice_id` field reference removed (audit F-3):** `MENU_Key_MENU()` read `MenuList[gMenuCursor].voice_id`, but `t_menu_item` has no such field — dormant inside `#ifdef ENABLE_VOICE`, so enabling voice prompts broke the build. Replaced with `VOICE_ID_CONFIRM`; `ENABLE_VOICE=ON` builds compile again.
 - **`BatCal`/`TxTOut`/`D Prel` spot-check note:** partial digit entry now previews the clamped minimum instead of committing interim values (see the fill-in template below).
-- **KeyLck timing and range:** the auto-keypad-lock countdown is now a 16-bit 10-ms tick counter using `AUTO_KEYPAD_LOCK × 1500`, so all 15-second steps through the 10-minute maximum work without `uint8_t` overflow.
+- **KeyLck timing and range:** the auto-keypad-lock countdown (`gKeyLockCountdown`)
+  is now `uint16_t` instead of `uint8_t`, so the full `AUTO_KEYPAD_LOCK × 30` range
+  (decremented every 500 ms in `APP_TimeSlice500ms()`, 15 s per step, up to the
+  40-step / 10-minute maximum) no longer overflows.
+- **KeyLck vs. power-save conflict resolved (auto-keypad-lock never engaged on idle):** the
+  power-save wake handler in `APP_TimeSlice10ms()` reset `gKeyLockCountdown` on *every*
+  wake/sleep cycle. With `BatSav` > 0 the wake cycle is ≤ 500 ms — faster than the 500 ms
+  decrement in `APP_TimeSlice500ms()` — so any battery-save level kept the countdown pinned
+  at its full value and the keypad could never auto-lock (the reported "KeyLck = 15 s not
+  working" symptom). The reset is now gated on `g_SquelchLost`, i.e. it only re-arms while a
+  signal is actually opening the squelch (genuine reception still suppresses the lock);
+  quiet idle in power save now counts down normally and the lock engages after the selected
+  KeyLck time. `BLTime` (backlight), `SetSav`/`BatSav` and the dual-watch/scan paths were
+  audited and are unaffected — they don't touch the key-lock countdown.
 
 #### ✨ Added
 
