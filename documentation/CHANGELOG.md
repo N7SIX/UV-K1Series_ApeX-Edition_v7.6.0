@@ -133,6 +133,11 @@ A full deep audit of the menu system — every item in `MenuList[]` (~75 entries
 - New CMake options **`ENABLE_FAST_BK4819_SPI`** and **`ENABLE_WFI_IDLE`** (both default ON, added to `CMakePresets.json`). Disabling both rebuilds to the byte-identical v7.6.10C footprint (110,508 B FLASH / 14,144 B RAM).
 - Full audit report: `documentation/PERFORMANCE_AUDIT_v7.6.10D.md` (methodology, hot-path analysis, hardware-validation checklist and additional repository findings).
 
+📈 Memory
+Resource	Size	% Used
+Flash	112,876 B	93.42 %
+RAM	13,888 B	84.77 %
+
 ### 🧹 Code Hygiene
 
 - **Repository hygiene (new `.gitignore`):** ignores `build/`, `.vscode/*.json`, IDE/CMake scratch files — prevents the stale Docker cache and AI chat-session logs from being versioned again.
