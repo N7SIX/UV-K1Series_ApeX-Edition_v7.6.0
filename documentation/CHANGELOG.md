@@ -1,22 +1,30 @@
 # Changelog
-*> ⚠️ v7.6.10D is pending release — the performance release and menu/BatCal hardening are implemented in source, but the final firmware package has not been released.*
+*✅ v7.6.10D — RELEASED (2026-09-10): performance release, menu/BatCal hardening and the memory deep audit are implemented in source and the final firmware package has been built from the release source.*
 Release: v7.6.10D — Performance: 8× faster LCD, fast BK4819 I/O, WFI idle sleep
 
-**Date:** 2026-09-10 (pending release)
+**Date:** 2026-09-10
 **Target:** UV-K1 Series (BK4819 / BK4829)
-**Toolchain:** arm-none-eabi-gcc 14.3, Release + LTO
+**Toolchain:** arm-none-eabi-gcc 13.3 (release/CI Docker toolchain), Release + LTO
 **Base:** v7.6.10C
-**Firmware (pending release):** `n7six.ApeX-k1.v7.6.10D.bin` (112,536 B flash, 14,144 B RAM) — final source changes require a fresh v7.6.10D build and reflash
+**Firmware:** `n7six.ApeX-k1.v7.6.10D.bin` (**112,876 B flash / 93.42 %**, **13,888 B RAM / 84.77 %**) — built from release source `200dc93` (shown as BUILD_ID on the device); reflash required for all v7.6.10D features
 
-## [v7.6.10D] — Pending Release (base 2026-09-07; menu addendum 2026-09-09)
+## [v7.6.10D] — Released 2026-09-10 (base 2026-09-07; menu addendum 2026-09-09)
 
-**Target:** UV-K1 Series (BK4819 / BK4829) · **Base:** v7.6.10C · **Toolchain:** arm-none-eabi-gcc 14.3 (Release, LTO)
-**Firmware (pending release):** `n7six.ApeX-k1.v7.6.10D.bin` · **FLASH 112,536 B (93.14 %)** · **RAM 14,144 B (86.33 %)**
+**Target:** UV-K1 Series (BK4819 / BK4829) · **Base:** v7.6.10C · **Toolchain:** arm-none-eabi-gcc 13.3 (Release, LTO — release/CI Docker toolchain)
+**Firmware:** `n7six.ApeX-k1.v7.6.10D.bin` · **FLASH 112,876 B (93.42 %)** · **RAM 13,888 B (84.77 %)**
 
-### 🔄 Current pending-source update (2026-09-10)
+### 🧠 Memory deep audit — RAM recovered without feature loss (2026-09-10)
 
-The following changes are included in the pending v7.6.10D source and must be included
-in the final release build:
+Full RAM/FLASH audit of the release source (`documentation/MEMORY_DEEP_AUDIT_v7.6.10D_2026-09-10.md`):
+
+- **RAM −256 B (86.33 % → 84.77 %):** the 256-byte heap reservation in `Core/py32f071xb.ld` was removed after a repo-wide symbol audit found **zero** `malloc`/`calloc`/`realloc` call sites (including CherryUSB). No feature disabled, no UI/UX change, no performance impact; the freed reserve becomes extra stack headroom and the on-device `MEMORY` page readout auto-corrects (it reads the linker symbols).
+- **No FLASH reduction was possible without feature loss:** `-Oz`, `-fwhole-program` are byte-identical no-ops under LTO and `-fmerge-all-constants` saves only 24 B — all rejected; no duplicated string literals remain in the binary; every major RAM buffer (`SectorCache` 4 KB deferred-write image, display frame buffers, protocol-sized UART/VCP frames) is documented as required for correctness or fidelity.
+- **Release build verification (Docker 13.3, BUILD_ID `200dc93`):** FLASH 112,876 B (93.42 %) · RAM 13,888 B (84.77 %) · CI size gate **passes** on both feature-matrix extremes — ApeX 93.42 %/84.77 %, ApeX-minimal FLASH 82,604 B (68.36 %)/RAM 9,048 B (55.22 %); host unit tests 2/2 pass.
+
+### 🔄 Final source update (2026-09-10)
+
+The following changes are included in the final v7.6.10D release source and the
+release build:
 
 - BatCal uses one shared production calibration helper for normal battery readings,
   spectrum status, and UI previews; the EEPROM address remains `0x010140` with a
@@ -37,7 +45,7 @@ in the final release build:
 - BatCal edit rendering was deduplicated without changing calibration math or UI behavior,
   reducing the measured flash footprint by 108 bytes.
 
-Performance release from a full deep audit of the driver hot paths (pending release): 8× faster display blits, ~2.5–3× faster BK4819 register I/O and CPU idle sleep. Net cost **+44 B flash**; both optimizations are switchable build options — disabling them rebuilds to the exact v7.6.10C footprint (110,508 B).
+Performance release from a full deep audit of the driver hot paths: 8× faster display blits, ~2.5–3× faster BK4819 register I/O and CPU idle sleep. Net cost **+44 B flash**; both optimizations are switchable build options — disabling them rebuilds to the exact v7.6.10C footprint (110,508 B).
 
 ### 📖 New Documentation — BatCal Guide
 
