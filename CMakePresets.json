@@ -84,9 +84,9 @@
                 "ENABLE_FAST_BK4819_SPI": true,
                 "ENABLE_WFI_IDLE": true,
                 "VERSION_STRING_1": "v0.22",
-                "VERSION_STRING_2": "v7.6.10D",
+                "VERSION_STRING_2": "v7.6.10E",
                 "EDITION_STRING": "ApeX",
-                "TARGET": "n7six.ApeX-k1.v7.6.10D"
+                "TARGET": "n7six.ApeX-k1.v7.6.10E"
             }
         },
         {
