@@ -1087,13 +1087,25 @@ static void CheckRadioInterrupts(void)
         }
 
 #ifdef ENABLE_AIRCOPY
-        if (interrupts.fskFifoAlmostFull &&
+        if ((interrupts.fskFifoAlmostFull || interrupts.fskRxFinied) &&
             gScreenToDisplay == DISPLAY_AIRCOPY &&
             gAircopyState == AIRCOPY_TRANSFER &&
             gAirCopyIsSendMode == 0)
         {
-            for (unsigned int i = 0; i < 4; i++) {
-                g_FSK_Buffer[gFSKWriteIndex++] = BK4819_ReadRegister(BK4819_REG_5F);
+            // Drain the RX FIFO. The FIFO-almost-full IRQ delivers 4 words; on
+            // FSK-RX-FINISHED any remainder that was not picked up (e.g. a missed
+            // almost-full event) is read so the packet can still be assembled
+            // instead of being silently dropped, which would leave a block
+            // missing without any error being counted. Mirrors the proven
+            // BEAM_StorePacket handling below.
+            unsigned int wordsToRead = 4u;
+            if (interrupts.fskRxFinied && gFSKWriteIndex < 36u)
+                wordsToRead = (unsigned int)(36u - gFSKWriteIndex);
+
+            for (unsigned int i = 0; i < wordsToRead; i++) {
+                const uint16_t word = BK4819_ReadRegister(BK4819_REG_5F);
+                if (gFSKWriteIndex < 36)
+                    g_FSK_Buffer[gFSKWriteIndex++] = word;
             }
 
             AIRCOPY_StorePacket();

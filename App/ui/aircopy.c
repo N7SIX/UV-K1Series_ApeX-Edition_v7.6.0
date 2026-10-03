@@ -117,13 +117,23 @@ void UI_DisplayAircopy(void)
 
     if (doneBlocks > 0)
     {
-        // Track CRC errors per real block index
-        if (gErrorsDuringAirCopy != lErrorsDuringAirCopy)
+        // Record EVERY error seen since the last redraw, not just one. The old
+        // code marked a single bit per redraw at doneBlocks-1, so a burst of
+        // rejected blocks left most of their positions unmarked and the gauge
+        // looked frozen. `lErrorsDuringAirCopy` is a uint8_t shadow of the
+        // uint16_t counter, so the delta is clamped to doneBlocks - an unbounded
+        // loop would spin once the counter passed 255.
+        uint16_t newErrors = (uint16_t)(gErrorsDuringAirCopy - lErrorsDuringAirCopy);
+        if (newErrors > doneBlocks)
+            newErrors = doneBlocks;
+
+        while (newErrors > 0u)
         {
-            // Mark the last processed block as faulty
-            set_bit(crc, doneBlocks - 1);
-            lErrorsDuringAirCopy = gErrorsDuringAirCopy;
+            set_bit(crc, doneBlocks - newErrors);
+            newErrors--;
         }
+
+        lErrorsDuringAirCopy = (uint8_t)gErrorsDuringAirCopy;
 
         uint16_t b = 0;
         uint16_t fraction_accumulator = 0;
@@ -134,11 +144,15 @@ void UI_DisplayAircopy(void)
             bool error     = processed && get_bit(crc, b);
 
             if (!processed)
-                gFrameBuffer[4][col + 4] = 0x81;   // not yet processed
+                gFrameBuffer[4][col + 4] = 0x81;   // not yet processed (empty track)
             else if (error)
-                gFrameBuffer[4][col + 4] = 0x81;   // error gap (intentional hole)
+                gFrameBuffer[4][col + 4] = 0x99;   // received but rejected: a
+                                                   // rejected block used the SAME
+                                                   // glyph as "not yet processed",
+                                                   // so any packet loss rendered
+                                                   // as a bar that never moves
             else
-                gFrameBuffer[4][col + 4] = 0xBD;   // ok filled
+                gFrameBuffer[4][col + 4] = 0xBD;   // received OK (filled)
 
             // DDA/Bresenham algorythm
             fraction_accumulator += currentMap->total_blocks;

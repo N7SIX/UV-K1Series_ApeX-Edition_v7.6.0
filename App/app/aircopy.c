@@ -241,6 +241,14 @@ bool AIRCOPY_SendMessage(void)
 
     RADIO_SetTxParameters();
 
+    // RADIO_SetTxParameters() calls BK4819_DisableMDC1200RX(), which zeroes
+    // REG_58 (FSK enable) and REG_70 (Tone-2) so the normal FM voice TX path is
+    // used. Air Copy depends on those registers for FSK modulation, so restore
+    // the FSK config before pushing the packet. Without this the carrier is
+    // keyed but no FSK data reaches the air and the receiver never syncs
+    // (RCV stays at 0.00%, E:0).
+    BK4819_SetupAircopy();
+
     BK4819_SendFSKData(g_FSK_Buffer);
     BK4819_SetupPowerAmplifier(0, 0);
     BK4819_ToggleGpioOut(BK4819_GPIO1_PIN29_PA_ENABLE, false);
@@ -365,6 +373,13 @@ static void AIRCOPY_Key_EXIT()
     if (gInputBoxIndex == 0) {
         AIRCOPY_InitTransfer(0); // Mode: Receive
         gErrorsDuringAirCopy = lErrorsDuringAirCopy = 0;
+
+        // Re-assert the FSK register set (REG_58/REG_70/REG_72/REG_5C/REG_5D)
+        // before arming the receiver. It can have been cleared by a prior PTT
+        // (RADIO_SetTxParameters -> BK4819_DisableMDC1200RX), or by entering
+        // Air Copy without typing a frequency, which would otherwise leave FSK
+        // receive disabled and the receiver silent.
+        BK4819_SetupAircopy();
 
         BK4819_PrepareFSKReceive();
         

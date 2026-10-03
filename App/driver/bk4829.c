@@ -1138,13 +1138,27 @@ void BK4819_TurnsOffTones_TurnsOnRX(void)
 #ifdef ENABLE_AIRCOPY
     void BK4819_SetupAircopy(void)
     {
-        BK4819_WriteRegister(BK4819_REG_70, 0x00C3);    // Enable Tone2, tuning gain 48
+        // Register set is copied verbatim from the proven reference Air Copy
+        // implementation (DualTachyon / egzumer uv-k5, also in bk4819.c here).
+        // These two lines used to differ, and both differences break reception:
+        //
+        // REG_70 MUST be 0x00E0. The old 0x00C3 is not another spelling of it -
+        // the low bits are the Tone-2 tuning-gain field, and the same driver's
+        // on-air-proven MDC-1200 TX/RX path writes 0x00E0 with this very
+        // comment ("Enable Tone-2, tuning gain 48"). 0x00C3 under-drives the
+        // FSK modulator. The BK4819/4829 RX FIFO still fills to the programmed
+        // 72-byte length on a weak burst, so the receiver assembles 36 words of
+        // noise and rejects EVERY block at the 0xABCD/0xDCBA framing test:
+        // "RCV:xx.xx%" still climbs (errors count as progress) while E: runs to
+        // the block count and nothing is ever stored.
+        BK4819_WriteRegister(BK4819_REG_70, 0x00E0);    // Enable Tone2, tuning gain 48
         BK4819_WriteRegister(BK4819_REG_72, 0x3065);    // Tone2 baudrate 1200
         BK4819_WriteRegister(BK4819_REG_58, 0x00C1);    // FSK Enable, FSK 1.2K RX Bandwidth, Preamble 0xAA or 0x55, RX Gain 0, RX Mode
                                                         // (FSK1.2K, FSK2.4K Rx and NOAA SAME Rx), TX Mode FSK 1.2K and FSK 2.4K Tx
         BK4819_WriteRegister(BK4819_REG_5C, 0x5665);    // Enable CRC among other things we don't know yet
         BK4819_WriteRegister(BK4819_REG_5D, 0x4700);    // FSK Data Length 72 Bytes (0xabcd + 2 byte length + 64 byte payload + 2 byte CRC + 0xdcba)
-        BK4819_WriteRegister(0x5E, 0x3204);
+        // REG_5E is deliberately NOT written: the reference implementation does
+        // not program it, and its 0x3204 value here is undocumented.
     }
 #endif
 
