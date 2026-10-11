@@ -1,0 +1,192 @@
+// Backup of the tone-emulated ApeX roger variants (tier 1), replaced by
+// the hardware-FFSK tier 3a implementation on 2026-10-09.
+// Sources: App/driver/bk4829.c lines 1872-2048; App/driver/bk4819.h lines 175-182
+
+// ---- App/driver/bk4819.h ----
+#ifdef N7SIX_APEX
+// ApeX-only emulated MDC roger variants (MENU > Roger).
+void     BK4819_EnableTone1(bool enable);
+void     BK4819_SetTone1Frequency(uint16_t freq_Hz);
+void     BK4819_PlayRogerBeep_MDC_ExtendedPreamble(BK4819_FilterBandwidth_t Bandwidth);
+void     BK4819_PlayRogerBeep_MDC_SelCall2Packet(BK4819_FilterBandwidth_t Bandwidth);
+void     BK4819_PlayRogerBeep_MDC_EmergencyLoop(BK4819_FilterBandwidth_t Bandwidth);
+#endif
+
+// ---- App/driver/bk4829.c ----
+#ifdef N7SIX_APEX
+/*
+ * ApeX-only emulated MDC roger variants (MENU > Roger).
+ *
+ * Unlike the FSK burst above, these emulate MDC-1200 style packets by
+ * shifting the BK4819 Tone-1 generator between 1200 Hz (Mark) and
+ * 1800 Hz (Space). The TX scaffolding mirrors BK4819_PlayRogerNormal():
+ * TX/AF muted while the tone path is armed, wide channels temporarily
+ * forced to narrow, and the Tone-1 tuning gain picked per bandwidth.
+ */
+
+static uint8_t sTone1TuningGain = 32;
+
+void BK4819_EnableTone1(const bool enable)
+{
+    BK4819_WriteRegister(BK4819_REG_70,
+        enable
+            ? (BK4819_REG_70_ENABLE_TONE1 |
+               (sTone1TuningGain << BK4819_REG_70_SHIFT_TONE1_TUNING_GAIN))
+            : 0x0000);
+}
+
+void BK4819_SetTone1Frequency(const uint16_t freq_Hz)
+{
+    BK4819_WriteRegister(BK4819_REG_71, scale_freq(freq_Hz));
+}
+
+static void BK4819_RogerMDC_Begin(const BK4819_FilterBandwidth_t Bandwidth)
+{
+    BK4819_EnterTxMute();
+    BK4819_SetAF(BK4819_AF_MUTE);
+
+    sTone1TuningGain = (Bandwidth == BK4819_FILTER_BW_WIDE) ? 32u : 67u;
+
+    if (Bandwidth == BK4819_FILTER_BW_WIDE)
+        BK4819_SetFilterBandwidth(BK4819_FILTER_BW_NARROW, true);
+
+    BK4819_SetTone1Frequency(1200);     // park on the first tone of the burst
+    BK4819_EnableTone1(true);
+    BK4819_EnableTXLink();
+    SYSTEM_DelayMs(50);
+
+    BK4819_ExitTxMute();                // audible from here on
+}
+
+static void BK4819_RogerMDC_End(const BK4819_FilterBandwidth_t Bandwidth)
+{
+    BK4819_EnterTxMute();
+    BK4819_EnableTone1(false);
+
+    if (Bandwidth == BK4819_FILTER_BW_WIDE)
+        BK4819_SetFilterBandwidth(Bandwidth, true);
+
+    BK4819_WriteRegister(BK4819_REG_30, 0xC1FE);
+}
+
+/**
+ * @brief Transmits an Extended Preamble MDC-1200 Emulated Roger Beep
+ * @details Alternates 1200 Hz (Mark) and 1800 Hz (Space) to emulate a long 300ms preamble,
+ *          followed by a pseudo-packet chirp before dropping PTT.
+ */
+void BK4819_PlayRogerBeep_MDC_ExtendedPreamble(const BK4819_FilterBandwidth_t Bandwidth)
+{
+    BK4819_RogerMDC_Begin(Bandwidth);
+
+    // Enable BK4819 TX tone generator path
+    BK4819_EnableTone1(true);
+
+    // 1. Extended Preamble Loop (~300 ms total duration)
+    // 15 cycles x (10ms @ 1200Hz + 10ms @ 1800Hz) = 300 ms
+    for (uint8_t i = 0; i < 15; i++) {
+        BK4819_SetTone1Frequency(1200); // 1200 Hz
+        SYSTEM_DelayMs(10);
+        
+        BK4819_SetTone1Frequency(1800); // 1800 Hz
+        SYSTEM_DelayMs(10);
+    }
+
+    // 2. Simulated MDC Packet Burst (pseudo-random rapid tone shifting ~170 ms)
+    const uint16_t mdc_tones[] = { 1200, 1800, 1200, 1200, 1800, 1200, 1800, 1800 };
+    for (uint8_t j = 0; j < 16; j++) {
+        BK4819_SetTone1Frequency(mdc_tones[j % 8]);
+        SYSTEM_DelayMs(10);
+    }
+
+    // Disable Tone Generator
+    BK4819_EnableTone1(false);
+
+    BK4819_RogerMDC_End(Bandwidth);
+}
+
+/**
+ * @brief Transmits a SelCall / Call Alert Double-Packet Emulated Roger Beep
+ * @details Sends two consecutive MDC-style chirps separated by a brief 20ms sync gap.
+ */
+void BK4819_PlayRogerBeep_MDC_SelCall2Packet(const BK4819_FilterBandwidth_t Bandwidth)
+{
+    BK4819_RogerMDC_Begin(Bandwidth);
+
+    // --- PACKET 1: Header Burst (~180 ms) ---
+    // Short 40ms Preamble
+    for (uint8_t i = 0; i < 2; i++) {
+        BK4819_SetTone1Frequency(1200);
+        SYSTEM_DelayMs(10);
+        BK4819_SetTone1Frequency(1800);
+        SYSTEM_DelayMs(10);
+    }
+    // Packet Payload Tones
+    const uint16_t packet1[] = { 1800, 1200, 1800, 1800, 1200, 1800, 1200, 1200, 1800, 1200, 1800, 1200, 1800, 1200 };
+    for (uint8_t j = 0; j < 14; j++) {
+        BK4819_SetTone1Frequency(packet1[j]);
+        SYSTEM_DelayMs(10);
+    }
+
+    // --- INTER-PACKET GAP (20 ms Sync Pause) ---
+    BK4819_EnableTone1(false);
+    SYSTEM_DelayMs(20);
+    BK4819_EnableTone1(true);
+
+    // --- PACKET 2: Destination ID Burst (~180 ms) ---
+    // Short 40ms Preamble
+    for (uint8_t i = 0; i < 2; i++) {
+        BK4819_SetTone1Frequency(1200);
+        SYSTEM_DelayMs(10);
+        BK4819_SetTone1Frequency(1800);
+        SYSTEM_DelayMs(10);
+    }
+    // Packet Payload Tones
+    const uint16_t packet2[] = { 1200, 1800, 1200, 1200, 1800, 1200, 1800, 1800, 1200, 1800, 1200, 1800, 1200, 1800 };
+    for (uint8_t k = 0; k < 14; k++) {
+        BK4819_SetTone1Frequency(packet2[k]);
+        SYSTEM_DelayMs(10);
+    }
+
+    BK4819_EnableTone1(false);
+
+    BK4819_RogerMDC_End(Bandwidth);
+}
+
+/**
+ * @brief Transmits an Emergency Retry Sequence Emulated Roger Beep
+ * @details Fires 3 rapid MDC bursts with short silence intervals in between.
+ */
+void BK4819_PlayRogerBeep_MDC_EmergencyLoop(const BK4819_FilterBandwidth_t Bandwidth)
+{
+    BK4819_RogerMDC_Begin(Bandwidth);
+
+    // Execute 3 burst loops
+    for (uint8_t burst = 0; burst < 3; burst++) {
+        BK4819_EnableTone1(true);
+
+        // Fast 30ms Preamble
+        for (uint8_t p = 0; p < 3; p++) {
+            BK4819_SetTone1Frequency(1800);
+            SYSTEM_DelayMs(5);
+            BK4819_SetTone1Frequency(1200);
+            SYSTEM_DelayMs(5);
+        }
+
+        // Emergency Packet Tone Payload (~100 ms)
+        const uint16_t emergency_pattern[] = { 1800, 1800, 1200, 1800, 1200, 1200, 1800, 1800, 1200, 1800 };
+        for (uint8_t t = 0; t < 10; t++) {
+            BK4819_SetTone1Frequency(emergency_pattern[t]);
+            SYSTEM_DelayMs(10);
+        }
+
+        BK4819_EnableTone1(false);
+
+        // If not the final burst, add a short 60ms gap between retries
+        if (burst < 2) {
+            SYSTEM_DelayMs(60);
+        }
+    }
+
+    BK4819_RogerMDC_End(Bandwidth);
+}
+#endif /* N7SIX_APEX */

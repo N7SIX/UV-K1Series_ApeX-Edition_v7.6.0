@@ -17,6 +17,7 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 enum FUNCTION_Type_t
@@ -35,13 +36,8 @@ typedef enum FUNCTION_Type_t FUNCTION_Type_t;
 
 extern FUNCTION_Type_t       gCurrentFunction;
 
-/** @brief Initialize the firmware function state machine. */
 void FUNCTION_Init(void);
-
-/** @brief Switch the active firmware function. */
 void FUNCTION_Select(FUNCTION_Type_t Function);
-
-/** @brief Return true if the radio is currently in an RX-related function. */
 bool FUNCTION_IsRx();
 
 #endif

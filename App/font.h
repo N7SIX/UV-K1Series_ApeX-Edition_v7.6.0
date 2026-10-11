@@ -20,22 +20,17 @@
 #include <stdint.h>
 
 
-/** @brief Large ASCII font bitmap table. */
-extern const uint8_t gFontBig[95 - 1][16 - 2];
-
-/** @brief Large digit font bitmap table. */
+void FONT_DrawBigGlyph(uint8_t glyph, uint8_t *top, uint8_t *bottom);
 extern const uint8_t gFontBigDigits[11][26 - 6];
-
-/** @brief 3x5 compact font bitmap table. */
 extern const uint8_t gFont3x5[96][3];
 
-/** @brief Small ASCII font bitmap table. */
-extern const uint8_t gFontSmall[95 - 1][6];
+#define FONT_SMALL_WIDTH       6u
+#define FONT_SMALL_GLYPH_COUNT (95u - 1u)
+#define FONT_SMALL_PACKED_SIZE ((FONT_SMALL_GLYPH_COUNT * FONT_SMALL_WIDTH * 7u + 7u) / 8u)
 
+extern const uint8_t gFontSmallPacked[FONT_SMALL_PACKED_SIZE];
 #ifdef ENABLE_SMALL_BOLD
-    /** @brief Small bold ASCII font bitmap table. */
-    extern const uint8_t gFontSmallBold[95 - 1][6];
+    extern const uint8_t gFontSmallBoldPacked[FONT_SMALL_PACKED_SIZE];
 #endif
 
 #endif
-

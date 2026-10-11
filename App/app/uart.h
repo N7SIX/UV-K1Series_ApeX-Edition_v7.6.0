@@ -19,6 +19,7 @@
 #define APP_UART_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 enum
 {
@@ -32,10 +33,9 @@ enum
 
 bool UART_IsCommandAvailable(uint32_t Port);
 void UART_HandleCommand(uint32_t Port);
-
-#if defined(ENABLE_FEAT_N7SIX_K5VIEWER) || defined(ENABLE_FEAT_N7SIX_RXTX_LOG_K5VIEWER)
-extern uint8_t gUART_LockK5Viewer;
+void UART_ServiceCommands(void);
+#ifdef ENABLE_AIRCOPY_UART
+void UART_SendAircopy(const uint16_t *data, uint8_t words);
 #endif
 
 #endif
-

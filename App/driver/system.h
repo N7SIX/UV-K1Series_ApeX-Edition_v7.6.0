@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 void SYSTEM_DelayMs(uint32_t Delay);
+void SYSTEM_ConfigureClocks(void);
 
 #endif
 

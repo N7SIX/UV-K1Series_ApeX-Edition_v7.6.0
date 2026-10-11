@@ -25,28 +25,12 @@
 #include "radio.h"
 #include <driver/backlight.h>
 
-// PY25Q16 SPI flash virtual EEPROM address mapping
-// (see App/documentation/EEPROM_ARCHITECTURE.md for full map)
-#define EEPROM_ADDR_GENERAL_SETTINGS   0x00A000u  // General settings (8 bytes)
-#define EEPROM_ADDR_SETTINGS_MIRROR    0x00A010u  // Mirror/backup of general settings (8 bytes)
-#define EEPROM_ADDR_FM_SETTINGS        0x00A020u  // FM settings (4 bytes)
-#define EEPROM_ADDR_FM_CHANNELS        0x00A028u  // FM memory channels (128 bytes)
-#define EEPROM_ADDR_EXTENDED_SETTINGS  0x00A0A8u  // Extended settings (128 bytes)
-#define BATTERY_CALIB_FLASH_ADDR       0x010140u  // PY25Q16 physical address (12 bytes)
-#define BATTERY_CALIB_FLASH_SIZE       12u
-#define EEPROM_ADDR_LOGO_LINES         0x00A0C8u  // Logo/display lines (32 bytes)
-#define EEPROM_ADDR_WELCOME0           0x00A0C8u  // Welcome string 0 (16 bytes, alias)
-#define EEPROM_ADDR_WELCOME1           0x00A0D8u  // Welcome string 1 (16 bytes)
-#define EEPROM_ADDR_SCAN_LIST          0x00A130u  // Scan list settings (8 bytes)
-#define EEPROM_ADDR_F_LOCK             0x00A150u  // Frequency lock settings (8 bytes)
-#define EEPROM_ADDR_N7SIX_STATE        0x00A158u  // N7SIX custom state (8 bytes)
-#define EEPROM_ADDR_DISPLAY_STATE      0x00A158u  // Display state (alias for N7SIX_STATE)
-#define EEPROM_ADDR_VERSION            0x00A160u  // Version/build string (16 bytes)
-#define EEPROM_ADDR_SETTINGS_CRC       0x00A170u  // CRC-16 for settings block (2 bytes)
-#define EEPROM_SETTINGS_SIZE           0x170u     // Settings block size (368 bytes)
+/* Shared PY25Q16 locations for the two configurable boot-message lines. */
+#define SETTINGS_BOOT_MESSAGE_LINE1_ADDR 0x00A0C8u
+#define SETTINGS_BOOT_MESSAGE_LINE2_ADDR 0x00A0D8u
 
 enum POWER_OnDisplayMode_t {
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     POWER_ON_DISPLAY_MODE_ALL,
     POWER_ON_DISPLAY_MODE_SOUND,
 #else
@@ -54,7 +38,7 @@ enum POWER_OnDisplayMode_t {
 #endif
     POWER_ON_DISPLAY_MODE_MESSAGE,
     POWER_ON_DISPLAY_MODE_VOLTAGE,
-#ifdef ENABLE_FEAT_N7SIX_LOGO
+#ifdef ENABLE_FEAT_F4HWN_LOGO
     POWER_ON_DISPLAY_MODE_LOGO,
 #endif
     POWER_ON_DISPLAY_MODE_NONE,
@@ -64,17 +48,17 @@ typedef enum POWER_OnDisplayMode_t POWER_OnDisplayMode_t;
 enum TxLockModes_t {
     F_LOCK_DEF, //all default frequencies + configurable
     F_LOCK_FCC,
-#ifdef ENABLE_FEAT_N7SIX_CA
+#ifdef ENABLE_FEAT_F4HWN_CA
     F_LOCK_CA,
 #endif
     F_LOCK_CE,
     F_LOCK_GB,
     F_LOCK_430,
     F_LOCK_438,
-#ifdef ENABLE_FEAT_N7SIX_PMR
+#ifdef ENABLE_FEAT_F4HWN_PMR
     F_LOCK_PMR,
 #endif
-#ifdef ENABLE_FEAT_N7SIX_GMRS_FRS_MURS
+#ifdef ENABLE_FEAT_F4HWN_GMRS_FRS_MURS
     F_LOCK_GMRS_FRS_MURS,
 #endif
     F_LOCK_ALL, // disable TX on all frequencies
@@ -99,7 +83,10 @@ enum {
 enum {
     DUAL_WATCH_OFF = 0,
     DUAL_WATCH_CHAN_A,
-    DUAL_WATCH_CHAN_B
+    DUAL_WATCH_CHAN_B,
+#ifdef ENABLE_FEAT_F4HWN_FULL_WATCH
+    DUAL_WATCH_FULL
+#endif
 };
 
 enum {
@@ -120,44 +107,35 @@ enum {
 };
 
 enum ACTION_OPT_t {
-    ACTION_OPT_NONE = 0,
-    ACTION_OPT_FLASHLIGHT,
-    ACTION_OPT_POWER,
-    ACTION_OPT_MONITOR,
-    ACTION_OPT_SCAN,
-    ACTION_OPT_VOX,
-    ACTION_OPT_ALARM,
-    ACTION_OPT_FM,
-    ACTION_OPT_1750,
-    ACTION_OPT_KEYLOCK,
-    ACTION_OPT_A_B,
-    ACTION_OPT_VFO_MR,
-    ACTION_OPT_SWITCH_DEMODUL,
-    ACTION_OPT_BLMIN_TMP_OFF, //BackLight Minimum Temporay OFF
-#ifdef ENABLE_FEAT_N7SIX
-    ACTION_OPT_RXMODE,
-    ACTION_OPT_MAINONLY,
-    ACTION_OPT_PTT,
-    ACTION_OPT_WN,
-    ACTION_OPT_BACKLIGHT,
-    ACTION_OPT_MUTE,
-    ACTION_OPT_RXA,
-    #ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
-        ACTION_OPT_POWER_HIGH,
-        ACTION_OPT_REMOVE_OFFSET,
-    #endif
-    #ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
-        ACTION_OPT_RXTX_LOG,
-    #endif
-#endif
-#ifdef ENABLE_REGA
-    ACTION_OPT_REGA_ALARM,
-    ACTION_OPT_REGA_TEST,
-#endif
-#ifdef ENABLE_FEAT_N7SIX_BEAM
-    ACTION_OPT_BEAM,
-#endif
-    ACTION_OPT_LEN
+    /* Persisted in EEPROM: never renumber or make these values conditional. */
+    ACTION_OPT_NONE           = 0,
+    ACTION_OPT_FLASHLIGHT     = 1,
+    ACTION_OPT_POWER          = 2,
+    ACTION_OPT_MONITOR        = 3,
+    ACTION_OPT_SCAN           = 4,
+    ACTION_OPT_VOX            = 5,
+    ACTION_OPT_FM             = 6,
+    ACTION_OPT_1750           = 7,
+    ACTION_OPT_KEYLOCK        = 8,
+    ACTION_OPT_A_B            = 9,
+    ACTION_OPT_VFO_MR         = 10,
+    ACTION_OPT_SWITCH_DEMODUL = 11,
+    ACTION_OPT_RXMODE         = 12,
+    ACTION_OPT_MAINONLY       = 13,
+    ACTION_OPT_PTT            = 14,
+    ACTION_OPT_WN             = 15,
+    ACTION_OPT_MUTE           = 16,
+    ACTION_OPT_RXA            = 17,
+
+    /* Preset-specific actions keep their IDs even when not compiled. */
+    ACTION_OPT_RXTX_LOG       = 18,
+    ACTION_OPT_BEAM           = 19,
+    ACTION_OPT_POWER_HIGH     = 20,
+    ACTION_OPT_REMOVE_OFFSET  = 21,
+    ACTION_OPT_FOXHUNT        = 22,
+    ACTION_OPT_BEACON         = 23,
+
+    ACTION_OPT_LEN            = 24
 };
 
 #ifdef ENABLE_VOICE
@@ -170,16 +148,16 @@ enum ACTION_OPT_t {
     typedef enum VOICE_Prompt_t VOICE_Prompt_t;
 #endif
 
-enum ALARM_Mode_t {
-    ALARM_MODE_SITE = 0,
-    ALARM_MODE_TONE
-};
-typedef enum ALARM_Mode_t ALARM_Mode_t;
-
 enum ROGER_Mode_t {
     ROGER_MODE_OFF = 0,
     ROGER_MODE_ROGER,
     ROGER_MODE_MDC
+#ifdef N7SIX_APEX
+    // ApeX-only emulated MDC roger variants (MENU > Roger).
+    ,ROGER_MODE_MDC_EP       // Extended Preamble
+    ,ROGER_MODE_MDC_2P       // SelCall 2-Packet
+    ,ROGER_MODE_MDC_EL       // Emergency Loop
+#endif
 };
 typedef enum ROGER_Mode_t ROGER_Mode_t;
 
@@ -207,8 +185,8 @@ typedef struct {
     // 
     uint8_t               TX_VFO;
 
-    uint8_t               field7_0xa;  // Reserved/legacy; do not remove to preserve EEPROM layout
-    uint8_t               field8_0xb;  // Reserved/legacy; do not remove to preserve EEPROM layout
+    uint8_t               field7_0xa;
+    uint8_t               field8_0xb;
 
 #ifdef ENABLE_FMRADIO
     uint16_t          FM_SelectedFrequency;
@@ -222,11 +200,10 @@ typedef struct {
     uint8_t               SQUELCH_LEVEL;
     uint8_t               TX_TIMEOUT_TIMER;
     bool                  KEY_LOCK;
-#ifdef ENABLE_FEAT_N7SIX
-    bool                  KEY_LOCK_PTT;
+#ifdef ENABLE_FEAT_F4HWN
     bool                  SET_NAV;
 #endif
-#ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     bool                  MENU_LOCK;
     uint8_t               SET_KEY;
 #endif
@@ -245,31 +222,23 @@ typedef struct {
     uint8_t               BACKLIGHT_TIME;
     uint8_t               SCAN_RESUME_MODE;
     uint8_t               SCAN_LIST_DEFAULT;
+    uint32_t              SCAN_LIST_MIX_MASK;
     bool                  SCAN_LIST_ENABLED;
     uint16_t              SCANLIST_PRIORITY_CH[6];
-//#ifdef ENABLE_FEAT_N7SIX_RESUME_STATE // Fix me !!! What the hell is this?
+//#ifdef ENABLE_FEAT_F4HWN_RESUME_STATE // Fix me !!! What the hell is this?
     uint8_t               CURRENT_STATE;
     uint8_t               CURRENT_LIST;
 //#endif                                // Fix me !!! What the hell is this?
 
-    uint8_t               field29_0x26;  // Reserved/legacy
-    uint8_t               field30_0x27;  // Reserved/legacy
-
-    uint8_t               field37_0x32;  // Reserved/legacy
-    uint8_t               field38_0x33;  // Reserved/legacy
+    uint8_t               field29_0x26;
+    uint8_t               field30_0x27;
+    
+    uint8_t               field37_0x32;
+    uint8_t               field38_0x33;
 
     uint8_t               AUTO_KEYPAD_LOCK;
-#if defined(ENABLE_ALARM) || defined(ENABLE_TX1750)
-    ALARM_Mode_t      ALARM_MODE;
-#endif
     POWER_OnDisplayMode_t POWER_ON_DISPLAY_MODE;
     ROGER_Mode_t          ROGER;
-    
-    /* MDC-1200 Configuration (v7.6.10A): Parameterized MDC transmission */
-    uint16_t              MDC_UnitID;         /*!< Destination Unit ID for MDC frames (default from radio ID) */
-    uint8_t               MDC_DefaultOp;      /*!< Default MDC opcode (0x00=Status, etc.) */
-    uint8_t               MDC_DefaultArg;     /*!< Default MDC argument (opcode-dependent) */
-    
     uint8_t               REPEATER_TAIL_TONE_ELIMINATION;
     uint8_t               KEY_1_SHORT_PRESS_ACTION;
     uint8_t               KEY_1_LONG_PRESS_ACTION;
@@ -285,13 +254,13 @@ typedef struct {
 #endif
     char                  DTMF_UP_CODE[16];
 
-    uint8_t               field57_0x6c;  // Reserved/legacy
-    uint8_t               field58_0x6d;  // Reserved/legacy
+    uint8_t               field57_0x6c;
+    uint8_t               field58_0x6d;
 
     char                  DTMF_DOWN_CODE[16];
 
-    uint8_t               field60_0x7e;  // Reserved/legacy
-    uint8_t               field61_0x7f;  // Reserved/legacy
+    uint8_t               field60_0x7e;
+    uint8_t               field61_0x7f;
 
 #ifdef ENABLE_DTMF_CALLING
     char                  DTMF_SEPARATE_CODE;
@@ -313,7 +282,7 @@ typedef struct {
     bool              NOAA_AUTO_SCAN;
 #endif
     uint8_t               VOLUME_GAIN;
-    #ifdef ENABLE_FEAT_N7SIX
+    #ifdef ENABLE_FEAT_F4HWN
         uint8_t           VOLUME_GAIN_BACKUP;
     #endif
     uint8_t               DAC_GAIN;
@@ -323,42 +292,17 @@ typedef struct {
     uint16_t              VOX1_THRESHOLD;
     uint16_t              VOX0_THRESHOLD;
 
-    uint8_t               field77_0x95;  // Reserved/legacy
-    uint8_t               field78_0x96;  // Reserved/legacy
-    uint8_t               field79_0x97;  // Reserved/legacy
+    uint8_t               field77_0x95;
+    uint8_t               field78_0x96;
+    uint8_t               field79_0x97;
 
     uint8_t               KEY_M_LONG_PRESS_ACTION;
     uint8_t               BACKLIGHT_MIN;
-#ifdef ENABLE_BLMIN_TMP_OFF
-    BLMIN_STAT_t          BACKLIGHT_MIN_STAT;
-#endif
     uint8_t               BACKLIGHT_MAX;
     BATTERY_Type_t        BATTERY_TYPE;
 #ifdef ENABLE_RSSI_BAR
     uint8_t               S0_LEVEL;
     uint8_t               S9_LEVEL;
-#endif
-#ifdef ENABLE_FEAT_N7SIX_CW
-    uint8_t               CW_KEY_INPUT;
-    uint8_t               CW_KEYER_MODE;
-    uint8_t               CW_KEY_WPM;
-    uint8_t               field_cw_0x9d;  // Reserved/legacy CW field
-    uint8_t               CW_MESSAGE_REPEAT_DELAY;
-    uint16_t              CW_ADC_CABLE_20K;
-    uint16_t              CW_ADC_CABLE_10K;
-    uint16_t              CW_ADC_MAX;
-    uint8_t               CW_ADC_RANGE_LIMIT;
-    uint8_t               CW_ADC_GLITCH_GUARDBAND;
-    uint8_t               field_cw_0xa6;  // Reserved/legacy CW field
-    uint8_t               field_cw_0xa7;  // Reserved/legacy CW field
-    uint8_t               field_cw_0xa8;  // Reserved/legacy CW field
-    uint8_t               field_cw_0xa9;  // Reserved/legacy CW field
-    uint8_t               field_cw_0xaa;  // Reserved/legacy CW field
-    uint8_t               field_cw_0xab;  // Reserved/legacy CW field
-    uint8_t               field_cw_0xac;  // Reserved/legacy CW field
-    uint8_t               field_cw_0xad;  // Reserved/legacy CW field
-    uint8_t               field_cw_0xae;  // Reserved/legacy CW field
-    uint8_t               field_cw_0xaf;  // Reserved/legacy CW field
 #endif
 } EEPROM_Config_t;
 
@@ -383,11 +327,18 @@ typedef struct {
     PTT_ID_t         dtmfPttIdTxMode;
 } ChannelScanDisplayInfo_t;
 
+#ifdef ENABLE_FEAT_F4HWN_MULTIBOOT_HOT_CFG
+void     SETTINGS_InitEEPROM(bool preserve_display_mode);
+#else
 void     SETTINGS_InitEEPROM(void);
+#endif
 void     SETTINGS_LoadCalibration(void);
 uint32_t SETTINGS_FetchChannelFrequency(const uint16_t channel);
 bool     SETTINGS_FetchChannelScanInfo(const uint16_t channel, uint32_t *frequency, ModulationMode_t *modulation);
 bool     SETTINGS_FetchChannelScanDisplayInfo(const uint16_t channel, ChannelScanDisplayInfo_t *info);
+#if defined(ENABLE_FEAT_F4HWN_FULL_WATCH) || defined(ENABLE_FEAT_F4HWN_SCAN_FASTER)
+void     SETTINGS_ApplyChannelScanDisplayInfo(VFO_Info_t *vfo, uint16_t channel, const ChannelScanDisplayInfo_t *info);
+#endif
 void     SETTINGS_FetchChannelName(char *s, const uint16_t channel);
 void     SETTINGS_FactoryReset(bool bIsAll);
 #ifdef ENABLE_FMRADIO
@@ -399,15 +350,14 @@ void SETTINGS_SaveSettings(void);
 void SETTINGS_SaveChannelName(uint16_t channel, const char * name);
 void SETTINGS_SaveChannel(uint16_t Channel, uint8_t VFO, const VFO_Info_t *pVFO, uint8_t Mode);
 void SETTINGS_SaveBatteryCalibration(const uint16_t * batteryCalibration);
-void SETTINGS_UpdateChannel(uint16_t channel, const VFO_Info_t *pVFO, bool keep, bool check, bool save);
-void SETTINGS_WriteBuildOptions(void);
-#ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
+void SETTINGS_UpdateChannel(uint16_t channel, const VFO_Info_t *pVFO, bool keep);
+#ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
     void SETTINGS_WriteCurrentState(void);
 #endif
-#ifdef ENABLE_FEAT_N7SIX_VOL
+#ifdef ENABLE_FEAT_F4HWN_VOL
     void SETTINGS_WriteCurrentVol(void);
 #endif
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     void SETTINGS_ResetTxLock(void);
 #endif
 #endif

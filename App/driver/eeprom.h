@@ -18,14 +18,8 @@
 #define DRIVER_EEPROM_H
 
 #include <stdint.h>
-#include <stdbool.h>
 
 void EEPROM_ReadBuffer(uint16_t Address, void *pBuffer, uint8_t Size);
-void EEPROM_WriteBuffer(uint16_t Address, const void *pBuffer);
-
-// Returns true if the last EEPROM_WriteBuffer() verified successfully.
-bool EEPROM_LastWriteVerified(void);
-
+void EEPROM_WriteBuffer(uint16_t Address, const void *pBuffer, uint8_t Size);
 
 #endif
-

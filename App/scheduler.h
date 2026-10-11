@@ -18,19 +18,19 @@
 
 #include "py32f0xx.h"
 
-/** @brief Global system tick counter incremented by the SysTick handler. */
-extern volatile uint32_t gGlobalSysTickCounter;
-
-/** @brief Enable the SysTick scheduler interrupt. */
 static void inline SCHEDULER_Enable()
 {
     NVIC_EnableIRQ(SysTick_IRQn);
 }
 
-/** @brief Disable the SysTick scheduler interrupt. */
 static void inline SCHEDULER_Disable()
 {
     NVIC_DisableIRQ(SysTick_IRQn);
 }
+
+#if defined(ENABLE_FEAT_F4HWN_OVERLAY_APPS) || defined(ENABLE_FEAT_N7SIX_WATERFALL)
+/* Free-running 10 ms SysTick counter (wraps after ~497 days). */
+uint32_t SCHEDULER_GetTick10ms(void);
+#endif
 
 #endif

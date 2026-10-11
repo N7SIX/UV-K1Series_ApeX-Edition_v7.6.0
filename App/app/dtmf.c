@@ -18,7 +18,7 @@
 #include <stdio.h>   // NULL
 
 #include "app/chFrScanner.h"
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     #include "app/fm.h"
 #endif
 #include "app/scanner.h"
@@ -262,10 +262,7 @@ void DTMF_HandleRequest(void)
     if (gDTMF_RX_index >= 9)
     {   // look for the KILL code
 
-        snprintf(String, sizeof(String), "%s%c%s", gEeprom.ANI_DTMF_ID, gEeprom.DTMF_SEPARATE_CODE, gEeprom.KILL_CODE);
-
-        if (strlen(String) > gDTMF_RX_index)
-            return;  // string too long to match
+        sprintf(String, "%s%c%s", gEeprom.ANI_DTMF_ID, gEeprom.DTMF_SEPARATE_CODE, gEeprom.KILL_CODE);
 
         Offset = gDTMF_RX_index - strlen(String);
 
@@ -282,7 +279,7 @@ void DTMF_HandleRequest(void)
 
                 gDTMF_ReplyState = DTMF_REPLY_AB;
 
-                #ifdef ENABLE_FMRADIO
+                #ifdef ENABLE_FMRADIO_EMBEDDED
                     if (gFmRadioMode)
                     {
                         FM_TurnOff();
@@ -306,10 +303,7 @@ void DTMF_HandleRequest(void)
     if (gDTMF_RX_index >= 9)
     {   // look for the REVIVE code
 
-        snprintf(String, sizeof(String), "%s%c%s", gEeprom.ANI_DTMF_ID, gEeprom.DTMF_SEPARATE_CODE, gEeprom.REVIVE_CODE);
-
-        if (strlen(String) > gDTMF_RX_index)
-            return;  // string too long to match
+        sprintf(String, "%s%c%s", gEeprom.ANI_DTMF_ID, gEeprom.DTMF_SEPARATE_CODE, gEeprom.REVIVE_CODE);
 
         Offset = gDTMF_RX_index - strlen(String);
 
@@ -335,9 +329,6 @@ void DTMF_HandleRequest(void)
     {   // look for ACK reply
         char *pPrintStr = "AB";
 
-        if (strlen(pPrintStr) > gDTMF_RX_index)
-            return;  // string too long to match
-
         Offset = gDTMF_RX_index - strlen(pPrintStr);
 
         if (CompareMessage(gDTMF_RX + Offset, pPrintStr, strlen(pPrintStr), true)) {
@@ -360,10 +351,7 @@ void DTMF_HandleRequest(void)
         gDTMF_RX_index >= 9)
     {   // waiting for a reply
 
-        snprintf(String, sizeof(String), "%s%c%s", gDTMF_String, gEeprom.DTMF_SEPARATE_CODE, "AAAAA");
-
-        if (strlen(String) > gDTMF_RX_index)
-            return;  // string too long to match
+        sprintf(String, "%s%c%s", gDTMF_String, gEeprom.DTMF_SEPARATE_CODE, "AAAAA");
 
         Offset = gDTMF_RX_index - strlen(String);
 
@@ -385,10 +373,7 @@ void DTMF_HandleRequest(void)
 
         gDTMF_IsGroupCall = false;
 
-        snprintf(String, sizeof(String), "%s%c", gEeprom.ANI_DTMF_ID, gEeprom.DTMF_SEPARATE_CODE);
-
-        if (strlen(String) + 3 > gDTMF_RX_index)
-            return;  // string too long to match
+        sprintf(String, "%s%c", gEeprom.ANI_DTMF_ID, gEeprom.DTMF_SEPARATE_CODE);
 
         Offset = gDTMF_RX_index - strlen(String) - 3;
 
@@ -445,7 +430,7 @@ void DTMF_Reply(void)
 #ifdef ENABLE_DTMF_CALLING
             if (gDTMF_CallMode != DTMF_CALL_MODE_DTMF)
             {   // append our ID code onto the end of the DTMF code to send
-                snprintf(String, sizeof(String), "%s%c%s", gDTMF_String, gEeprom.DTMF_SEPARATE_CODE, gEeprom.ANI_DTMF_ID);
+                sprintf(String, "%s%c%s", gDTMF_String, gEeprom.DTMF_SEPARATE_CODE, gEeprom.ANI_DTMF_ID);
                 pString = String;
             }
             else
@@ -461,7 +446,7 @@ void DTMF_Reply(void)
             break;
 
         case DTMF_REPLY_AAAAA:
-            snprintf(String, sizeof(String), "%s%c%s", gEeprom.ANI_DTMF_ID, gEeprom.DTMF_SEPARATE_CODE, "AAAAA");
+            sprintf(String, "%s%c%s", gEeprom.ANI_DTMF_ID, gEeprom.DTMF_SEPARATE_CODE, "AAAAA");
             pString = String;
             break;
 #endif
@@ -473,9 +458,7 @@ void DTMF_Reply(void)
 #endif
                 gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_APOLLO ||
                 gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_OFF    ||
-                gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_TX_DOWN ||
-                gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200 ||
-                gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200L)
+                gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_TX_DOWN)
             {
                 gDTMF_ReplyState = DTMF_REPLY_NONE;
                 return;

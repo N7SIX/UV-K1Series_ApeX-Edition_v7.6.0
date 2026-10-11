@@ -2,9 +2,9 @@
 
 ![Alt](https://repobeats.axiom.co/api/embed/ecdd86aa536b716f088339a0c5ee734558f78c28.svg "Repobeats analytics image")
 
-# N7SIX firmware port for the UV-K1 and UV-K5 V3 using the PY32F071 MCU
+# F4HWN firmware port for the UV-K1 and UV-K5 V3 using the PY32F071 MCU
 
-This repository is a fork of the [N7SIX custom firmware](https://github.com/armel/uv-k5-firmware-custom), who was a fork of [Egzumer custom firmware](https://github.com/egzumer/uv-k5-firmware-custom). It extends the work done for the UV-K5 V1, based on the DP32G030 MCU, and adapts it to the newer UV-K1 and UV-K5 V3 built around the PY32F071 MCU. It is the result of the joint work of [@muzkr](https://github.com/muzkr) and [@armel](https://github.com/armel).
+This repository is a fork of the [F4HWN custom firmware](https://github.com/armel/uv-k5-firmware-custom), who was a fork of [Egzumer custom firmware](https://github.com/egzumer/uv-k5-firmware-custom). It extends the work done for the UV-K5 V1, based on the DP32G030 MCU, and adapts it to the newer UV-K1 and UV-K5 V3 built around the PY32F071 MCU. It is the result of the joint work of [@muzkr](https://github.com/muzkr) and [@armel](https://github.com/armel).
 
 A big thanks to DualTachyon, who paved the way by releasing the very first open-source [firmware](https://github.com/DualTachyon/uv-k5-firmware) for the UV-K5 V1. None of this would have been possible without that initial work !
 
@@ -36,155 +36,367 @@ Anyway, have fun.
 > _FR - A propos de CHIRP, comme pour beaucoup d'autres firmwares, vous devez utiliser un pilote dédié. Le driver CHIRP correspondant est désormais fourni avec chaque release de ce dépôt, ce qui permet de récupérer ensemble le firmware et son pilote depuis la page des [Releases](https://github.com/armel/uv-k1-k5v3-firmware-custom/releases)._
 
 > [!CAUTION]
-> EN - I recommend to backup your calibration data with [uvtools2](https://armel.github.io/uvtools2/) just after flashing this firmware. It's a good reflex to have. 
+> EN - I recommend backing up your calibration data with [UV Studio](https://armel.github.io/uvstudio/#dump-calib) immediately after flashing this firmware. It is a good habit to adopt.
 >
-> _FR - Je recommande de sauvegarder vos données de calibration avec [uvtools2](https://armel.github.io/uvtools2/) juste après avoir flashé ce firmware. C'est un bon réflexe à avoir._
+> _FR - Je recommande de sauvegarder vos données de calibration avec [UV Studio](https://armel.github.io/uvstudio/#dump-calib) juste après avoir flashé ce firmware. C'est un bon réflexe à adopter._
 
 # Donations
 
-Special thanks to Jean-Cyrille F6IWW (3 times), Fabrice 14RC123, David F4BPP, Olivier 14RC206, Frédéric F4ESO, Stéphane F5LGW (2 times), Jorge Ornelas (4 times), Laurent F4AXK, Christophe Morel, Clayton W0LED, Pierre Antoine F6FWB, Jean-Claude 14FRS3306, Thierry F4GVO, Eric F1NOU, PricelessToolkit, Ady M6NYJ, Tom McGovern (4 times), Joseph Roth, Pierre-Yves Colin, Frank DJ7FG, Marcel Testaz, Brian Frobisher, Yannick F4JFO, Paolo Bussola, Dirk DL8DF, Levente Szőke (2 times), Bernard-Michel Herrera, Jérôme Saintespes, Paul Davies, RS (3 times), Johan F4WAT, Robert Wörle, Rafael Sundorf, Paul Harker, Peter Fintl, Pascal F4ICR (2 times), Mike DL2MF (3 times), Eric KI1C (2 times), Phil G0ELM, Jérôme Lambert, Eliot Vedel, Alfonso EA7KDF, Jean-François F1EVM, Robert DC1RDB (2 times), Ian KE2CHJ, Daryl VK3AWA, Roberto Brunelli, Robert Boardman, Stephen Oliver, Nicolas F4INE, William Bruno, Daniel OK2VLK, Tayler Chew, Peter DL7RFP, Philippe Kopp, Rune LA6YMA, Jeremy Luna, Steef Wagenaar (2 times), Zhuo BG7SGA, Jamie M0JLB, Antoine LIBERT, Vince K0DKR, Julia DF7JA, Ken 2E0UMK, Victor TI2SYS, Tobi DG9LAY, Deaglan K4DFQ, Catherine PALMER, Brian WA6JFK, Stéphane Hintzy, Roger F1HCN, Marcin Kusaj and Flavio Cottarelli for their [donations](https://www.paypal.com/paypalme/N7SIX). That’s so kind of them. Thanks so much 🙏🏻
+Special thanks to Jean-Cyrille F6IWW (3 times), Fabrice 14RC123, David F4BPP (2 times), Olivier 14RC206, Frédéric F4ESO, Stéphane F5LGW (2 times), Jorge Ornelas (4 times), Laurent F4AXK, Christophe Morel, Clayton W0LED, Pierre Antoine F6FWB, Jean-Claude 14FRS3306, Thierry F4GVO, Eric F1NOU, PricelessToolkit, Ady M6NYJ, Tom McGovern (4 times), Joseph Roth, Pierre-Yves Colin, Frank DJ7FG, Marcel Testaz, Brian Frobisher, Yannick F4JFO, Paolo Bussola, Dirk DL8DF, Levente Szőke (2 times), Bernard-Michel Herrera, Jérôme Saintespes, Paul Davies, RS (3 times), Johan F4WAT, Robert Wörle, Rafael Sundorf, Paul Harker, Peter Fintl, Pascal F4ICR (2 times), Mike DL2MF (3 times), Eric KI1C / F4WFS (3 times), Phil G0ELM, Jérôme Lambert, Eliot Vedel, Alfonso EA7KDF, Jean-François F1EVM, Robert DC1RDB (2 times), Ian KE2CHJ, Daryl VK3AWA, Roberto Brunelli, Robert Boardman, Stephen Oliver, Nicolas F4INE, William Bruno, Daniel OK2VLK, Tayler Chew, Peter DL7RFP, Philippe Kopp, Rune LA6YMA, Jeremy Luna, Steef Wagenaar (2 times), Zhuo BG7SGA, Jamie M0JLB, Antoine LIBERT, Vince K0DKR, Julia DF7JA, Ken 2E0UMK, Victor TI2SYS, Tobi DG9LAY, Deaglan K4DFQ, Catherine PALMER, Brian WA6JFK, Stéphane Hintzy, Roger F1HCN, Marcin Kusaj, Flavio Cottarelli, Bob N1MLZ, Carlos EA1IJ, Brian M7YLF, Giuseppe IT9LLH, 邓 月, Jon M1JRH, Antonios Chouchoumis, Cédric Thomas and Justin White for their [donations](https://www.paypal.com/paypalme/F4HWN). That’s so kind of them. Thanks so much 🙏🏻
 
 ## Table of Contents
 
-* [My Features](#main-features)
+* [Main features and improvements from F4HWN](#main-features-and-improvements-from-f4hwn)
 * [Main Features from Egzumer](#main-features-from-egzumer)
 * [Manual](#manual)
 * [Compiling and Building from Docker](#compiling-and-Building-from-docker)
-* [Flashing the Firmware with UVTools2](#flashing-the-firmware-with-uvtools2)
+* [Flashing the Firmware with UV Studio](#flashing-the-firmware-with-uv-studio)
 * [Credits](#credits)
 * [Other sources of information](#other-sources-of-information)
 * [License](#license)
 
-## Main features and improvements from N7SIX:
+## Main features and improvements from F4HWN
 
-* ApeX is now the reference edition of the project:
-    * all-in-one firmware for UV-K1 and UV-K5 V3,
-    * spectrum analyzer made by Fagci,
-    * commercial FM radio support,
-    * Vox and Aircopy support,
-    * screenshots and K5Viewer support,
-    * advanced RX audio profiles and Audio Scope,
-    * first-responder oriented options,
-    * small breakout game,
-* improve default power settings level: 
-    * Low1 to Low5 (<~20mW, ~125mW, ~250mW, ~500mW, ~1W), 
-    * Mid ~2W, 
-    * High ~5W,
-    * User (see SetPwr),
-* improve S-Meter (IARU Region 1 Technical Recommendation R.1 for VHF/UHF - [read more](https://hamwaves.com/decibel/en/)),
-   * S-Meter (S0/S9) Level EEPROM settings that were introduced in the Egzumer firmware are now ignored and replaced by hardcoded values to comply with the IARU Recommendation.     
-* improve bandscope (Spectrum Analyser):
-    * add channel name,
-    * add save of some spectrum parameters,
-* improve UI: 
-    * menu index is always visible, even if a menu is selected,
-    * s-meter new design (Classic or Tiny), 
-    * MAIN ONLY screen mode, 
-    * DUAL and CROSS screen mode, 
-    * RX blink on VFO RX, 
-    * RX LED blink, 
-    * Squelch level and Monitor,
-    * Step value,
-    * CTCSS or DCS value,
-    * KeyLock message,
-    * last RX,
-    * move BatTxt menu from 34/63 to 30/63 (just after BatSave menu 29/63),
-    * rename BackLt to BLTime,
-    * rename BltTRX to BLTxRx,
-    * improve memory channel input,
-    * improve keyboard frequency input,
-    * add percent and gauge to Air Copy,
-    * improve audio bar,
-    * add backlight fading,
-    * add Audio Scope on TX,
-    * and more...
-* new menu entries and changes:
-    * add SetPwr menu to set User power (<20mW, 125mW, 250mW, 500mW, 1W, 2W or 5W),
-    * add SetPTT menu to set PTT mode (Classic or OnePush),
-    * add SetTOT menu to set TOT alert (Off, Sound, Visual, All),
-    * add SetCtr menu to set contrast (0 to 15),
-    * add SetInv menu to set screen in invert mode (Off or On),
-    * add SetEOT menu to set EOT (End Of Transmission) alert (Off, Sound, Visual, All),
-    * add SetMet menu to set s-meter style (Classic or Tiny),
-    * add SetLck menu to set what is locked (Keys or Keys + PTT),
-    * add SetGUI menu to set font size on the VFO baseline (Classic or Tiny),
-    * add SetRxA menu to select RX audio profiles,
-    * add TXLock menu to open TX on channel,
-    * add SetTmr menu to set RX and TX timers (Off or On),
-    * add SetOff menu to set the delay before the transceiver goes into deep sleep (Off or 1 minute to 2 hours),
-    * add SetNFM menu to set Narrow width (12.5kHz or 6.25kHz),
-    * add SetVol menu to adjust RX audio volume,
-    * add SetScn menu to set Scan mode
-    * rename BatVol menu (52/63) to SysInf, which displays the firmware version in addition to the battery status,
-    * improve PonMsg menu,
-    * improve BackLt menu,
-    * improve TxTOut menu,
-    * improve ScnRev menu (CARRIER from 250ms to 20s, STOP, TIMEOUT from 5s to 2m)
-    * improve KeyLck menu (OFF, delay from 15s to 10m)
-    * add HAM CA F Lock band (for Canadian zone),
-    * add PMR 446 F Lock band,
-    * add FRS/GMRS/MURS F Lock band,
-    * add SetNav hidden menu to select the navigation layout according to the radio model,
-    * remove blink and SOS functionality, 
-    * remove AM Fix menu (AM Fix is ENABLED by default),
-    * add support of 3500mAh battery,
-* improve status bar:
-    * add SetPtt mode in status bar,
-    * change font and bitmaps,
-    * move USB icon to left of battery information,
-    * add RX and TX timers,
-* improve channel scanning:
-    * support up to 24 scan lists,
-    * each memory channel can be assigned to `OFF`, to one list (`01` to `24`), or to `ALL`,
-    * `ALL` scans every channel except those set to `OFF`,
-    * named scan lists are shown in the UI and status bar when available,
-    * if the selected scan list is empty or invalid, the firmware automatically jumps to the next valid one,
-    * very fast scan mode (around 150 freq/s),
-    * frequencies exclusions,
-* add resume mode on startup (scan, spectrum analyzer and FM radio),
-* improve VFO persistence and restore behavior:
-    * save the Squelch level adjusted with F + UP or F + DOWN,
-    * restore the full VFO state on long press of EXIT,
-* new actions:
-    * RX MODE,
-    * MAIN ONLY,
-    * PTT, 
-    * WIDE NARROW,
-    * 1750Hz,
-    * MUTE,
-    * POWER HIGH,
-    * REMOVE OFFSET,
-    * BEAM,
-* new key combinations:
-    * add the F + UP or F + DOWN key combination to dynamically change the Squelch level,
-    * add the F + F1 or F + F2 key combination to dynamically change the Step,
-    * add F + 8 to quickly switch backlight between BLMin and BLMax on demand (this bypass BackLt strategy),
-    * add F + 9 to return to BackLt strategy,
-    * add long press on MENU, in * SCAN mode, to exclude the current memory channel,
-    * add direct scan list selection while scanning with two digits (`00` = `ALL`, `01` to `24` = scan list).
-* many fix:
-    * squelch, 
-    * s-meter,
-    * DTMF overlaying, 
-    * scan range limit,
-    * clean display on startup,
-    * no more PWM noise,
-    * K5Viewer/serial key handling,
-    * spectrum freeze on USB-C unplug,
-    * Audio Scope behavior in OnePush mode and after DTMF/1750,
-    * and more...
-* enabled AIR COPY
-* disabled ENABLE_DTMF_CALLING,
-* disabled SCRAMBLER,
-* remove 200Tx, 350Tx and 500Tx,
-* unlock TX on all bands needs only to be repeat 3 times,
-* code refactoring and many memory optimization,
-* stream the live screen of the Quansheng K5 to K5Viewer and capture screenshots over a USB-to-Serial cable,
-* and more...
+### Fusion edition
+
+Fusion is the generic reference edition for the UV-K1 and UV-K5 V3. It is intended
+for everyday use and is the base inherited by the specialized editions. It includes:
+
+- Fagci's spectrum analyzer,
+- broadcast FM radio and VOX,
+- [UV Studio](https://armel.github.io/uvstudio/) with integrated K5Viewer screen mirroring, screenshots and remote keyboard control,
+- advanced RX audio profiles and Audio Scope,
+- automatic RX/TX activity logging with RF Log,
+- Full Watch across VFO A, VFO B and up to two priority channels,
+- Multiboot with one protected Main backup and four user firmware slots,
+- independent Multiconfig banks, switchable at runtime through `SetCfg`.
+
+Specialized presets extend Fusion for specific uses:
+
+- **Transfer** adds AirCopy and BEAM wireless channel transfer.
+- **FieldOps** adds first-responder controls, Fox Hunt and Morse Beacon support.
+- **Labs** is the experimental edition. It carries the broad feature selection of the
+  other releases and adds the overlay-apps platform (apps loaded from external Flash and
+  run in a 4 KiB RAM overlay) — the newest, least-settled work. Expect rough edges. It is
+  not a strict superset of every other edition: features may be exchanged between releases
+  to preserve stability and memory headroom.
+- **ApeX** is this fork's dedicated edition: the Fusion feature set branded as
+  ApeX (binary target `n7six.ApeX-k1.v7.6.11`).
+- **Custom** remains a manually configured build based directly on the hidden technical default.
+
+### Multiboot and Multiconfig
+
+Multiboot uses the radio's external Flash to keep one automatically maintained
+**Main** firmware backup and four additional firmware slots. Each image is
+validated before it is restored to internal Flash, and the selector displays
+the edition and version stored in every valid slot.
+
+To open the Multiboot selector, power off the radio, hold `MENU`, power it on,
+then release the key when the selector appears. Use `UP` and `DOWN` to choose a
+slot, `MENU` to restore it and `EXIT` to leave without making changes.
+
+> [!CAUTION]
+> Never power off the radio while a firmware slot is being restored.
+
+Multiconfig provides one independent configuration bank for Main and for each
+of the four user slots. A bank contains the memory channels and names, VFO
+settings, scan lists, radio settings and edition-specific settings. By default,
+each firmware slot uses the bank with the same number.
+
+The `SetCfg` menu can select and apply another bank immediately, without
+restarting the radio or changing firmware. The status bar shows the active bank
+as `CFG M` or `CFG 1` to `CFG 4`, so several operating configurations can be
+used with the same firmware and compatible configurations can be shared across
+editions.
+
+### Full Watch
+
+Full Watch extends the normal dual-watch cycle to monitor:
+
+- VFO A,
+- VFO B,
+- priority channel 1,
+- priority channel 2.
+
+The priority channels come from the existing scan-list priority settings.
+Duplicates, invalid entries and channels already loaded in VFO A or B are
+ignored automatically.
+
+The `RxMode` menu provides two Full Watch modes:
+
+- `FULL RX / RESPOND` replies on the channel that opened the squelch,
+- `MAIN TX / FULL RX` always transmits on the selected main VFO.
+
+Animated chevrons show the background watch cycle while the normal VFO display
+remains available for navigation and operation.
+
+### Overlay applications and APRS
+
+Labs can store up to 16 applications from the current collection of 18 in
+external Flash. Each app is loaded into a dedicated 4 KiB RAM overlay only
+while it is running, while larger read-only assets such as text, fonts, bitmaps
+and lookup tables remain in external Flash.
+
+The current app collection includes:
+
+- radio tools: Broadcast FM, Fox Hunt, Beacon, Beam and Spectrum3D,
+- digital and signal apps: APRS RX, APRS TX, SSTV and EPIRB 406,
+- diagnostics: System Info,
+- games and demos: Breakout, Cube3D, Minesweeper, Plasma, Rapid Roll, Snake,
+  Space Impact and Tetris.
+
+APRS RX receives AX.25 UI frames using Bell 202 AFSK at 1200 baud, displays
+common position formats and Mic-E data, and keeps a five-frame history. APRS TX
+provides an on-radio editor for the source callsign and SSID, digipeater path,
+position, symbol and comment before transmitting a position beacon.
+
+> [!IMPORTANT]
+> Overlay apps, including APRS RX and APRS TX, are experimental and intended for
+> Labs. Use the app files supplied with the same firmware release so their ABI
+> and required capabilities match the installed firmware.
+
+> [!CAUTION]
+> Transmitting apps must only be used on frequencies, power levels and modes
+> permitted by your licence and local regulations.
+
+### Radio and signal handling
+
+- Reworked output-power levels:
+  - `Low 1`: below approximately 20 mW,
+  - `Low 2`: approximately 125 mW,
+  - `Low 3`: approximately 250 mW,
+  - `Low 4`: approximately 500 mW,
+  - `Low 5`: approximately 1 W,
+  - `Mid`: approximately 2 W,
+  - `High`: approximately 5 W,
+  - `User`: configurable through `SetPwr`.
+- S-meter calibrated according to the [IARU Region 1 recommendation for VHF/UHF](https://hamwaves.com/decibel/en/):
+  - fixed S0 to S9+ values replace the former EEPROM S-meter thresholds,
+  - Classic and Tiny display styles are available.
+- Configurable 12.5 kHz or 6.25 kHz narrow-FM bandwidth.
+- Per-channel TX lock.
+- Adjustable RX audio volume.
+- Advanced RX audio profiles for FM and AM reception.
+- Regional frequency-lock profiles for amateur bands, PMR446, FRS, GMRS and MURS.
+- Support for 1600, 2200 and 3500 mAh battery profiles.
+
+### Spectrum analyzer
+
+- Channel names displayed in the spectrum view.
+- Persistent spectrum settings.
+- Faster and smoother spectrum rendering.
+- Improved behavior when freezing the spectrum or disconnecting USB-C.
+- Spectrum analyzer state can be restored automatically at startup.
+
+### Scanning
+
+- Support for up to 24 named scan lists + 1 mixed list.
+- Each memory channel can be assigned to:
+  - `OFF`,
+  - one scan list from `01` to `24`,
+  - `ALL`.
+- The `ALL` list scans every channel except those assigned to `OFF`.
+- The `MIX` list combines any selected subset of the 24 named lists into one
+  scan set.
+- Automatic selection of the next valid list when the requested list is empty.
+- Direct scan-list selection while scanning:
+  - `00` selects `ALL`,
+  - `01` to `24` select the corresponding list,
+  - `25` selects `MIX`.
+- Long press on `MENU` while scanning to exclude the current memory channel.
+- Up to 64 frequency exclusions.
+- Very fast scanning mode, reaching approximately 150 frequencies per second.
+- Scan progress, RSSI and detected CTCSS/DCS information.
+- Configurable scan resume behavior.
+- Scan state can be restored automatically at startup.
+
+### User interface
+
+- Improved VFO screen with:
+  - Classic and Tiny S-meter styles,
+  - Classic and Tiny frequency-information layouts,
+  - `MAIN ONLY`, `DUAL`, `FULL` and `CROSS` display modes,
+  - RX activity indication on the active VFO,
+  - optional RX LED blinking,
+  - squelch, monitor, step and CTCSS/DCS information,
+  - last-RX indication,
+  - RX and TX timers.
+- Improved status bar with updated fonts and icons.
+- Menu index remains visible while editing an entry.
+- Improved frequency and memory-channel input.
+- Improved audio-level display.
+- AirCopy progress percentage and gauge.
+- Smooth backlight fading.
+- Manual backlight controls for quickly switching between minimum and maximum brightness.
+- Configurable contrast and inverted-display mode.
+- Configurable navigation layout for the different radio models.
+- Improved power-on message and optional startup logo.
+- System-information pages for:
+  - firmware version and build information,
+  - battery information,
+  - Flash and SRAM usage,
+  - project and documentation QR codes.
+
+### Audio and transmission controls
+
+- Classic and OnePush PTT modes.
+- Configurable timeout-timer alerts:
+  - disabled,
+  - sound,
+  - visual,
+  - sound and visual.
+- Configurable end-of-transmission alerts using the same modes.
+- Audio Scope during RX and TX.
+- Improved Audio Scope behavior with OnePush PTT, DTMF and the 1750 Hz tone.
+- Configurable automatic deep-sleep timeout.
+- Quick actions for:
+  - RX mode,
+  - main-VFO-only display,
+  - PTT,
+  - wide/narrow bandwidth,
+  - 1750 Hz tone,
+  - mute,
+  - RX audio profile,
+  - maximum power,
+  - offset removal.
+
+### Fox Hunt and Beacon
+
+- Dedicated Fox Hunt receiver with:
+  - calibrated S-meter display,
+  - scrolling signal-history graph,
+  - peak, minimum and trend indicators,
+  - selectable RF attenuation,
+  - silent, Geiger-style and received-audio modes,
+  - long-press `F` keypad lock (attenuation stays adjustable with the arrow keys).
+- Independent Morse Beacon transmitter with:
+  - `MOE`, `MOI`, `MOS`, `MOH`, `MO5` and `MO` identifiers,
+  - optional callsign identification,
+  - configurable TX and idle periods,
+  - live TX and idle countdowns,
+  - persisted Beacon settings,
+  - interactive control during transmission,
+  - shared long-press `F` keypad lock,
+  - TX-lock, modulation and battery-safety checks.
+- Fox Hunt and Beacon screens are mirrored to UV Studio's integrated K5Viewer.
+
+### RF Log
+
+- Automatic logging of RX and TX activity when RF Log is enabled.
+- Logs stored in the radio's external Flash memory.
+- Recorded information includes:
+  - RX or TX direction,
+  - frequency and channel,
+  - channel name,
+  - activity duration,
+  - S-meter level,
+  - battery voltage.
+- On-radio history with RX/TX filtering and detailed views.
+- Live RF Log dashboard and history access through UV Studio.
+
+### Connectivity and data transfer
+
+- Live screen streaming to [UV Studio](https://armel.github.io/uvstudio/) over a USB serial connection.
+- Screenshot capture and download.
+- Remote keyboard control through the integrated K5Viewer.
+- Automatic reconnection after a USB disconnect.
+- RF Log monitoring, analytics and CSV export.
+- Firmware flashing, calibration backup and restore, and boot-logo management from the same interface.
+- BEAM transfer of complete channel settings between compatible radios.
+
+#### AirCopy (Transfer edition)
+
+AirCopy can transfer one 128-channel bank, the radio settings, or all memory
+banks and settings in one operation. Version 6.1 adds a stop-and-wait protocol
+with acknowledgements in both directions:
+
+- the receiver acknowledges CRC32 comparison frames and every stored data frame,
+- a missing acknowledgement automatically triggers a retry, up to three times,
+- invalid, out-of-sequence or mismatched selections are rejected instead of
+  being applied silently,
+- the progress screen reports retries or receive errors and distinguishes
+  blocks that were already identical from blocks that were copied.
+
+Before sending data, the two radios compare CRC32 values in groups of up to 24
+blocks. The receiver returns a difference bitmap, so only blocks whose contents
+differ are transmitted. Each radio data frame can carry up to three consecutive
+64-byte blocks, approximately doubling over-the-air throughput compared with
+the previous one-block framing.
+
+Transfer also supports direct radio-to-radio cable cloning over UART at 460800
+baud. Press `*` in AirCopy to switch between `AIR COPY` and `CABLE COPY`; use
+`UP` and `DOWN` to select a memory bank, `Settings` or `All (Mem+Set)`, then
+`MENU` on the sender and `EXIT` on the receiver.
+
+Cable mode additionally provides `Flash 2M`, which clones the complete 2 MiB
+external Flash. Sectors are compared by CRC32 and only different sectors are
+written. The device-specific calibration sector is never copied or erased, and
+the receiving radio must be restarted after a successful Flash clone.
+
+> [!IMPORTANT]
+> The new AirCopy wire format is not compatible with earlier versions. Both
+> radios must run the same firmware version.
+
+### Settings and controls
+
+- New or extended menu entries:
+  - `SetPwr`: configurable User output power,
+  - `SetPTT`: Classic or OnePush PTT,
+  - `SetTOT`: timeout-timer alert,
+  - `SetEOT`: end-of-transmission alert,
+  - `SetCtr`: display contrast,
+  - `SetInv`: inverted display,
+  - `SetLck`: keypad or keypad-and-PTT lock,
+  - `SetMet`: S-meter style,
+  - `SetGUI`: VFO information style,
+  - `SetRxA`: RX audio profile,
+  - `SetTmr`: RX and TX timers,
+  - `SetOff`: automatic deep-sleep delay,
+  - `SetNFM`: narrow-FM bandwidth,
+  - `SetVol`: RX audio volume,
+  - `SetScn`: scan mode,
+  - `SetNav`: radio-specific navigation layout,
+  - `SetCfg`: apply another Multiconfig bank without restarting.
+- Improved `PonMsg`, `BackLt`, `TxTOut`, `ScnRev` and `KeyLck` menus.
+- Full VFO state restoration with a long press on `EXIT`.
+- Squelch changes made with `F + UP` or `F + DOWN` are persisted.
+
+### Keyboard shortcuts and assignable actions
+
+- `F + UP` or `F + DOWN`: adjust the squelch level.
+- `F + F1` or `F + F2`: adjust the frequency step.
+- `F + 8`: temporarily switch the backlight between minimum and maximum brightness.
+- `F + 9`: return to the configured backlight strategy.
+- Configurable short- and long-press actions include:
+  - RX mode,
+  - main-VFO-only display,
+  - virtual PTT,
+  - wide/narrow bandwidth,
+  - 1750 Hz tone,
+  - mute,
+  - RX audio profile,
+  - maximum power,
+  - offset removal,
+  - BEAM,
+  - RF Log,
+  - Fox Hunt,
+  - Beacon.
+
+### Reliability and optimization
+
+- Improved squelch and S-meter behavior.
+- Fixed DTMF overlay issues.
+- Fixed scan-range limits.
+- Cleaner startup display.
+- Removed PWM-related audio noise.
+- Improved serial and K5Viewer key handling.
+- Improved VFO persistence and restoration.
+- Extensive code refactoring and memory optimization.
+- DTMF calling and the scrambler remain disabled in Fusion.
+- Legacy AM Fix support has been removed.
 
 ## Main features from Egzumer:
 * many of OneOfEleven mods:
-   * AM fix, huge improvement in reception quality
    * long press buttons functions replicating F+ action
    * fast scanning
    * channel name editing in the menu
@@ -233,39 +445,12 @@ more tolerant and should remain more usable.
 
 But, they are nice toys for the price, fun to play with.
 
-## Build Restore Points
+## Compiling and Building from Docker
 
-This repository supports automatic restore points that capture your source state tied to each build ID. If a build goes wrong, you can restore your source tree back to the exact state it was in when that build was created.
-
-### How it works
-
-- Every time you run `./compile-with-docker.sh`, a restore point is automatically created before the build starts.
-- The restore point is stored in `archive/builds/<BUILD_ID>/`, where `<BUILD_ID>` matches the 8-hex-digit build ID shown in SysInf under BUILD.
-- A `manifest.txt` inside each restore point records the date, time, and preset used.
-
-### Listing available restore points
-
-```bash
-./tools/restore_from_build_id.sh
-```
-
-### Restoring to a specific build
-
-```bash
-./tools/restore_from_build_id.sh 6a34e081
-```
-
-### Restore point maintenance
-
-- Restore points are full source snapshots. Over time they can consume significant disk space.
-- You can safely delete old restore points by removing their directories under `archive/builds/`.
-- The current `archive/` folder may already contain release binaries; these are separate from build restore points.
-
-## Building
-
-This project provides a Docker-based build system to compile the ApeX firmware for the UV-K1 and UV-K5 V3. Everything is handled through the `compile-with-docker.sh` helper script.
-
-The firmware is built as a single unified variant with all features enabled.
+This project provides a Docker-based build system for the UV-K1 and UV-K5 V3.
+Everything is handled through the `compile-firmware.sh` helper script. Fusion is
+the default generic preset, while specialized builds are generated in their own
+`build/<Preset>` directories.
 
 ### Prerequisites
 
@@ -274,97 +459,94 @@ The firmware is built as a single unified variant with all features enabled.
 
 ### Build Script Overview
 
-The script `compile-with-docker.sh` performs the following actions:
+The script `compile-firmware.sh`:
 
 1. Builds the Docker image (`uvk1-uvk5v3`) if it does not already exist.
-2. Removes any previous `build` directory to ensure a clean configuration.
-3. Runs CMake using the `ApeX` preset inside the Docker container.
-4. Builds the firmware and outputs `.elf`, `.bin` and `.hex` files.
+2. Configures the selected preset with `cmake --fresh`.
+3. Builds the firmware and outputs matching `.elf`, `.bin` and `.hex` files.
+4. Displays Flash and RAM usage; `All` keeps the individual build logs quiet.
 
 ### Usage
 
-If the script is not executable on your system, run:
-
 ```bash
-chmod +x ./compile-with-docker.sh
+./compile-firmware.sh [Preset] [extra CMake options]
 ```
 
-Then build with:
+The default preset is **Fusion**. Available presets are:
+
+- **Custom**
+- **Fusion**
+- **Transfer**
+- **FieldOps**
+- **Labs**
+- **ApeX**
+- **All** (Fusion, Transfer, FieldOps, Labs, Max and ApeX)
+
+Examples:
 
 ```bash
-./compile-with-docker.sh ApeX
+./compile-firmware.sh
+./compile-firmware.sh Fusion
+./compile-firmware.sh Transfer
+./compile-firmware.sh FieldOps
+./compile-firmware.sh Labs
+./compile-firmware.sh ApeX
+./compile-firmware.sh All
 ```
 
-### Build Preset
+### Passing Additional CMake Options
 
-- **ApeX** - Full-featured firmware with all N7SIX mods enabled
+You can pass extra configuration options after the preset name.  
+These are forwarded directly to `cmake --preset` inside the container.
 
-### Build Output
+Examples:
 
-The compiled firmware is generated in `build/ApeX/` with the following files:
-- `n7six.ApeX-k1.v7.6.9B.elf` - ELF binary (for debugging)
-- `n7six.ApeX-k1.v7.6.9B.bin` - Raw binary (for flashing)
-- `n7six.ApeX-k1.v7.6.9B.hex` - Intel HEX format (for flashing)
+```bash
+./compile-firmware.sh FieldOps -DENABLE_VOX=OFF
+./compile-firmware.sh Fusion -DENABLE_FEAT_F4HWN_GAME=ON
+./compile-firmware.sh Fusion -DSQL_TONE=600
+```
+
+To prepare the rolling development firmware:
+
+```bash
+./compile-firmware.sh Fusion -DDEV=ON
+```
+
+This keeps the regular build output in `build/Fusion` and also updates
+`archive/f4hwn.fusion.development.bin`. The development build is identified as
+`DEV` in the firmware information screen. Publishing the updated archive file
+remains an explicit Git operation.
 
 ### Notes
 
 - The first run may take a few minutes while Docker builds the base image.
 - Each build runs inside Docker, so your host environment remains clean.
-- The firmware package name follows the format: `n7six.ApeX-k1.<version>`
 
-### Restore Points
+## Flashing the Firmware with UV Studio
 
-Each successful build automatically creates a **restore point** — a snapshot of the source tree keyed by the build ID — under `archive/builds/`. This lets you reproduce or audit the exact source that produced a given firmware build (the build ID is visible in the radio's **SysInf → BUILD** field).
+You can flash the UV-K5 V3 and UV-K1 directly from your web browser using the Web Serial-based [UV Studio](https://armel.github.io/uvstudio/).
 
-To list available restore points:
-
-```bash
-ls archive/builds/
-```
-
-To restore a previous build's source snapshot into a fresh `restored/<build-id>/` directory:
-
-```bash
-tools/restore_from_build_id.sh <build-id>
-```
-
-For example, to restore the source for build ID `b1231c9`:
-
-```bash
-tools/restore_from_build_id.sh b1231c9
-```
-
-You can pass either the short hex build ID (as shown in SysInf) or the full directory name (`build_id-b1231c9`).
-
-> [!NOTE]
-> Restore points are git-ignored and never committed, so they only exist on the machine that created the build. To share a restore point with another machine, copy the corresponding `archive/builds/build_id-<id>/` directory manually.
->
-> On Windows, these scripts require a bash environment — they work in Git Bash (bundled with [Git for Windows](https://git-scm.com/download/win)) or WSL. If using Docker, you can also run them inside the build container.
-
-## Flashing the Firmware with UVTools2
-
-You can flash the UV-K5 V3 and UV-K1 directly from your web browser using the cross-platform WebSerial-based [UVTools2](https://armel.github.io/uvtools2/).
-
-It works on Chrome, Chromium and Edge (desktop versions), and does not require installing any driver or software on your computer.
+UV Studio combines firmware flashing, calibration maintenance, boot-logo management, K5Viewer and RF Log in a single interface. It requires no application installation, server or account. Use a desktop browser with Web Serial support, such as Chrome, Brave, Edge, Opera or Firefox 151+.
 
 ## Steps to flash the firmware
 
-- Open UVTools2 in [flash](https://armel.github.io/uvtools2/?mode=flash) mode (or click the Flash Firmware tab).
+- Open the [Flash Firmware](https://armel.github.io/uvstudio/#flash) view in UV Studio.
 - Connect your radio to your computer using a compatible USB programming cable (USB-C or Baofeng/Kenwood like double jack USB cable).
 - Make sure your radio is in **DFU mode (flash mode)**.
-- Select the firmware .bin file on your computer. 
+- Select an official F4HWN Fusion release from the catalog or load a local `.bin` firmware file.
 - Click on `Flash Firmware`, then select the serial port associated with your radio.
 - The progress bar will guide you through the flashing steps.
 
-Once finished, your radio restart with the new firmware.
+Once finished, your radio restarts with the new firmware.
 
 ## Steps to dump or restore calibration data
 
-[UVTools2](https://armel.github.io/uvtools2/) can also dump and restore calibration data, which is highly recommended. It’s best to create a dump right after installing N7SIX firmware, and to restore it before installing another firmware (or when returning to the stock firmware, for example).
+[UV Studio](https://armel.github.io/uvstudio/) can also dump and restore calibration data, which is highly recommended. It is best to create a dump immediately after installing the F4HWN firmware, and to restore it before installing another firmware or returning to the stock firmware.
 
 ### Dump
 
-- Open UVTools2 in [dump](https://armel.github.io/uvtools2/?mode=dump) mode (or click the Dump Calib tab).
+- Open the [Dump Calibration](https://armel.github.io/uvstudio/#dump-calib) view in UV Studio.
 - Power on your radio in **normal mode**.
 - Click `Dump Calibration Data`.
 
@@ -375,9 +557,9 @@ When the process is complete, click `Download calibration.dat` to save the file 
 
 ### Restore
 
-- Open UVTools2 in [restore](https://armel.github.io/uvtools2/?mode=restore) mode (or click the Restore Calib tab).
+- Open the [Restore Calibration](https://armel.github.io/uvstudio/#restore-calib) view in UV Studio.
 - Power on your radio in **normal mode**.
-- Select your calibration.dat file on your computer.
+- Select your `calibration.dat` file on your computer.
 
 Click `Restore Calibration Data` and wait until the process fully completes.
 

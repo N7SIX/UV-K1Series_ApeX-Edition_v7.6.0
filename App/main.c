@@ -18,27 +18,29 @@
 #include <string.h>
 #include <stdio.h>     // NULL
 
-#ifdef ENABLE_AM_FIX
-    #include "am_fix.h"
-#endif
-
 #include "audio.h"
 #include "board.h"
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG
+    #include "app/rxtx_log.h"
+#endif
 #include "misc.h"
 #include "radio.h"
 #include "settings.h"
 #include "version.h"
+#ifdef ENABLE_FEAT_F4HWN_OVERLAY_INFO
+    #include "stack_usage.h"
+#endif
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     #ifdef ENABLE_FMRADIO
         #include "app/action.h"
         #include "ui/ui.h"
     #endif
-    #ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
-        #include "app/rxtx_log.h"
-    #endif
     #ifdef ENABLE_SPECTRUM
         #include "app/spectrum.h"
+    #endif
+    #ifdef ENABLE_FEAT_N7SIX_WATERFALL
+        #include "app/waterfall_glue.h"
     #endif
     #include "app/chFrScanner.h"
 #endif
@@ -52,6 +54,10 @@
 #include "driver/system.h"
 #include "driver/systick.h"
 #include "driver/py25q16.h"
+#ifdef ENABLE_FEAT_F4HWN_MULTIBOOT
+    #include "driver/mb_flash.h"
+    #include "ui/multiboot.h"
+#endif
 #ifdef ENABLE_UART
     #include "driver/uart.h"
 #endif
@@ -67,11 +73,6 @@
 
 #include "external/printf/printf.h"
 
-#ifdef ENABLE_WFI_IDLE
-    #include "functions.h"      // gCurrentFunction
-    #include "py32f0xx.h"       // __WFI
-#endif
-
 void _putchar(__attribute__((unused)) char c)
 {
 
@@ -83,8 +84,19 @@ void _putchar(__attribute__((unused)) char c)
 
 void Main(void)
 {
+#ifdef ENABLE_FEAT_F4HWN_OVERLAY_INFO
+    STACK_WatermarkInit();
+#endif
     SYSTICK_Init();
     BOARD_Init();
+
+#ifdef ENABLE_FEAT_F4HWN_MULTIBOOT
+    /* Resolve the active settings bank BEFORE any EEPROM/settings access
+     * below. This also adopts a normally-flashed firmware as slot 0 (discreet
+     * self-backup) when the running image isn't the slot the marker points to.
+     * Calibration stays shared regardless of the selected bank. */
+    PY25Q16_SetBankBase(MB_BankBase(MB_BootResolveState()));
+#endif
 
     boot_counter_10ms = 250;   // 2.5 sec
 
@@ -105,18 +117,21 @@ void Main(void)
 
     BOARD_ADC_GetBatteryInfo(&gBatteryCurrentVoltage, &gBatteryCurrent);
 
+#ifdef ENABLE_FEAT_F4HWN_MULTIBOOT_HOT_CFG
+    SETTINGS_InitEEPROM(false);
+#else
     SETTINGS_InitEEPROM();
+#endif
 
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG
     RXTX_LOG_Init();
 #endif
 
-    #ifdef ENABLE_FEAT_N7SIX
+    #ifdef ENABLE_FEAT_F4HWN
         gDW = gEeprom.DUAL_WATCH;
         gCB = gEeprom.CROSS_BAND_RX_TX;
     #endif
 
-    SETTINGS_WriteBuildOptions();
     SETTINGS_LoadCalibration();
 
     RADIO_ConfigureChannel(0, VFO_CONFIGURE_RELOAD);
@@ -131,22 +146,37 @@ void Main(void)
 
     BATTERY_GetReadings(false);
 
-#ifdef ENABLE_AM_FIX
-    AM_fix_init();
-#endif
-
     BOOT_Mode_t  BootMode = BOOT_GetMode();
 
-#ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
+#ifdef ENABLE_FEAT_F4HWN_MULTIBOOT
+    /* Run before the welcome screen and the normal application UI. EXIT from
+     * the selector simply resumes this boot as if no special mode was held. */
+    if (BootMode == BOOT_MODE_MULTIBOOT)
+    {
+        BOOT_ProcessMode(BootMode);
+        BootMode = BOOT_MODE_NORMAL;
+    }
+#endif
+
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     if (BootMode == BOOT_MODE_RESCUE_OPS)
     {
         gEeprom.MENU_LOCK = !gEeprom.MENU_LOCK;
         SETTINGS_SaveSettings();
     }
 
+    /*
+    if(gEeprom.MENU_LOCK == true) // Force Main Only
+    {
+        gEeprom.DUAL_WATCH = 0;
+        gEeprom.CROSS_BAND_RX_TX = 0;
+        //gFlagReconfigureVfos = true;
+        //gUpdateStatus        = true;
+    }
+    */
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     if (BootMode == BOOT_MODE_F_LOCK && gEeprom.MENU_LOCK == true)
     {
         BootMode = BOOT_MODE_NORMAL;
@@ -157,22 +187,20 @@ void Main(void)
     {
 
         gF_LOCK = true;            // flag to say include the hidden menu items
-        #ifdef ENABLE_FEAT_N7SIX
+        #ifdef ENABLE_FEAT_F4HWN
             gEeprom.KEY_LOCK = 0;
             SETTINGS_SaveSettings();
+            #ifdef ENABLE_FEAT_F4HWN_MENU_CAT
+                gMenuLevel    = MENU_LEVEL_ITEMS;
+                gMenuCategory = CAT_ALL;
+            #endif
             gMenuCursor = UI_MENU_GetMenuIdx(FIRST_HIDDEN_MENU_ITEM);
             gSubMenuSelection = gSetting_F_LOCK;
         #endif
     }
 
-    // count the number of menu items
-    gMenuListCount = 0;
-    while (MenuList[gMenuListCount].name[0] != '\0') {
-        if(!gF_LOCK && MenuList[gMenuListCount].menu_id == FIRST_HIDDEN_MENU_ITEM)
-            break;
-
-        gMenuListCount++;
-    }
+    // build the current menu view (Etape 1: vue = All, identite)
+    UI_MENU_BuildView();
 
     // wait for user to release all butts before moving on
     if (GPIO_IsPttPressed() ||
@@ -210,7 +238,7 @@ void Main(void)
 
         BACKLIGHT_TurnOn();
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
         if (gEeprom.POWER_ON_DISPLAY_MODE != POWER_ON_DISPLAY_MODE_NONE && gEeprom.POWER_ON_DISPLAY_MODE != POWER_ON_DISPLAY_MODE_SOUND)
 #else
         if (gEeprom.POWER_ON_DISPLAY_MODE != POWER_ON_DISPLAY_MODE_NONE)
@@ -248,6 +276,11 @@ void Main(void)
 
         BOOT_ProcessMode(BootMode);
 
+        if (gEeprom.AUTO_KEYPAD_LOCK && !gEeprom.KEY_LOCK)
+            gKeyLockCountdown = gEeprom.AUTO_KEYPAD_LOCK * 30; // 15 seconds step
+
+        // GPIO_ClearBit(&GPIOA->DATA, GPIOA_PIN_VOICE_0);
+
         gUpdateStatus = true;
 
 #ifdef ENABLE_VOICE
@@ -274,7 +307,7 @@ void Main(void)
 #endif
     }
 
-    #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
+    #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
         if (gEeprom.CURRENT_STATE == 2 || gEeprom.CURRENT_STATE == 5)
             CHFRSCANNER_ScanRange();
 
@@ -298,7 +331,13 @@ void Main(void)
             #ifdef ENABLE_SPECTRUM
                 case 4:
                 case 5:
+                    #ifdef ENABLE_FEAT_N7SIX_WATERFALL
+                    WATERFALL_GlueEnter();
+                    #endif
                     APP_RunSpectrum();
+                    #ifdef ENABLE_FEAT_N7SIX_WATERFALL
+                    WATERFALL_GlueExit();
+                    #endif
                     break;
             #endif
 
@@ -306,14 +345,6 @@ void Main(void)
                 // No action for CURRENT_STATE == 0 or other unexpected values
                 break;
         }
-    #endif
-
-    #ifdef ENABLE_FEAT_N7SIX
-        // Initialize key lock countdown at boot if auto-lock is enabled.
-        // Without this, gKeyLockCountdown is 0 after BSS init, so the
-        // auto-keypad-lock feature never activates after a power cycle.
-        if (gEeprom.AUTO_KEYPAD_LOCK)
-            gKeyLockCountdown = (uint16_t)gEeprom.AUTO_KEYPAD_LOCK * 30u; // 500ms ticks, 15s/step
     #endif
         
     while (true) {
@@ -327,16 +358,5 @@ void Main(void)
                 APP_TimeSlice500ms();
             }
         }
-#ifdef ENABLE_WFI_IDLE
-        else if (gCurrentFunction != FUNCTION_TRANSMIT && !gPttIsPressed) {
-            // Nothing scheduled: sleep until the next interrupt (SysTick
-            // @10ms, UART DMA, USB IRQ) instead of spinning at 48MHz.
-            // All RX command data arrives via DMA/IRQ buffers, so nothing
-            // is lost while sleeping. Skipped while transmitting because
-            // the TX-timeout alert uses gBlinkCounter as a free-running
-            // timebase (see APP_Update).
-            __WFI();
-        }
-#endif
     }
 }

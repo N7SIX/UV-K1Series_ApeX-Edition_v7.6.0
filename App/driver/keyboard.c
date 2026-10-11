@@ -27,21 +27,37 @@ KEY_Code_t gKeyReading1     = KEY_INVALID;
 uint16_t   gDebounceCounter = 0;
 bool       gWasFKeyPressed  = false;
 
-#ifdef ENABLE_FEAT_N7SIX_SCREENSHOT
+#ifdef ENABLE_FEAT_F4HWN_K5VIEWER
+// Short press: hold key for SERIAL_KEY_SHORT_POLLS calls.
+// Must exceed key_debounce_10ms (2) to trigger ProcessKey(key, true, false).
+#define SERIAL_KEY_SHORT_POLLS  5
+
+// Long press: hold key for SERIAL_KEY_LONG_POLLS calls.
+// Must exceed key_repeat_delay_10ms (40) to trigger ProcessKey(key, true, true).
+#define SERIAL_KEY_LONG_POLLS   45
+
 // Packet types for serial key injection (K5Viewer → radio)
 #define SERIAL_KEY_TYPE         0x03
 #define SERIAL_KEY_TYPE_LONG    0x04
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_K5VIEWER
+#define SERIAL_FEATURE_TYPE     0x05
+#endif
 
-// Serial-injected key (written by UART/VCP parser, consumed by KEYBOARD_Poll).
-volatile KEY_Code_t gKeyFromSerial = KEY_INVALID;
+volatile KEY_Code_t gKeyFromSerial      = KEY_INVALID;
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_K5VIEWER
+volatile uint8_t    gSerialViewerFeatures = 0;
+#endif
+static   uint8_t    gSerialKeyHoldCount = 0;
+static   uint8_t    gSerialKeyLong      = 0;  // 0 = short press, 1 = long press
 
 // Inject a short or long press from serial (UART or VCP).
 // KEY_PTT is explicitly blocked — PTT release cannot be guaranteed over serial.
 static inline void KEYBOARD_InjectKey(uint8_t keyCode, bool keyLong)
 {
-    (void)keyLong; // Reserved for future hold/repeat support
     if (keyCode < KEY_INVALID && keyCode != KEY_PTT) {
-        gKeyFromSerial = (KEY_Code_t)keyCode;
+        gKeyFromSerial      = (KEY_Code_t)keyCode;
+        gSerialKeyHoldCount = 0;
+        gSerialKeyLong      = keyLong;
     }
 }
 
@@ -61,24 +77,35 @@ bool KEYBOARD_ProcessProtocolByte(ParseState_t *state, uint8_t b)
             break;
             
         case STATE_KA_2:
-            *state = (b == 0x00) ? STATE_KA_3
-                       : (b == 0x05) ? STATE_KA_RFLOG
-                       : STATE_IDLE;
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_K5VIEWER
+            if (b == 0x00)
+                *state = STATE_KA_3;
+            else if (b == SERIAL_FEATURE_TYPE)
+                *state = STATE_KA_FEATURE;
+            else
+                *state = STATE_IDLE;
+#else
+            *state = (b == 0x00) ? STATE_KA_3 : STATE_IDLE;
+#endif
             break;
-            
+
         case STATE_KA_3:
-            if (b == 0x00) connected = true;
+            if (b == 0x00) {
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_K5VIEWER
+                gSerialViewerFeatures = 0;
+#endif
+                connected = true;
+            }
             *state = STATE_IDLE;
             break;
-            
-        case STATE_KA_RFLOG:
-            // UV Studio sends: 0x55 0xAA 0x05 <features>
-            // features: 0x01=RF_LOG, 0x02=RF_LOG_HISTORY, 0x80=RESTART
-            // We always respond with 0x03 (RF_LOG | RF_LOG_HISTORY) since
-            // both are compiled in together under ENABLE_FEAT_N7SIX_RXTX_LOG_K5VIEWER.
+
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_K5VIEWER
+        case STATE_KA_FEATURE:
+            gSerialViewerFeatures = b;
             connected = true;
             *state = STATE_IDLE;
             break;
+#endif
             
         case STATE_KEY_1:
             *state = (b == 0x55) ? STATE_KEY_2 : STATE_IDLE;
@@ -109,8 +136,6 @@ bool KEYBOARD_ProcessProtocolByte(ParseState_t *state, uint8_t b)
 #define GPIOx               GPIOB
 #define PIN_MASK_COLS       (LL_GPIO_PIN_6 | LL_GPIO_PIN_5 | LL_GPIO_PIN_4 | LL_GPIO_PIN_3)
 #define PIN_COLS            GPIO_MAKE_PIN(GPIOx, PIN_MASK_COLS)
-// Column pins are inverted: col 0 = pin 6, col 1 = pin 5, col 2 = pin 4, col 3 = pin 3.
-// This matches the PCB trace routing on UV-K1/K5 hardware.
 #define PIN_COL(n)          GPIO_MAKE_PIN(GPIOx, 1u << (6 - (n)))
 
 #define PIN_MASK_ROWS       (LL_GPIO_PIN_15 | LL_GPIO_PIN_14 | LL_GPIO_PIN_13 | LL_GPIO_PIN_12)
@@ -159,24 +184,32 @@ static const KEY_Code_t keyboard[5][4] = {
 
 KEY_Code_t KEYBOARD_Poll(void)
 {
-    KEY_Code_t Key = KEY_INVALID;
-
-    // Check serial-injected key first (from UART/VCP K5Viewer protocol).
-    // Takes priority over physical keys for responsive remote control.
-    // Note: gKeyFromSerial is NOT cleared here — it stays set so that
-    // CheckKeys() can see it for multiple polls (needed for debounce).
-    // CheckKeys() clears it via KEYBOARD_ConsumeSerialKey() after processing.
-#ifdef ENABLE_FEAT_N7SIX_SCREENSHOT
+#ifdef ENABLE_FEAT_F4HWN_K5VIEWER
+    // Serial-injected key: hold it for SHORT or LONG polls depending on press type,
+    // so the debounce counter in app.c reaches the right threshold:
+    //   - Short: key_debounce_10ms (2)  → ProcessKey(key, true, false)
+    //   - Long:  key_repeat_delay_10ms (40) → ProcessKey(key, true, true)
+    // Once the hold count is exhausted we clear it — next call returns KEY_INVALID,
+    // which triggers the release path in app.c naturally.
     if (gKeyFromSerial != KEY_INVALID) {
-        return gKeyFromSerial;
+        KEY_Code_t injected  = gKeyFromSerial;
+        uint8_t    threshold = gSerialKeyLong ? SERIAL_KEY_LONG_POLLS : SERIAL_KEY_SHORT_POLLS;
+        if (++gSerialKeyHoldCount >= threshold) {
+            gKeyFromSerial      = KEY_INVALID;
+            gSerialKeyHoldCount = 0;
+            gSerialKeyLong      = 0;
+        }
+        return injected;
     }
 #endif
 
-    // Scan all 5 columns - j=0 reads side keys (all columns high),
-    // j=1..4 scans the 4x4 key matrix columns.
+    KEY_Code_t Key = KEY_INVALID;
+
+    // Scan all 5 columns - never break early to avoid GPIO state issues
     for (unsigned int j = 0; j < 5; j++)
     {
         uint32_t reg;
+        uint32_t match_count = 0;  // Count consecutive matching reads
 
         // Set all columns high first
         GPIO_SetOutputPin(PIN_COLS);
@@ -187,13 +220,44 @@ KEY_Code_t KEYBOARD_Poll(void)
             GPIO_ResetOutputPin(PIN_COL(j - 1));
         }
 
-    // Settling time for line capacitance to discharge
-    // Reduced from 15us to 10us — RC circuit on UV-K1/K5 PCB settles
-    // within 5-8us given low trace capacitance. Saves 25us per poll.
-    SYSTICK_DelayUs(10);
-        reg = read_rows();
+        // Debounce: Read rows multiple times and look for stable reads
+        // CRITICAL FIX #1: Proper debounce logic (replaces confusing i *= syntax)
+        // CRITICAL FIX #2: Increased delay from 1µs to 10µs for real keyboard bounce capture
+        // CRITICAL FIX #3: Clear match_count if reads differ (noise detection)
+        reg = 0;
+        for (unsigned int k = 0; k < 8; k++)
+        {
+            SYSTICK_DelayUs(10);  // FIX #2: Increased from 1µs to 10µs
+            uint32_t reg2 = read_rows();
+            
+            // FIX #3: Clear match counter if values don't match
+            if (reg2 != reg)
+            {
+                match_count = 0;
+                reg = reg2;
+            }
+            else
+            {
+                match_count++;
+            }
+            
+            // Success: We have 3 consecutive matching reads = stable signal
+            if (match_count >= 2)
+            {
+                break;  // Debounce complete for this column
+            }
+        }
 
-        // Check which row is pressed in this column
+        // FIX #1: Do NOT break on noise - continue scanning all columns
+        // Only skip key detection if debounce failed, but GPIO state is cleaned
+        if (match_count < 2)
+        {
+            // Debounce failed (too much noise), but continue to next column
+            // This prevents GPIO from staying in invalid state and blocking other columns
+            continue;
+        }
+
+        // Debounce successful, check which row is pressed in this column
         for (unsigned int i = 0; i < 4; i++)
         {
             if (!(reg & PIN_MASK_ROW(i)))
@@ -205,11 +269,12 @@ KEY_Code_t KEYBOARD_Poll(void)
 
         if (Key != KEY_INVALID)
         {
-            break;  // Found a pressed key, stop scanning
+            break;  // Found a valid key, stop scanning
         }
     }
 
-    // Always clean up GPIO state - set all columns high at end
+    // CRITICAL FIX #4: Always clean up GPIO state - set all columns high at end
+    // This ensures GPIO pins are in a known state even if function exited early due to noise
     GPIO_SetOutputPin(PIN_COLS);
 
     return Key;
@@ -229,12 +294,3 @@ void HideFKeyIcon(void) {
     gWasFKeyPressed       = false;
     gUpdateStatus         = true;
 }
-
-#ifdef ENABLE_FEAT_N7SIX_SCREENSHOT
-// Clear the serial-injected key after CheckKeys() has processed it.
-// Called by CheckKeys() after the key has passed debounce and is dispatched.
-void KEYBOARD_ConsumeSerialKey(void)
-{
-    gKeyFromSerial = KEY_INVALID;
-}
-#endif

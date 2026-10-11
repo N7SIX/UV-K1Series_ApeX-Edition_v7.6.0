@@ -41,11 +41,11 @@ enum
     MENU_OFFSET,
     MENU_TOT,
     MENU_W_N,
-#ifndef ENABLE_FEAT_N7SIX
+#ifndef ENABLE_FEAT_F4HWN
     MENU_SCR,
 #endif
     MENU_BCL,
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     MENU_TX_LOCK, 
 #endif
     MENU_MEM_CH,
@@ -76,9 +76,6 @@ enum
     MENU_S_PRI,
     MENU_S_PRI_CH_1,
     MENU_S_PRI_CH_2,    
-#ifdef ENABLE_ALARM
-    MENU_AL_MOD,
-#endif
 #ifdef ENABLE_DTMF_CALLING
     MENU_ANI_ID,
 #endif
@@ -98,36 +95,32 @@ enum
     MENU_D_LIVE_DEC,
     MENU_PONMSG,
     MENU_ROGER,
-    MENU_MDC_ID,
     MENU_VOL,
     MENU_BAT_TXT,
     MENU_AM,
-#ifdef ENABLE_AM_FIX
-    MENU_AM_FIX,
-#endif
-#ifndef ENABLE_FEAT_N7SIX
+#ifndef ENABLE_FEAT_F4HWN
     #ifdef ENABLE_NOAA
         MENU_NOAA_S,
     #endif
 #endif
     MENU_RESET,
     MENU_F_LOCK,
-#ifndef ENABLE_FEAT_N7SIX
+#ifndef ENABLE_FEAT_F4HWN
     MENU_200TX,
     MENU_350TX,
     MENU_500TX,
 #endif
     MENU_350EN,
-#ifndef ENABLE_FEAT_N7SIX
+#ifndef ENABLE_FEAT_F4HWN
     MENU_SCREN,
 #endif
 #ifdef ENABLE_F_CAL_MENU
     MENU_F_CALI,  // reference xtal calibration
 #endif
-#ifdef ENABLE_FEAT_N7SIX_SLEEP
+#ifdef ENABLE_FEAT_F4HWN_SLEEP
     MENU_SET_OFF,
 #endif
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     MENU_SET_PWR,
     MENU_SET_PTT,
     MENU_SET_TOT,
@@ -138,38 +131,71 @@ enum
     MENU_SET_MET,
     MENU_SET_GUI,
     MENU_SET_TMR,
-    #ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+    #ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
         MENU_SET_SCN,
     #endif
-    #ifdef ENABLE_FEAT_N7SIX_NARROWER
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
         MENU_SET_NFM,
     #endif
-    #ifdef ENABLE_FEAT_N7SIX_VOL
+    #ifdef ENABLE_FEAT_F4HWN_VOL
         MENU_SET_VOL,
     #endif
-    #ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
         MENU_SET_KEY,
     #endif
     #ifdef ENABLE_NOAA
         MENU_NOAA_S,
     #endif
     MENU_SET_NAV,
-    #ifdef ENABLE_FEAT_N7SIX_AUDIO
+    #ifdef ENABLE_FEAT_F4HWN_MULTIBOOT
+        MENU_SET_CFG,
+    #endif
+    #ifdef ENABLE_FEAT_F4HWN_AUDIO
         MENU_SET_AUD,
     #endif
 #endif
-    MENU_BATCAL_LOW,  // inert placeholder - Cal Lo/Hi handled inside MENU_BATCAL nested editor
-    MENU_BATCAL,       // battery calibration: high reference (~8.4V)
+    MENU_BATCAL,  // battery voltage calibration
     MENU_F1SHRT,
     MENU_F1LONG,
     MENU_F2SHRT,
     MENU_F2LONG,
     MENU_MLONG,
     MENU_BATTYP,
-#if defined(ENABLE_FEAT_N7SIX) && defined(ENABLE_FEAT_N7SIX_LOGO_SAV)
+#if defined(ENABLE_FEAT_F4HWN) && defined(ENABLE_FEAT_F4HWN_LOGO_SAV)
     MENU_SET_SAV
 #endif
 };
+
+#ifdef ENABLE_FEAT_F4HWN_MENU_CAT
+// Categories (niveau 1) — l'ordre = ordre d'affichage de l'ecran des categories.
+enum {
+    CAT_CHANNELS = 0,
+    CAT_SCAN,
+    CAT_KEYS,
+    CAT_POWER,
+    CAT_DISPLAY,
+    CAT_TIMERS,
+    CAT_AUDIO,
+    CAT_RADIO,
+    CAT_DTMF,
+    CAT_SERVICE,   // menu cache : n'apparait que si gF_LOCK
+    CAT_ALL,       // liste plate complete, ordre et numeros d'origine
+    CAT_COUNT
+};
+
+#define MENU_LEVEL_CAT   0
+#define MENU_LEVEL_ITEMS 1
+
+extern const char *const CategoryNames[];
+extern uint8_t            gMenuCategory;
+extern uint8_t            gMenuLevel;
+extern uint8_t            gCatOrder[];
+extern uint8_t            gMenuCatCursor;
+extern uint8_t            gCatLastPos[];
+
+void UI_MENU_BuildCategoryScreen(void);
+uint8_t UI_MENU_CategoryItemCount(uint8_t cat);
+#endif
 
 extern const uint8_t FIRST_HIDDEN_MENU_ITEM;
 extern const t_menu_item MenuList[];
@@ -179,46 +205,48 @@ extern const char* const            gSubMenu_SFT_D[3];
 extern const char* const            gSubMenu_W_N[2];
 extern const char* const            gSubMenu_OFF_ON[2];
 extern const char*                  gSubMenu_NA;
+extern const char* const            gSubMenu_TOT[11];
+#ifdef ENABLE_FEAT_F4HWN_FULL_WATCH
+extern const char* const            gSubMenu_RXMode[6];
+#else
 extern const char* const            gSubMenu_RXMode[4];
+#endif
 
 #ifdef ENABLE_VOICE
     extern const char* const        gSubMenu_VOICE[3];
 #endif
 extern const char* const            gSubMenu_MDF[4];
-#ifdef ENABLE_ALARM
-    extern const char* const        gSubMenu_AL_MOD[2];
-#endif
 #ifdef ENABLE_DTMF_CALLING
 extern const char* const            gSubMenu_D_RSP[4];
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     extern const char* const        gSubMenu_SET_PWR[7];
     extern const char* const        gSubMenu_SET_PTT[2];
     extern const char* const        gSubMenu_SET_TOT[4];
-    extern const char* const        gSubMenu_SET_LCK[4];
+    extern const char* const        gSubMenu_SET_LCK[];
     extern const char* const        gSubMenu_SET_MET[2];
-    #ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+    #ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
         extern const char* const    gSubMenu_SET_SCN[2];
     #endif
-    #ifdef ENABLE_FEAT_N7SIX_NARROWER
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
         extern const char* const    gSubMenu_SET_NFM[2];
     #endif
-    #ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
         extern const char* const    gSubMenu_SET_KEY[5];
     #endif
-    #ifdef ENABLE_FEAT_N7SIX_AUDIO
+    #ifdef ENABLE_FEAT_F4HWN_AUDIO
         extern const char* const    gSubMenu_SET_AUD_FM[5];
         extern const char* const    gSubMenu_SET_AUD_AM[3];
     #endif
-    #ifdef ENABLE_FEAT_N7SIX_LOGO_SAV
+    #ifdef ENABLE_FEAT_F4HWN_LOGO_SAV
         extern const char* const    gSubMenu_SET_SAV[];
     #endif
 #endif
 
-extern const char* const gSubMenu_PTT_ID[7];
-#ifdef ENABLE_FEAT_N7SIX
-    #ifdef ENABLE_FEAT_N7SIX_LOGO
+extern const char* const gSubMenu_PTT_ID[5];
+#ifdef ENABLE_FEAT_F4HWN
+    #ifdef ENABLE_FEAT_F4HWN_LOGO
         extern const char* const    gSubMenu_PONMSG[6];
     #else
         extern const char* const    gSubMenu_PONMSG[5];
@@ -227,7 +255,12 @@ extern const char* const gSubMenu_PTT_ID[7];
     extern const char* const        gSubMenu_PONMSG[4];
 #endif
 
-extern const char* const            gSubMenu_ROGER[3];
+#ifdef N7SIX_APEX
+    extern const char* const        gSubMenu_ROGER[6];
+#else
+    extern const char* const        gSubMenu_ROGER[3];
+#endif
+
 extern const char* const            gSubMenu_RESET[2];
 extern const char* const            gSubMenu_F_LOCK[F_LOCK_LEN];
 extern const char* const            gSubMenu_RX_TX[4];
@@ -235,26 +268,19 @@ extern const char* const            gSubMenu_BAT_TXT[3];
 extern const char* const            gSubMenu_BATTYP[5];
 extern const char* const            gSubMenu_SET_NAV[2];
 
-#ifndef ENABLE_FEAT_N7SIX
+#ifndef ENABLE_FEAT_F4HWN
     extern const char* const        gSubMenu_SCRAMBLER[11];
 #endif
 
-typedef struct /* __attribute__((packed)) */ {
-    const char* name; 
-    uint8_t     id;
-} t_sidefunction;
-
-extern const uint8_t         gSubMenu_SIDEFUNCTIONS_size;
-extern const t_sidefunction  gSubMenu_SIDEFUNCTIONS[];
+#define SIDEFUNCTION_COUNT ACTION_OPT_LEN
+extern const char *const gSubMenu_SIDEFUNCTIONS[ACTION_OPT_LEN];
                          
 extern bool              gIsInSubMenu;
                          
 extern uint8_t           gMenuCursor;
+extern uint8_t           gMenuIndices[];
 
 extern int32_t           gSubMenuSelection;
-                         
-extern uint8_t           gBatCalStage;     // 0 = Lo/Hi picker, 1 = Factory/Custom picker, 2 = numeric edit
-extern uint8_t           gBatCalTarget;    // 0 = Cal Lo (6.0V), 1 = Cal Hi (8.4V)
                          
 extern char              edit_original[17];
 extern char              edit[17];
@@ -264,5 +290,7 @@ extern bool              edit_is_uppercase;
 void UI_DisplayMenu(void);
 int UI_MENU_GetCurrentMenuId();
 uint8_t UI_MENU_GetMenuIdx(uint8_t id);
+uint8_t UI_MENU_GetViewPos(uint8_t id);
+void UI_MENU_BuildView(void);
 
 #endif

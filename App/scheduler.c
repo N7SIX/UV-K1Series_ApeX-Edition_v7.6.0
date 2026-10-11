@@ -16,7 +16,7 @@
 
 #include "scheduler.h"
 #include "app/chFrScanner.h"
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     #include "app/fm.h"
 #endif
 #include "app/scanner.h"
@@ -42,7 +42,14 @@
                 flag = true;             \
     } while (0)
 
-volatile uint32_t gGlobalSysTickCounter;
+static volatile uint32_t gGlobalSysTickCounter;
+
+#if defined(ENABLE_FEAT_F4HWN_OVERLAY_APPS) || defined(ENABLE_FEAT_N7SIX_WATERFALL)
+uint32_t SCHEDULER_GetTick10ms(void)
+{
+    return gGlobalSysTickCounter;
+}
+#endif
 
 // we come here every 10ms
 void SysTick_Handler(void)
@@ -54,10 +61,10 @@ void SysTick_Handler(void)
     if ((gGlobalSysTickCounter % 50) == 0) {
         gNextTimeslice_500ms = true;
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
         DECREMENT_AND_TRIGGER(gVfoSaveCountdown_10ms, gScheduleVfoSave);
         DECREMENT_AND_TRIGGER(gTxTimerCountdownAlert_500ms - ALERT_TOT * 2, gTxTimeoutReachedAlert);
-        #ifdef ENABLE_FEAT_N7SIX_RX_TX_TIMER
+        #ifdef ENABLE_FEAT_F4HWN_RX_TX_TIMER
             DECREMENT(gRxTimerCountdown_500ms);
         #endif
 #endif
@@ -98,7 +105,7 @@ void SysTick_Handler(void)
         if (gCurrentFunction != FUNCTION_MONITOR && gCurrentFunction != FUNCTION_TRANSMIT)
             DECREMENT_AND_TRIGGER(gScanPauseDelayIn_10ms, gScheduleScanListen);
 
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
     // Scan stall watchdog: if the scan-resume countdown has expired
     // (gScanPauseDelayIn_10ms == 0) but no resume was actually scheduled
     // (gScheduleScanListen == false) and no real reception is happening
@@ -136,7 +143,7 @@ void SysTick_Handler(void)
     DECREMENT_AND_TRIGGER(gCountdownToPlayNextVoice_10ms, gFlagPlayQueuedVoice);
 #endif
 
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     if (gFM_ScanState != FM_SCAN_OFF && gCurrentFunction != FUNCTION_MONITOR)
         if (gCurrentFunction != FUNCTION_TRANSMIT && gCurrentFunction != FUNCTION_RECEIVE)
             DECREMENT_AND_TRIGGER(gFmPlayCountdown_10ms, gScheduleFM);

@@ -1,10 +1,24 @@
-/* Copyright 2025 Sean, N7SIX
+/* Copyright 2026 N7SIX
+ * https://github.com/n7six
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *     Unless required by applicable law or agreed to in writing, software
+ *     distributed under the License is distributed on an "AS IS" BASIS,
+ *     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *     See the License for the specific language governing permissions and
+ *     limitations under the License.
+ * 
  * Professional 16-level grayscale dithered waterfall for the bottom 1/4 LCD area.
  * Optimized with persistence/decay effect.
  *
  * Waterfall layout (ST7565, 128x64, page-mapped):
- * gFrameBuffer[5] (page 6) = lines 48-55
- * gFrameBuffer[6] (page 7) = lines 56-63
+ * gFrameBuffer[4] (page 5) = lines 40-47 = frequency strip (drawn by waterfall_glue.c)
+ * gFrameBuffer[5]+[6] (pages 6-7) = lines 48-63 = 16-row waterfall (1/4 LCD)
  *
  * Rendering uses 4x4 Bayer ordered dither to simulate 16 gray levels.
  */
@@ -241,7 +255,7 @@ void WATERFALL_Render(void)
     // visual expected by the user.
     for (uint8_t screenRow = 0; screenRow < WATERFALL_HEIGHT; screenRow++) {
         uint8_t bufRow = (waterfallWriteRow + WATERFALL_HEIGHT - 1 - screenRow) % WATERFALL_HEIGHT;
-        uint8_t pageIdx = (screenRow < 8) ? WATERFALL_PAGE0_IDX : WATERFALL_PAGE1_IDX;
+        uint8_t pageIdx = WATERFALL_PAGE0_IDX + (screenRow >> 3);
         uint8_t bitMask = (1u << (screenRow & 7));
         uint8_t rowOffset = (screenRow & 3) << 2;
 

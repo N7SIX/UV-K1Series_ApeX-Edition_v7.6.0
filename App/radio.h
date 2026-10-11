@@ -39,9 +39,7 @@ enum PTT_ID_t {
     PTT_ID_TX_UP,      // BEGIN OF TX
     PTT_ID_TX_DOWN,    // END OF TX
     PTT_ID_BOTH,       // BOTH
-    PTT_ID_APOLLO,      // Apolo quindar tones
-    PTT_ID_MDC1200,     // MDC-1200 PTT-ID (burst at end of transmission)
-    PTT_ID_MDC1200L     // MDC-1200L PTT-ID (long burst at end of transmission)
+    PTT_ID_APOLLO      // Apolo quindar tones
 };
 typedef enum PTT_ID_t PTT_ID_t;
 
@@ -52,7 +50,6 @@ enum VfoState_t
     VFO_STATE_BAT_LOW,
     VFO_STATE_TX_DISABLE,
     VFO_STATE_TIMEOUT,
-    VFO_STATE_ALARM,
     VFO_STATE_VOLTAGE_HIGH,
     _VFO_STATE_LAST_ELEMENT
 };
@@ -151,72 +148,33 @@ extern DCS_CodeType_t gCurrentCodeType;
 
 extern VfoState_t     VfoState[2];
 
-/** @brief Check whether a scan list index is valid. */
+// Human-readable label per VfoState_t (defined in ui/main.c), e.g. "TX DISABLE".
+extern const char *const VfoStateStr[];
+
 bool     RADIO_CheckValidList(uint8_t scanList);
-
-/** @brief Move to the next/previous valid scan list. */
+uint8_t  RADIO_GetAdjacentScanList(uint8_t scanList, int8_t direction);
 void     RADIO_NextValidList(int8_t direction);
-
-/** @brief Check whether a channel index is valid, optionally respecting scan lists. */
+bool     RADIO_IsChannelInScanList(uint8_t channelScanList, uint8_t scanList);
 bool     RADIO_CheckValidChannel(uint16_t channel, bool checkScanList, uint8_t scanList);
-
-/** @brief Find the next channel number in a given direction. */
 uint16_t RADIO_FindNextChannel(uint16_t ChNum, int8_t Direction, bool bCheckScanList, uint8_t RadioNum);
-
-/** @brief Initialize a VFO info structure from channel/frequency defaults. */
 void     RADIO_InitInfo(VFO_Info_t *pInfo, const uint16_t ChannelSave, const uint32_t Frequency);
-
-/** @brief Apply channel configuration to the radio hardware. */
 void     RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure);
-
-/** @brief Configure squelch and output power for a VFO. */
 void     RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo);
-
-/** @brief Validate and apply a CTCSS/DCS code to a frequency config. */
 void     RADIO_ValidateAndSetCode(FREQ_Config_t *pFreq_Config, uint8_t tmp);
-
-/** @brief Apply TX offset to a VFO. */
 void     RADIO_ApplyOffset(VFO_Info_t *pInfo);
-
-/** @brief Select active RX/TX VFOs based on dual watch/crossband state. */
 void     RADIO_SelectVfos(void);
-
-/** @brief Load radio register defaults. */
 void     RADIO_SetupRegisters(bool switchToForeground);
-
-/** @brief Enable or disable the audio path. */
-void     RADIO_SetAudioPath(bool on);
-
 #ifdef ENABLE_NOAA
-    /** @brief Configure NOAA channel scanning. */
     void RADIO_ConfigureNOAA(void);
 #endif
-
-/** @brief Get AM filter bandwidth for the current VFO. */
 BK4819_FilterBandwidth_t RADIO_GetAMFilterBandwidth(const VFO_Info_t *pVfo);
-
-/** @brief Configure TX parameters before transmission. */
 void     RADIO_SetTxParameters(void);
-
-/** @brief Configure AGC settings. */
 void     RADIO_SetupAGC(bool listeningAM, bool disable);
-
-/** @brief Set modulation mode. */
 void     RADIO_SetModulation(ModulationMode_t modulation);
-
-/** @brief Set the global VFO operating state. */
 void     RADIO_SetVfoState(VfoState_t State);
-
-/** @brief Prepare the radio for TX. */
 void     RADIO_PrepareTX(void);
-
-/** @brief Send a CTCSS/DCS tail tone at end of TX. */
 void     RADIO_SendCssTail(void);
-
-/** @brief Prepare CTCSS/DCS transmission mode. */
 void     RADIO_PrepareCssTX(void);
-
-/** @brief Send end-of-transmission sequence. */
 void     RADIO_SendEndOfTransmission(void);
 
 #endif

@@ -19,24 +19,6 @@
 #include "settings.h"
 #include <assert.h>
 
-// Helper: Clamp frequency to global band limits (F_MIN..F_MAX)
-uint32_t FREQUENCIES_ClampGlobal(uint32_t freq)
-{
-    if (freq < F_MIN) return F_MIN;
-    if (freq > F_MAX) return F_MAX;
-    return freq;
-}
-
-// Helper: Clamp frequency to specific band limits
-uint32_t FREQUENCIES_ClampToBand(uint32_t freq, FREQUENCY_Band_t band)
-{
-    if (freq < frequencyBandTable[band].lower)
-        return frequencyBandTable[band].lower;
-    if (freq > frequencyBandTable[band].upper)
-        return frequencyBandTable[band].upper;
-    return freq;
-}
-
 // the BK4819 has 2 bands it covers, 18MHz ~ 630MHz and 760MHz ~ 1300MHz
 
 #define BX4819_band1_lower 1800000
@@ -152,19 +134,8 @@ uint8_t FREQUENCY_CalculateOutputPower(uint8_t TxpLow, uint8_t TxpMid, uint8_t T
 
     if (Frequency <= Middle)
     {
-        /* Linear interpolation from TxpLow at LowerLimit up to TxpMid at
-         * Middle. The previous code started from TxpMid instead of TxpLow,
-         * biasing every lower-half frequency one power step high (inherited
-         * verbatim from upstream DualTachyon firmware).
-         *
-         * ORIGINAL (pre-fix) CODE — kept for reference in case we ever want
-         * to revert to the stock/upstream behavior:
-         *
-         *     TxpMid += ((TxpMid - TxpLow) * (Frequency - LowerLimit)) / (Middle - LowerLimit);
-         *     return TxpMid;
-         *
-         * To revert, replace the return below with the two lines above. */
-        return TxpLow + ((TxpMid - TxpLow) * (Frequency - LowerLimit)) / (Middle - LowerLimit);
+        TxpMid += ((TxpMid - TxpLow) * (Frequency - LowerLimit)) / (Middle - LowerLimit);
+        return TxpMid;
     }
 
     TxpMid += ((TxpHigh - TxpMid) * (Frequency - Middle)) / (UpperLimit - Middle);
@@ -201,12 +172,12 @@ int32_t TX_freq_check(const uint32_t Frequency)
             if (Frequency >= frequencyBandTable[BAND3_137MHz].lower && Frequency < frequencyBandTable[BAND3_137MHz].upper)
                 return 0;
             if (Frequency >= frequencyBandTable[BAND4_174MHz].lower && Frequency < frequencyBandTable[BAND4_174MHz].upper)
-            #ifndef ENABLE_FEAT_N7SIX
+            #ifndef ENABLE_FEAT_F4HWN
                 if (gSetting_200TX)
             #endif
                     return 0;
             if (Frequency >= frequencyBandTable[BAND5_350MHz].lower && Frequency < frequencyBandTable[BAND5_350MHz].upper)
-            #ifndef ENABLE_FEAT_N7SIX
+            #ifndef ENABLE_FEAT_F4HWN
                 if (gSetting_350TX && gSetting_350EN)
             #else
                 if (gSetting_350EN)                
@@ -215,7 +186,7 @@ int32_t TX_freq_check(const uint32_t Frequency)
             if (Frequency >= frequencyBandTable[BAND6_400MHz].lower && Frequency < frequencyBandTable[BAND6_400MHz].upper)
                 return 0;
             if (Frequency >= frequencyBandTable[BAND7_470MHz].lower && Frequency <= 60000000)
-            #ifndef ENABLE_FEAT_N7SIX
+            #ifndef ENABLE_FEAT_F4HWN
                 if (gSetting_500TX)
             #endif
                     return 0;
@@ -256,14 +227,14 @@ int32_t TX_freq_check(const uint32_t Frequency)
                 return 0;
             break;
 
-#ifdef ENABLE_FEAT_N7SIX_PMR
+#ifdef ENABLE_FEAT_F4HWN_PMR
         case F_LOCK_PMR:
             if (Frequency >= 44600625 && Frequency <= 44619375)
                 return 0;
             break;
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX_GMRS_FRS_MURS
+#ifdef ENABLE_FEAT_F4HWN_GMRS_FRS_MURS
         case F_LOCK_GMRS_FRS_MURS:
             // https://forums.radioreference.com/threads/the-great-unofficial-radioreference-frs-gmrs-murs-fact-sheet.275370/
             if ((Frequency >= 46255000 && Frequency <= 46272500) ||
@@ -278,7 +249,7 @@ int32_t TX_freq_check(const uint32_t Frequency)
             break;
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX_CA 
+#ifdef ENABLE_FEAT_F4HWN_CA 
         case F_LOCK_CA:
             if (Frequency >= 14400000 && Frequency < 14800000)
                 return 0;

@@ -27,6 +27,10 @@
 #include "external/printf/printf.h"
 #include "misc.h"
 
+/* MBMARK was an on-screen SPI trace used while bringing up multiboot (M1/M2).
+ * The tracer is gone; keep the call sites as no-ops. */
+#define MBMARK(s)
+
 // #define DEBUG
 
 #define SPIx SPI2
@@ -39,13 +43,41 @@
 #define PAGE_SIZE 0x100
 
 static uint32_t SectorCacheAddr = 0x1000000;
+#ifdef ENABLE_FEAT_F4HWN_MULTIBOOT_OVERLAY
+/* The restore-only RAM stub is copied over this cache immediately before it
+ * erases internal flash. A reset always follows, so the cache is never needed
+ * again after the overlay becomes active. */
+static uint8_t SectorCache[SECTOR_SIZE]
+    __attribute__((section(".bss.mb_workspace"), aligned(4), used));
+#else
 static uint8_t SectorCache[SECTOR_SIZE];
-#ifdef ENABLE_DEFERRED_FLASH_WRITES
-static bool SectorDirty;             // SectorCache holds un-flushed data
-static bool LastFlushVerified = true;
 #endif
 static uint8_t BlackHole[4] __attribute__((aligned(4)));
 static volatile bool TC_Flag;
+
+#ifdef ENABLE_FEAT_F4HWN_MULTIBOOT
+/* Active settings-bank base (see py25q16.h). 0 = bank 0 / historical
+ * config region, i.e. an identity mapping. */
+static uint32_t BankBase = 0;
+
+void PY25Q16_SetBankBase(uint32_t Base)
+{
+    BankBase = Base;
+}
+
+/* Redirect config-region accesses (addr < boundary) into the active bank.
+ * Calibration/logo/slots/marker (addr >= boundary) are returned unchanged.
+ * BankBase is sector-aligned, so alignment done by callers is preserved. */
+static inline uint32_t BankMap(uint32_t Address)
+{
+    return (Address < PY25Q16_BANK_SHARED_FROM) ? (Address + BankBase) : Address;
+}
+#else
+static inline uint32_t BankMap(uint32_t Address)
+{
+    return Address;
+}
+#endif
 
 static inline void CS_Assert()
 {
@@ -222,6 +254,7 @@ static void WriteEnable();
 static void SectorErase(uint32_t Addr);
 static void SectorProgram(uint32_t Addr, const uint8_t *Buf, uint32_t Size);
 static void PageProgram(uint32_t Addr, const uint8_t *Buf, uint32_t Size);
+static void ReadBufferRaw(uint32_t Address, void *pBuffer, uint32_t Size);
 
 void PY25Q16_Init()
 {
@@ -229,19 +262,23 @@ void PY25Q16_Init()
     SPI_Init();
 }
 
-void PY25Q16_ReadBuffer(uint32_t Address, void *pBuffer, uint32_t Size)
+static void ReadBufferRaw(uint32_t Address, void *pBuffer, uint32_t Size)
 {
+    MBMARK("RD cmd");          // about to assert CS + send read command
     CS_Assert();
 
     SPI_WriteByte(0x03);      // Send read command
+    MBMARK("RD addr");         // command sent, about to send address
     WriteAddr(Address);        // Send address (3 bytes)
 
+    MBMARK("RD flush");        // address sent, about to flush RX FIFO
     // CRITICAL: Flush RX FIFO before DMA to remove residual data
     while (LL_SPI_RX_FIFO_EMPTY != LL_SPI_GetRxFIFOLevel(SPIx))
     {
         LL_SPI_ReceiveData8(SPIx);  // Read and discard
     }
 
+    MBMARK("RD data");         // FIFO flushed, about to read the data
     if (Size >= 16) {
         SPI_ReadBuf((uint8_t *)pBuffer, Size);
     } else {
@@ -251,37 +288,63 @@ void PY25Q16_ReadBuffer(uint32_t Address, void *pBuffer, uint32_t Size)
         }
     }
 
+    MBMARK("RD end");          // data read, about to release CS
     CS_Release();
+}
 
-#ifdef ENABLE_DEFERRED_FLASH_WRITES
-    // Coherency: if a deferred (not yet flushed) write modified the sector
-    // currently held in SectorCache, serve the overlapping range from the
-    // cache so callers observe the data they wrote, even though the flash
-    // still holds the old image.
-    if (SectorDirty)
-    {
-        const uint32_t CachedEnd = SectorCacheAddr + SECTOR_SIZE;
-        const uint32_t ReadEnd   = Address + Size;
-        const uint32_t Start     = (Address > SectorCacheAddr) ? Address : SectorCacheAddr;
-        const uint32_t End       = (ReadEnd < CachedEnd) ? ReadEnd : CachedEnd;
+void PY25Q16_ReadBuffer(uint32_t Address, void *pBuffer, uint32_t Size)
+{
+    ReadBufferRaw(BankMap(Address), pBuffer, Size);
+}
 
-        if (Start < End)
-        {
-            memcpy((uint8_t *)pBuffer + (Start - Address),
-                   SectorCache + (Start - SectorCacheAddr),
-                   End - Start);
-        }
-    }
+#if defined(ENABLE_FEAT_F4HWN_EXT_FLASH_RW) || defined(ENABLE_FEAT_F4HWN_MULTIBOOT)
+// Raw physical read bypassing the active config-bank mapping (BankMap).
+void PY25Q16_ReadBufferPhysical(uint32_t Address, void *pBuffer, uint32_t Size)
+{
+    WaitWIP();
+    ReadBufferRaw(Address, pBuffer, Size);
+}
 #endif
+
+#if defined(ENABLE_FEAT_F4HWN_EXT_FLASH_RW) || defined(ENABLE_AIRCOPY_FLASH)
+// Raw physical erase/program backing the host dump/restore UART commands.
+// Every mutation drops the sector cache so the normal logical write path can
+// never trust stale data afterwards.
+void PY25Q16_SectorErasePhysical(uint32_t Address)
+{
+    SectorErase(Address);                 // caller supplies a 4 KiB-aligned address
+    PY25Q16_InvalidateCache();
+}
+
+void PY25Q16_WriteBufferPhysical(uint32_t Address, const void *pBuffer, uint32_t Size)
+{
+    // Program across page boundaries; the caller must have erased the sector(s).
+    SectorProgram(Address, (const uint8_t *)pBuffer, Size);
+    PY25Q16_InvalidateCache();
+}
+#endif
+
+// Like PY25Q16_ReadBuffer, but waits for the flash to be idle first (WIP=0),
+// exactly as PY25Q16_WriteBuffer does before its internal reads. A standalone
+// read issued while the chip is still busy from a prior program/erase never
+// returns the expected data.
+void PY25Q16_ReadBufferSafe(uint32_t Address, void *pBuffer, uint32_t Size)
+{
+    MBMARK("SAFE wip");        // about to WaitWIP()
+    WaitWIP();
+    MBMARK("SAFE rb");         // WaitWIP done, about to ReadBuffer
+    PY25Q16_ReadBuffer(Address, pBuffer, Size);
 }
 
 void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, bool Append)
 {
+    Address = BankMap(Address);   /* map once; internal reads use *Raw below */
+
 #ifdef DEBUG
     printf("spi flash write: %06x %ld %d\n", Address, Size, Append);
 #endif
 
-    //#ifdef ENABLE_FEAT_N7SIX_DEBUG
+    //#ifdef ENABLE_FEAT_F4HWN_DEBUG
     //    gDebug++;
     //#endif
 
@@ -302,24 +365,22 @@ void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, b
 
         if (SecAddr != SectorCacheAddr)
         {
-#ifdef ENABLE_DEFERRED_FLASH_WRITES
-            // Evicting a dirty sector from the cache: write it back first,
-            // otherwise the pending data would be lost.
-            if (SectorDirty)
-            {
-                PY25Q16_FlushPendingWrite();
-            }
-#endif
-            PY25Q16_ReadBuffer(SecAddr, SectorCache, SECTOR_SIZE);
+            /* SecAddr is already in mapped space (Address was mapped above), so
+             * read raw to avoid mapping a second time. */
+            ReadBufferRaw(SecAddr, SectorCache, SECTOR_SIZE);
             SectorCacheAddr = SecAddr;
         }
 
         if (0 != memcmp(pBuffer, (char *)SectorCache + SecOffset, SecSize))
         {
             bool Erase = false;
+            const uint8_t *oldData = SectorCache + SecOffset;
+            const uint8_t *newData = (const uint8_t *)pBuffer;
+
             for (uint32_t i = 0; i < SecSize; i++)
             {
-                if (0xff != SectorCache[SecOffset + i])
+                // NOR flash programming can only change bits from 1 to 0.
+                if ((oldData[i] & newData[i]) != newData[i])
                 {
                     Erase = true;
                     break;
@@ -330,17 +391,6 @@ void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, b
 
             if (Erase)
             {
-#ifdef ENABLE_DEFERRED_FLASH_WRITES
-                // Defer the ~300ms erase + reprogram to
-                // PY25Q16_FlushPendingWrite(). The complete new sector image
-                // is in SectorCache; all writes to this sector until the next
-                // flush are coalesced into a single erase cycle.
-                // (Append semantics collapse: the flush programs the full
-                // sector from the cache, and programming 0xff over erased
-                // cells is a no-op on NOR flash, so the resulting image is
-                // identical.)
-                SectorDirty = true;
-#else
                 SectorErase(SecAddr);
 
                 // CRITICAL FIX #2: Erase takes ~300ms, must complete before program starts
@@ -355,7 +405,6 @@ void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, b
                 {
                     SectorProgram(SecAddr, SectorCache, SECTOR_SIZE);
                 }
-#endif
             }
             else
             {
@@ -378,86 +427,29 @@ void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, b
 
 void PY25Q16_SectorErase(uint32_t Address)
 {
+    Address = BankMap(Address);
     Address -= (Address % SECTOR_SIZE);
-#ifdef ENABLE_DEFERRED_FLASH_WRITES
-    // Don't lose unrelated pending data when erasing a different sector.
-    if (SectorDirty && SectorCacheAddr != Address)
-    {
-        PY25Q16_FlushPendingWrite();
-    }
-#endif
     SectorErase(Address);
     if (SectorCacheAddr == Address)
     {
         memset(SectorCache, 0xff, SECTOR_SIZE);
-#ifdef ENABLE_DEFERRED_FLASH_WRITES
-        SectorDirty = false;    // the dirty data was intentionally wiped
-#endif
     }
 }
 
-#ifdef ENABLE_DEFERRED_FLASH_WRITES
-// Write back a dirty SectorCache to flash: one erase cycle (~300ms) +
-// full-sector program + read-back verify with one retry.
-// Called from the 10ms time slice (after UI rendering) and before
-// reboot/power-loss-critical transitions. See py25q16.h.
-void PY25Q16_FlushPendingWrite(void)
+void PY25Q16_InvalidateCache(void)
 {
-    if (!SectorDirty)
-    {
-        return;
-    }
-
-    for (uint8_t attempt = 0; attempt < 2; attempt++)
-    {
-        bool ok = true;
-        uint8_t VerifyBuf[64];  // small stack chunk: no extra static RAM
-
-        SectorErase(SectorCacheAddr);
-        WaitWIP();
-        SectorProgram(SectorCacheAddr, SectorCache, SECTOR_SIZE);
-
-        for (uint32_t Off = 0; Off < SECTOR_SIZE; Off += sizeof(VerifyBuf))
-        {
-            PY25Q16_ReadBuffer(SectorCacheAddr + Off, VerifyBuf, sizeof(VerifyBuf));
-            if (memcmp(VerifyBuf, SectorCache + Off, sizeof(VerifyBuf)) != 0)
-            {
-                ok = false;
-                break;
-            }
-        }
-
-        if (ok)
-        {
-            LastFlushVerified = true;
-            SectorDirty = false;
-            return;
-        }
-    }
-
-    LastFlushVerified = false;
+    /* Same "no sector cached" sentinel as the initial value: the next write
+     * re-reads its sector from flash instead of trusting SectorCache. */
+    SectorCacheAddr = 0x1000000;
 }
 
-bool PY25Q16_HasPendingWrite(void)
+#ifdef ENABLE_FEAT_F4HWN_OVERLAY_APPS
+/* Expose the 4 KiB sector cache as the overlay-app workspace. It lives in
+ * .bss.mb_workspace (the overlay VMA), so an app blob linked there runs in
+ * place once copied in. The caller InvalidateCache()s around its use. */
+uint8_t *PY25Q16_OverlayBuffer(void)
 {
-    return SectorDirty;
-}
-
-bool PY25Q16_LastFlushVerified(void)
-{
-    return LastFlushVerified;
-}
-#else
-void PY25Q16_FlushPendingWrite(void)
-{
-}
-bool PY25Q16_HasPendingWrite(void)
-{
-    return false;
-}
-bool PY25Q16_LastFlushVerified(void)
-{
-    return true;
+    return SectorCache;
 }
 #endif
 

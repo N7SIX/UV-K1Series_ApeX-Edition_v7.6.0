@@ -2,11 +2,11 @@
 
 <img width="2016" height="1512" alt="pcbite" src="https://github.com/user-attachments/assets/b3086bf2-c14c-47da-b68b-a6867268ae78" />
 
-Restoring a UV-K5 V1 accidentally flashed with the N7SIX ApeX 🔥 Edition firmware, using OpenOCD and a ST-LINK programmer.
+Restoring a UV-K5 V1 accidentally flashed with the F4HWN Fusion 🔥 Edition firmware, using OpenOCD and a ST-LINK programmer.
 
 ## Introduction
 
-Some users have accidentally flashed a UV-K5 V1 with the N7SIX ApeX 🔥 Edition firmware. This edition **is only** compatible with:
+Some users have accidentally flashed a UV-K5 V1 with the F4HWN Fusion 🔥 Edition firmware. This edition **is only** compatible with:
 
 - UV-K5 V3
 - UV-K1
@@ -118,13 +118,13 @@ If no errors appear, the bootloader has been successfully restored.
 - Reinstall the battery
 - Power on the radio on DFU mode
 
-The device should now start correctly on DFU mode again. You can then flash stock firmware, or the [N7SIX firmware for UV-K5 V1](https://github.com/armel/uv-k5-firmware-custom) (not the ApeX 🔥 Edition).
+The device should now start correctly on DFU mode again. You can then flash stock firmware, or the [F4HWN firmware for UV-K5 V1](https://github.com/armel/uv-k5-firmware-custom) (not the Fusion 🔥 Edition).
 
 # Helpful Videos
 
 Here are two videos that can assist you during the unbricking process. If you’re new to ST-LINK, OpenOCD, or SWD debugging, these will give you a clear visual overview:
 
-- [Your UV-K5 V1 is bricked? 🫣 Here’s how to fix it 😌](https://www.youtube.com/watch?v=4cWtYH_bpro) by N7SIX
+- [Your UV-K5 V1 is bricked? 🫣 Here’s how to fix it 😌](https://www.youtube.com/watch?v=4cWtYH_bpro) by F4HWN
 - [UNBRICK - Process Windows Quansheng UV-K5 , K6](https://www.youtube.com/watch?v=EmF08o5MIE0) by M0FXB
 
 These resources are not mandatory, but they can make the procedure much easier to follow.

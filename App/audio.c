@@ -15,11 +15,11 @@
  *     limitations under the License.
  */
 
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     #include "app/fm.h"
 #endif
 #include "audio.h"
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     #include "driver/bk1080.h"
 #endif
 #include "driver/bk4819.h"
@@ -41,7 +41,7 @@ static const uint16_t BEEP_Classic_array[][3] = { /* Tone    Duration    Repeats
     [BEEP_880HZ_200MS]                            = {880,    200,        1      },
     [BEEP_880HZ_500MS]                            = {880,    500,        1      },
 #endif
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     [BEEP_400HZ_30MS]                             = {400,    30,         1      },
     [BEEP_500HZ_30MS]                             = {500,    30,         1      },
     [BEEP_600HZ_30MS]                             = {600,    30,         1      },
@@ -70,7 +70,7 @@ void AUDIO_PlayBeep(BEEP_Type_t Beep)
     if (Beep >= ARRAY_SIZE(BEEP_Classic_array))
         return;
 
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     if (gFmRadioMode)
         BK1080_Mute(true);
 #endif
@@ -84,7 +84,7 @@ void AUDIO_PlayBeep(BEEP_Type_t Beep)
 
     uint16_t ToneConfig = BK4819_ReadRegister(BK4819_REG_71);
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     if(Beep == BEEP_400HZ_30MS || Beep == BEEP_500HZ_30MS || Beep == BEEP_600HZ_30MS)
     {
         BK4819_WriteRegister(BK4819_REG_70, BK4819_REG_70_ENABLE_TONE1 | ((1 & 0x7f) << BK4819_REG_70_SHIFT_TONE1_TUNING_GAIN));
@@ -112,7 +112,7 @@ void AUDIO_PlayBeep(BEEP_Type_t Beep)
     SYSTEM_DelayMs(5);
     BK4819_WriteRegister(BK4819_REG_71, ToneConfig);
 
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     const bool isFmRadio = gFmRadioMode;
     
     if (isFmRadio)
@@ -122,67 +122,13 @@ void AUDIO_PlayBeep(BEEP_Type_t Beep)
     if (gEnableSpeaker)
         AUDIO_AudioPathOn();
 
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     if (isFmRadio)
         BK1080_Mute(false);
 #endif
 
     if (gCurrentFunction == FUNCTION_POWER_SAVE && gRxIdleMode)
         BK4819_Sleep();
-
-#ifdef ENABLE_VOX
-    gVoxResumeCountdown = 80;
-#endif
-}
-
-/*
- * AUDIO_PlayMDCWarble - local MDC-ID-received indicator.
- *
- * Reproduces the characteristic MDC-1200 preamble sound (rapid 1200/1800 Hz
- * alternation - the 0x55 0x55... bit stream at 1200 baud) through the local
- * speaker. Unlike AUDIO_PlayBeep(), this is ALLOWED during FUNCTION_RECEIVE /
- * FUNCTION_MONITOR: it is the audible indication that an MDC ID was just
- * decoded from an incoming transmission, and it is therefore heard identically
- * on simplex channels and through repeaters - the sound is generated locally
- * from the decoded frame, independent of whether the repeater relays the
- * on-air data burst audio.
- */
-void AUDIO_PlayMDCWarble(uint8_t repeats)
-{
-    if (repeats == 0)
-        repeats = 1;
-
-    AUDIO_AudioPathOff();
-
-    SYSTEM_DelayMs(10);
-
-    const uint16_t toneConfig = BK4819_ReadRegister(BK4819_REG_71);
-
-    BK4819_PrepareToPlayTone(true);
-
-    SYSTEM_DelayMs(2);
-
-    AUDIO_AudioPathOn();
-
-    SYSTEM_DelayMs(30);
-
-    while (repeats--) {
-        for (uint8_t i = 0; i < 6; i++) {
-            BK4819_PlayToneRaw(1200, 20);   /* MDC mark   (0x55 bit stream) */
-            BK4819_PlayToneRaw(1800, 20);   /* MDC space                  */
-        }
-        SYSTEM_DelayMs(60);
-    }
-
-    AUDIO_AudioPathOff();
-
-    SYSTEM_DelayMs(5);
-    BK4819_TurnsOffTones_TurnsOnRX();
-    SYSTEM_DelayMs(5);
-    BK4819_WriteRegister(BK4819_REG_71, toneConfig);
-
-    if (gEnableSpeaker)
-        AUDIO_AudioPathOn();
 
 #ifdef ENABLE_VOX
     gVoxResumeCountdown = 80;
@@ -329,7 +275,7 @@ void AUDIO_PlaySingleVoice(bool bFlag)
         if (FUNCTION_IsRx())   // 1of11
             BK4819_SetAF(BK4819_AF_MUTE);
 
-        #ifdef ENABLE_FMRADIO
+        #ifdef ENABLE_FMRADIO_EMBEDDED
             if (gFmRadioMode)
                 BK1080_Mute(true);
         #endif
@@ -353,7 +299,7 @@ void AUDIO_PlaySingleVoice(bool bFlag)
             if (FUNCTION_IsRx())    // 1of11
                 RADIO_SetModulation(gRxVfo->Modulation);
 
-            #ifdef ENABLE_FMRADIO
+            #ifdef ENABLE_FMRADIO_EMBEDDED
                 if (gFmRadioMode)
                     BK1080_Mute(false);
             #endif
@@ -494,7 +440,7 @@ void AUDIO_PlayQueuedVoice(void)
         RADIO_SetModulation(gRxVfo->Modulation); // 1of11
     }
 
-    #ifdef ENABLE_FMRADIO
+    #ifdef ENABLE_FMRADIO_EMBEDDED
         if (gFmRadioMode)
             BK1080_Mute(false);
     #endif

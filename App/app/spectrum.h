@@ -20,11 +20,6 @@
 #pragma once
 
 #include "keyboard_state.h"
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-
-#define SPECTRUM_SETTINGS_SPI_ADDR  0x00A148u  // PY25Q16 address for spectrum settings (8 bytes)
 
 #include "../bitmaps.h"
 #include "../board.h"
@@ -43,8 +38,18 @@
 #include "../radio.h"
 #include "../settings.h"
 #include "../ui/helper.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-static const uint8_t DrawingEndY  = 31;
+#ifdef ENABLE_FEAT_N7SIX_WATERFALL
+/* Quarter-screen waterfall build: the curve stops at LCD row 39; fb[4]
+ * (40-47) is the frequency strip and fb[5..6] (48-63) the 16-row waterfall,
+ * so the graph shrinks by exactly the 8 rows the waterfall gains. */
+static const uint8_t DrawingEndY  = 32;
+#else
+static const uint8_t DrawingEndY  = 40;
+#endif
 static const uint8_t DrawingTopY  =  8;  // Reserve top 8px for frequency display (gFrameBuffer[0])
 
 static const uint8_t U8RssiMap[] = {

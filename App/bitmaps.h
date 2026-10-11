@@ -4,11 +4,14 @@
 
 #include <stdint.h>
 
-/** @brief Small bitmap/font data used by the UI. */
+#ifdef ENABLE_FEAT_F4HWN_MULTIBOOT_HOT_CFG
+extern const uint8_t gFontConfigBank[2][6];
+#else
 extern const uint8_t gFontPowerSave[2][6];
+#endif
 extern const uint8_t gFontPttOnePush[2][6];
 extern const uint8_t gFontPttClassic[2][6];
-extern const uint8_t gFontF[8];
+extern const uint8_t gFontF[9];
 extern const uint8_t gFontS[6];
 
 extern const uint8_t gFontKeyLock[9];
@@ -19,12 +22,14 @@ extern const uint8_t gFontMute[12];
 extern const uint8_t gFontXB[2][6];
 extern const uint8_t gFontMO[2][6];
 extern const uint8_t gFontDWR[3][6];
-#ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
-    extern const uint8_t gFontRO[2][6];
+#ifdef ENABLE_FEAT_F4HWN_FULL_WATCH
+extern const uint8_t gFontFWR[3][6];
+#endif
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
+extern const uint8_t gFontRO[2][6];
 #endif
 extern const uint8_t gFontHold[2][5];
 
-/** @brief Battery level icon bitmaps. */
 extern const uint8_t BITMAP_BatteryLevel[2];
 extern const uint8_t BITMAP_BatteryLevel1[17];
 extern const uint8_t BITMAP_USB_C[9];
@@ -35,10 +40,9 @@ extern const uint8_t BITMAP_NotReady[7];
 */
 
 #ifdef ENABLE_VOX
-    extern const uint8_t gFontVox[2][6];
+extern const uint8_t gFontVox[2][6];
 #endif
 
-/** @brief VFO state indicator bitmaps. */
 extern const uint8_t BITMAP_VFO_Default[7];
 extern const uint8_t BITMAP_VFO_NotDefault[7];
 extern const uint8_t BITMAP_VFO_Empty[7];
@@ -47,6 +51,17 @@ extern const uint8_t BITMAP_PowerUser[3];
 extern const uint8_t BITMAP_compand[6];
 
 extern const uint8_t BITMAP_NOAA[12];
+
+#if defined(ENABLE_FEAT_F4HWN_FOXHUNT) || defined(ENABLE_FEAT_F4HWN_BEACON)
+    extern const uint8_t BITMAP_FoxHuntSignal[10];
+    extern const uint8_t BITMAP_FoxHuntSpeaker[10];
+    extern const uint8_t BITMAP_FoxHuntUp[11];
+    extern const uint8_t BITMAP_FoxHuntDown[11];
+    extern const uint8_t BITMAP_FoxHuntFlat[11];
+    extern const uint8_t BITMAP_FoxHuntBars[11];
+    extern const uint8_t BITMAP_FoxHuntGraph[15];
+    extern const uint8_t BITMAP_FoxHuntTx[16];
+#endif
 
 #ifndef ENABLE_CUSTOM_MENU_LAYOUT
     extern const uint8_t BITMAP_CurrentIndicator[8];

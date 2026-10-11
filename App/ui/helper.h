@@ -20,19 +20,19 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-void UI_GenerateChannelString(char *pString, const uint16_t Channel);
 void UI_GenerateChannelStringEx(char *pString, const bool bShowPrefix, const uint16_t ChannelNumber);
 void UI_PrintString(const char *pString, uint8_t Start, uint8_t End, uint8_t Line, uint8_t Width);
 void UI_PrintStringSmallNormal(const char *pString, uint8_t Start, uint8_t End, uint8_t Line);
 void UI_PrintStringSmallNormalInverse(const char *pString, uint8_t Start, uint8_t End, uint8_t Line);
 void UI_PrintStringSmallBold(const char *pString, uint8_t Start, uint8_t End, uint8_t Line);
 void UI_PrintStringSmallBufferNormal(const char *pString, uint8_t *buffer);
+void UI_PrintStringSmallBufferBold(const char *pString, uint8_t * buffer);
 void UI_DisplayFrequency(const char *string, uint8_t X, uint8_t Y, bool center);
 
 void UI_DisplayPopup(const char *string);
 
 void UI_DrawPixelBuffer(uint8_t (*buffer)[128], uint8_t x, uint8_t y, bool black);
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     //void UI_DrawLineDottedBuffer(uint8_t (*buffer)[128], int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool black);
     void PutPixel(uint8_t x, uint8_t y, bool fill);
     void PutPixelStatus(uint8_t x, uint8_t y, bool fill);
@@ -42,8 +42,13 @@ void UI_DrawPixelBuffer(uint8_t (*buffer)[128], uint8_t x, uint8_t y, bool black
     bool IsEmptyName(const char *name, uint8_t len);
 #endif
 void UI_DrawLineBuffer(uint8_t (*buffer)[128], int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool black);
+void UI_DrawRectangleBuffer(uint8_t (*buffer)[128], int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool black);
 
-void UI_DisplayClear();
-void UI_StatusClear();
+void UI_DisplayClear(void);
+void UI_StatusClear(void);
+
+#if defined(ENABLE_FEAT_F4HWN_MULTIBOOT) || defined(ENABLE_FEAT_F4HWN_OVERLAY_APPS)
+void UI_DrawMenuKeyHints(const char *act_menu, const char *act_exit);
+#endif
 
 #endif

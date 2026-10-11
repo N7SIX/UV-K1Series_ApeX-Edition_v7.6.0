@@ -38,7 +38,7 @@ enum BEEP_Type_t
     BEEP_880HZ_200MS,
     BEEP_880HZ_500MS,
 #endif
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     BEEP_400HZ_30MS,
     BEEP_500HZ_30MS,
     BEEP_600HZ_30MS,
@@ -50,33 +50,13 @@ typedef enum BEEP_Type_t BEEP_Type_t;
 
 extern BEEP_Type_t       gBeepToPlay;
 
-/** @brief Play a system beep tone. */
 void AUDIO_PlayBeep(BEEP_Type_t Beep);
 
-/**
- * @brief Play the MDC-1200 preamble warble through the LOCAL speaker.
- *
- * Reproduces the characteristic MDC-1200 preamble sound (rapid 1200/1800 Hz
- * alternation, i.e. the 0x55 0x55... bit stream at 1200 baud). Unlike
- * AUDIO_PlayBeep(), this is allowed during FUNCTION_RECEIVE / FUNCTION_MONITOR
- * because it is the audible indication that an MDC ID was just decoded from an
- * incoming transmission. The sound is generated locally from the decoded
- * frame, so it is heard identically on simplex channels and through repeaters,
- * regardless of whether the repeater relays the on-air data-burst audio.
- *
- * @param repeats - number of warble bursts (>=1); emergency alerts use 2.
- */
-void AUDIO_PlayMDCWarble(uint8_t repeats);
-
-
-/** @brief Enable the radio audio path. */
 #define AUDIO_AudioPathOn() GPIO_EnableAudioPath()
 
-/** @brief Disable the radio audio path. */
 #define AUDIO_AudioPathOff() GPIO_DisableAudioPath()
 
 #ifdef ENABLE_VOICE
-    /** @brief Voice prompt identifiers. */
     typedef enum VOICE_ID_t  VOICE_ID_t;
 
     enum
@@ -85,7 +65,6 @@ void AUDIO_PlayMDCWarble(uint8_t repeats);
         VOICE_ID_ENG_BASE = 0x60U,
     };
 
-    /** @brief Voice prompt IDs spoken by the voice synthesiser. */
     enum VOICE_ID_t
     {
         VOICE_ID_0                             = 0x00U,
@@ -174,17 +153,10 @@ void AUDIO_PlayMDCWarble(uint8_t repeats);
     extern volatile uint16_t gCountdownToPlayNextVoice_10ms;
     extern volatile bool     gFlagPlayQueuedVoice;
     extern VOICE_ID_t        gAnotherVoiceID;
-
-    /** @brief Play a single voice prompt immediately. */
+    
     void    AUDIO_PlaySingleVoice(bool bFlag);
-
-    /** @brief Queue a voice prompt by ring buffer index. */
     void    AUDIO_SetVoiceID(uint8_t Index, VOICE_ID_t VoiceID);
-
-    /** @brief Convert a numeric value to voice prompt digits and queue them. */
     uint8_t AUDIO_SetDigitVoice(uint8_t Index, uint16_t Value);
-
-    /** @brief Play the next queued voice prompt. */
     void    AUDIO_PlayQueuedVoice(void);
 #endif
 

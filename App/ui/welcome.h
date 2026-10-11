@@ -23,17 +23,17 @@
 void UI_DisplayReleaseKeys(void);
 void UI_DisplayWelcome(void);
 
-#ifdef ENABLE_FEAT_N7SIX_LOGO
+#ifdef ENABLE_FEAT_F4HWN_LOGO
 void UI_DisplayLogo(void);
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX_QRCODE
+#ifdef ENABLE_FEAT_F4HWN_QRCODE
 // Draw the embedded GitHub QR code (V4, 33x33) at (origin_x, origin_y).
 // `wiki` selects the wiki URL bitmap, otherwise the repo URL bitmap.
 void UI_DrawQRCode(bool wiki, uint8_t origin_x, uint8_t origin_y);
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX_MEM
+#ifdef ENABLE_FEAT_F4HWN_MEM
 // Compute current FLASH and SRAM usage as percentages × 100 (e.g. 7559 = 75.59%).
 void UI_GetMemPercents(uint16_t *flash_pct_x100, uint16_t *ram_pct_x100);
 #endif

@@ -33,6 +33,7 @@
 #include "ui/ui.h"
 
 uint16_t          gFM_Channels[FM_CHANNELS_MAX];
+#ifdef ENABLE_FMRADIO_EMBEDDED
 bool              gFmRadioMode;
 uint8_t           gFmRadioCountdown_500ms;
 volatile uint16_t gFmPlayCountdown_10ms;
@@ -52,8 +53,8 @@ const uint8_t BUTTON_EVENT_HELD = BUTTON_STATE_PRESSED | BUTTON_STATE_HELD;
 const uint8_t BUTTON_EVENT_SHORT =  0;
 const uint8_t BUTTON_EVENT_LONG =  BUTTON_STATE_HELD;
 
-
 static void Key_FUNC(KEY_Code_t Key, uint8_t state);
+#endif
 
 bool FM_CheckValidChannel(uint8_t Channel)
 {
@@ -94,6 +95,7 @@ int FM_ConfigureChannelState(void)
     return 0;
 }
 
+#ifdef ENABLE_FMRADIO_EMBEDDED
 void FM_SetFrequency(void)
 {
     BK1080_SetFrequency(gEeprom.FM_FrequencyPlaying, gEeprom.FM_Band/*, gEeprom.FM_Space*/);
@@ -116,7 +118,7 @@ void FM_TurnOff(void)
 
     gUpdateStatus  = true;
 
-    #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
+    #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
         gEeprom.CURRENT_STATE = 0;
         SETTINGS_WriteCurrentState();
     #endif
@@ -196,6 +198,7 @@ void FM_PlayAndUpdate(void)
     BACKLIGHT_TurnOn();
     FM_AudioPathOn();
 }
+#endif
 
 int FM_CheckFrequencyLock(uint16_t Frequency, uint16_t LowerLimit)
 {
@@ -240,6 +243,7 @@ int FM_CheckFrequencyLock(uint16_t Frequency, uint16_t LowerLimit)
     return 0;
 }
 
+#ifdef ENABLE_FMRADIO_EMBEDDED
 static void Key_DIGITS(KEY_Code_t Key, uint8_t state)
 {
     enum { STATE_FREQ_MODE, STATE_MR_MODE, STATE_SAVE };
@@ -657,10 +661,11 @@ void FM_Start(void)
 
     gUpdateStatus        = true;
 
-    #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
+    #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
         gEeprom.CURRENT_STATE = 3;
         SETTINGS_WriteCurrentState();
     #endif
 }
+#endif
 
 #endif

@@ -45,7 +45,7 @@ const uint16_t    key_debounce_10ms                =    20 / 10;   // 20ms
 
 const uint8_t     scan_delay_10ms                  =   210 / 10;   // 210ms
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     const uint16_t    dual_watch_count_after_tx_10ms   =  420;         // 4.2 sec after TX ends
     const uint16_t    dual_watch_count_after_rx_10ms   =  1000 / 10;   // 1 sec after RX ends ?
     const uint16_t    dual_watch_count_after_1_10ms    =  5000 / 10;   // 5 sec
@@ -89,7 +89,7 @@ const uint32_t    gDefaultAesKey[4]                = {0x4AA5CC60, 0x0312CC5F, 0x
 
 const uint8_t     gMicGain_dB2[9]                  = {3, 8, 16, 24, 32, 40, 48, 56, 63}; // BK4819 {3, 8, 16, 24, 31};
 
-#ifndef ENABLE_FEAT_N7SIX
+#ifndef ENABLE_FEAT_F4HWN
     bool              gSetting_350TX;
 #endif
 
@@ -97,7 +97,7 @@ const uint8_t     gMicGain_dB2[9]                  = {3, 8, 16, 24, 32, 40, 48, 
 bool              gSetting_KILLED;
 #endif
 
-#ifndef ENABLE_FEAT_N7SIX
+#ifndef ENABLE_FEAT_F4HWN
 bool              gSetting_200TX;
 bool              gSetting_500TX;
 #endif
@@ -107,20 +107,16 @@ bool              gSetting_ScrambleEnable;
 
 enum BacklightOnRxTx_t gSetting_backlight_on_tx_rx;
 
-#ifdef ENABLE_AM_FIX
-    bool          gSetting_AM_fix = true;
-#endif
-
-#ifdef ENABLE_FEAT_N7SIX_SLEEP 
+#ifdef ENABLE_FEAT_F4HWN_SLEEP 
     uint8_t       gSetting_set_off = 1;
     bool          gWakeUp = false;
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
     bool          gSetting_set_scn = 1;
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     uint8_t       gSetting_set_pwr = 1;
     bool          gSetting_set_ptt = 0;
     uint8_t       gSetting_set_tot = 0;
@@ -130,30 +126,27 @@ enum BacklightOnRxTx_t gSetting_backlight_on_tx_rx;
     uint8_t       gSetting_set_lck = SET_LCK_KEYS;
     bool          gSetting_set_met = 0;
     bool          gSetting_set_gui = 0;
-    #ifdef ENABLE_FEAT_N7SIX_AUDIO
+    #ifdef ENABLE_FEAT_F4HWN_AUDIO
         uint8_t       gSetting_set_audio_fm = 0;
         uint8_t       gSetting_set_audio_am = 0;
     #endif
-    #ifdef ENABLE_FEAT_N7SIX_NARROWER
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
         bool          gSetting_set_nfm = 0;
     #endif
-    #ifdef ENABLE_FEAT_N7SIX_LOGO_SAV
+    #ifdef ENABLE_FEAT_F4HWN_LOGO_SAV
         uint8_t       gSetting_set_sav = SET_SAV_OFF;
     #endif
     bool          gSetting_set_tmr = 0;
     bool          gSetting_set_ptt_session;
-    #ifdef ENABLE_FEAT_N7SIX_DEBUG
+    #ifdef ENABLE_FEAT_F4HWN_DEBUG
         int16_t   gDebug;
     #endif
     uint8_t       gDW = 0;
     uint8_t       gCB = 0;
     bool          gSaveRxMode = false;
-    uint8_t       crc[15] = { 0 };
-    uint8_t       lErrorsDuringAirCopy = 0;
-    uint8_t       gAircopyStep = 0;
     uint8_t       gAircopyCurrentMapIndex = 0;
     bool          gAirCopyBootMode = 0;
-    #ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
         bool          gPowerHigh = false;
         bool          gRemoveOffset = false;
     #endif
@@ -186,7 +179,7 @@ uint16_t          gEEPROM_1F8C;
 MR_ChannelCache_t gMR_ChannelAttributes_Cache[MR_CHANNELS_CACHE_SIZE] = {0};
 ChannelAttributes_t gMR_ChannelAttributes_Current = {0};
 
-volatile uint16_t gBatterySaveCountdown_10ms = 1000;  // was: battery_save_count_10ms (10000/10)
+volatile uint16_t gBatterySaveCountdown_10ms = battery_save_count_10ms;
 
 volatile bool     gPowerSaveCountdownExpired;
 volatile bool     gSchedulePowerSave;
@@ -203,16 +196,16 @@ volatile bool     gNextTimeslice_500ms;
 volatile uint16_t gTxTimerCountdown_500ms;
 volatile bool     gTxTimeoutReached;
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     volatile uint16_t gTxTimerCountdownAlert_500ms;
     volatile bool     gTxTimeoutReachedAlert;
     volatile uint16_t gTxTimeoutToneAlert = 800;
-    #ifdef ENABLE_FEAT_N7SIX_RX_TX_TIMER
+    #ifdef ENABLE_FEAT_F4HWN_RX_TX_TIMER
         volatile uint16_t gRxTimerCountdown_500ms;
     #endif
-    #ifdef ENABLE_FEAT_N7SIX_SCREENSHOT
-        volatile uint8_t  gUART_LockScreenshot = 0; // lock screenshot if Chirp is used
-        bool gUSB_ScreenshotEnabled = false;
+    #ifdef ENABLE_FEAT_F4HWN_K5VIEWER
+        volatile uint8_t  gUART_LockK5Viewer = 0; // lock the K5Viewer stream if Chirp is used
+        bool gUSB_K5ViewerEnabled = false;
     #endif
 #endif
 
@@ -226,13 +219,13 @@ volatile uint8_t    gVFOStateResumeCountdown_500ms;
 
 bool              gEnableSpeaker;
 uint8_t           gKeyInputCountdown = 0;
-uint16_t          gKeyLockCountdown;
+uint8_t           gKeyLockCountdown;
 uint8_t           gRTTECountdown_10ms;
 bool              bIsInLockScreen;
 uint8_t           gUpdateStatus;
-volatile uint8_t  gFoundCTCSS;
-volatile uint8_t  gFoundCDCSS;
-volatile bool     gEndOfRxDetectedMaybe;
+uint8_t           gFoundCTCSS;
+uint8_t           gFoundCDCSS;
+bool              gEndOfRxDetectedMaybe;
 
 int16_t           gVFO_RSSI[2];
 uint8_t           gVFO_RSSI_bar_level[2];
@@ -244,8 +237,8 @@ bool              gCssBackgroundScan;
 volatile bool     gScheduleScanListen = true;
 volatile uint16_t gScanPauseDelayIn_10ms;
 
-#if defined(ENABLE_ALARM) || defined(ENABLE_TX1750)
-    AlarmState_t  gAlarmState;
+#ifdef ENABLE_TX1750
+    bool gTx1750Active;
 #endif
 uint16_t          gMenuCountdown;
 bool              gPttWasReleased;
@@ -258,7 +251,7 @@ bool              gFlagResetVfos;
 bool              gRequestSaveVFO;
 uint16_t          gRequestSaveChannel;
 bool              gRequestSaveSettings;
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     bool          gRequestSaveFM;
 #endif
 bool              gFlagPrepareTX;
@@ -266,20 +259,20 @@ bool              gFlagPrepareTX;
 bool              gFlagAcceptSetting;
 bool              gFlagRefreshSetting;
 
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     bool          gFlagSaveFM;
 #endif
-volatile bool     g_CDCSS_Lost;
-volatile uint8_t  gCDCSSCodeType;
-volatile bool     g_CTCSS_Lost;
-volatile bool     g_CxCSS_TAIL_Found;
+bool              g_CDCSS_Lost;
+uint8_t           gCDCSSCodeType;
+bool              g_CTCSS_Lost;
+bool              g_CxCSS_TAIL_Found;
 #ifdef ENABLE_VOX
-    volatile bool     g_VOX_Lost;
+    bool          g_VOX_Lost;
     bool          gVOX_NoiseDetected;
     uint16_t      gVoxResumeCountdown;
     uint16_t      gVoxPauseCountdown;
 #endif
-volatile bool     g_SquelchLost;
+bool              g_SquelchLost;
 
 volatile uint16_t gFlashLightBlinkCounter;
 
@@ -288,17 +281,13 @@ uint16_t          gNextMrChannel;
 ReceptionMode_t   gRxReceptionMode;
 
 bool              gRxVfoIsActive;
-#ifdef ENABLE_ALARM
-    uint8_t       gAlarmToneCounter;
-    uint16_t      gAlarmRunningCounter;
-#endif
 bool              gKeyBeingHeld;
 bool              gPttIsPressed;
 uint8_t           gPttDebounceCounter;
 uint8_t           gMenuListCount;
 uint8_t           gBackup_CROSS_BAND_RX_TX;
 uint8_t           gScanDelay_10ms;
-volatile uint8_t  gFSKWriteIndex;
+uint8_t           gFSKWriteIndex;
 
 #ifdef ENABLE_NOAA
     bool          gIsNoaaMode;
@@ -323,7 +312,7 @@ volatile bool     gNextTimeslice40ms;
     volatile bool     gScheduleNOAA       = true;
 #endif
 volatile bool     gFlagTailNoteEliminationComplete;
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     volatile bool gScheduleFM;
 #endif
 
@@ -332,7 +321,7 @@ volatile uint8_t  boot_counter_10ms;
 uint8_t           gIsLocked = 0xFF;
 
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     bool          gK5startup = true;
     bool          gBackLight = false;
     bool          gMute = false;
@@ -396,7 +385,7 @@ unsigned long StrToUL(const char * str)
 
 // Cache hit/miss statistics (optional, for debugging)
 
-#ifdef ENABLE_FEAT_N7SIX_DEBUG
+#ifdef ENABLE_FEAT_F4HWN_DEBUG
     static uint32_t cache_hits = 0;
     static uint32_t cache_misses = 0;
 #endif
@@ -503,7 +492,7 @@ ChannelAttributes_t* MR_GetChannelAttributes(uint16_t channel_id)
     
     if (cache_index >= 0) {
         // CACHE HIT
-        #ifdef ENABLE_FEAT_N7SIX_DEBUG
+        #ifdef ENABLE_FEAT_F4HWN_DEBUG
             cache_hits++;
         #endif
         
@@ -514,7 +503,7 @@ ChannelAttributes_t* MR_GetChannelAttributes(uint16_t channel_id)
     }
     
     // CACHE MISS - Load from Flash
-    #ifdef ENABLE_FEAT_N7SIX_DEBUG
+    #ifdef ENABLE_FEAT_F4HWN_DEBUG
         cache_misses++;
     #endif
     
@@ -617,7 +606,7 @@ void MR_InitChannelAttributesCache(void)
 // Debugging / Statistics (optional, for development)
 // 
 
-#ifdef ENABLE_FEAT_N7SIX_DEBUG
+#ifdef ENABLE_FEAT_F4HWN_DEBUG
 
 uint32_t MR_GetCacheHits(void)
 {
@@ -646,16 +635,14 @@ void MR_PrintCacheStats(void)
 
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX_SCREENSHOT
-    bool SCREENSHOT_IsLocked(void) 
+#ifdef ENABLE_FEAT_F4HWN_K5VIEWER
+    bool K5VIEWER_IsLocked(void) 
     {
-        if (gUART_LockScreenshot > 0) {
-            gUART_LockScreenshot--;
+        if (gUART_LockK5Viewer > 0) {
+            gUART_LockK5Viewer--;
             return true;
         }
         
         return false;
     }
 #endif
-
-char gListName[MR_CHANNELS_LIST][4];

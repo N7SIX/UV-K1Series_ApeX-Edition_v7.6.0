@@ -4,16 +4,24 @@
 // all these images are on their right sides
 // turn your monitor 90-deg anti-clockwise to see the images
 
+#ifdef ENABLE_FEAT_F4HWN_MULTIBOOT_HOT_CFG
+const uint8_t gFontConfigBank[2][6] =
+{   // "C" and "M"; numbered banks use the regular small font
+    {0x00, 0x3e, 0x41, 0x41, 0x41, 0x22},
+    {0x00, 0x7f, 0x02, 0x1c, 0x02, 0x7f},
+};
+#else
 const uint8_t gFontPowerSave[2][6] =
 {
     {0x00, 0x7f, 0x9, 0x9, 0x9, 0x6},
     {0x00, 0x26, 0x49, 0x49, 0x49, 0x32},
 };
+#endif
 
 const uint8_t gFontPttOnePush[2][6] =
 {
     {0x00, 0x3e, 0x41, 0x41, 0x41, 0x3e},
-    {0x00, 0x7f, 0x9, 0x9, 0x9, 0x6},
+    {0x00, 0x7f, 0x09, 0x09, 0x09, 0x06},
 };
 
 const uint8_t gFontPttClassic[2][6] =
@@ -22,16 +30,17 @@ const uint8_t gFontPttClassic[2][6] =
     {0x00, 0x7f, 0x40, 0x40, 0x40, 0x40},
 };
 
-const uint8_t gFontF[8] =
+const uint8_t gFontF[9] =
 {
+    0b00111110,
     0b01111111,
-    0b00000000,
-    0b01110110,
-    0b01110110,
-    0b01110110,
-    0b01110110,
-    0b01111110,
-    0b01111111
+    0b01000001,
+    0b01110101,
+    0b01110101,
+    0b01110101,
+    0b01111101,
+    0b01111111,
+    0b00111110
 };
 
 const uint8_t gFontS[6] =
@@ -90,31 +99,38 @@ const uint8_t gFontMute[12] =
 
 const uint8_t gFontXB[2][6] =
 {   // "XB"
-    {0x00, 0x63, 0x14, 0x8, 0x14, 0x63},
+    {0x00, 0x63, 0x14, 0x08, 0x14, 0x63},
     {0x00, 0x7f, 0x49, 0x49, 0x49, 0x36},
 };
 
-
 const uint8_t gFontMO[2][6] =
 {   // "MO"
-    {0x00, 0x7f, 0x2, 0x1c, 0x2, 0x7f},
+    {0x00, 0x7f, 0x02, 0x1c, 0x02, 0x7f},
     {0x00, 0x3e, 0x41, 0x41, 0x41, 0x3e},
 };
 
 const uint8_t gFontDWR[3][6] =
 {   // "DWR"
-
     {0x00, 0x7f, 0x41, 0x41, 0x41, 0x3e},
     {0x00, 0x3f, 0x40, 0x38, 0x40, 0x3f},
-    {0x00, 0x7f, 0x9, 0x19, 0x29, 0x46},
+    {0x00, 0x7f, 0x09, 0x19, 0x29, 0x46},
 };
 
-#ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
-    const uint8_t gFontRO[2][6] =
-    {   // "RO"
-        {0x00, 0x7f, 0x9, 0x19, 0x29, 0x46},
-        {0x00, 0x3e, 0x41, 0x41, 0x41, 0x3e},
-    };
+#ifdef ENABLE_FEAT_F4HWN_FULL_WATCH
+const uint8_t gFontFWR[3][6] =
+{   // "FWR"
+    {0x00, 0x7f, 0x09, 0x09, 0x09, 0x01},
+    {0x00, 0x3f, 0x40, 0x38, 0x40, 0x3f},
+    {0x00, 0x7f, 0x09, 0x19, 0x29, 0x46},
+};
+#endif
+
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
+const uint8_t gFontRO[2][6] =
+{   // "RO"
+    {0x00, 0x7f, 0x09, 0x19, 0x29, 0x46},
+    {0x00, 0x3e, 0x41, 0x41, 0x41, 0x3e},
+};
 #endif
 
 const uint8_t gFontHold[2][5] =
@@ -165,11 +181,11 @@ const uint8_t BITMAP_USB_C[9] =
 };
 
 #ifdef ENABLE_VOX
-    const uint8_t gFontVox[2][6] =
-    {
-        {0x00, 0x1f, 0x20, 0x40, 0x20, 0x1f},
-        {0x00, 0x63, 0x14, 0x8, 0x14, 0x63},
-    };
+const uint8_t gFontVox[2][6] =
+{
+    {0x00, 0x1f, 0x20, 0x40, 0x20, 0x1f},
+    {0x00, 0x63, 0x14, 0x08, 0x14, 0x63},
+};
 #endif
 
 const uint8_t BITMAP_VFO_Lock[7] =
@@ -183,6 +199,29 @@ const uint8_t BITMAP_VFO_Lock[7] =
     0b00111100,
 };
 
+/*
+const uint8_t BITMAP_VFO_Default[7] =
+{
+    0b01111111,
+    0b01111111,
+    0b00111110,
+    0b00111110,
+    0b00011100,
+    0b00011100,
+    0b00001000
+};
+
+const uint8_t BITMAP_VFO_NotDefault[7] =
+{
+    0b01000001,
+    0b01000001,
+    0b00100010,
+    0b00100010,
+    0b00010100,
+    0b00010100,
+    0b00001000
+};
+*/
 
 // Compact arrow
 const uint8_t BITMAP_VFO_Default[7] =
@@ -275,6 +314,135 @@ const uint8_t BITMAP_NOAA[12] =
     0b00001000,
     0b00010100,
     0b01100011
+};
+#endif
+
+#if defined(ENABLE_FEAT_F4HWN_FOXHUNT) || defined(ENABLE_FEAT_F4HWN_BEACON)
+const uint8_t BITMAP_FoxHuntSignal[10] =
+{   // point source + the speaker bitmap's two sound waves, oriented horizontally
+    0b00001000,
+    0b00011100,
+    0b00011100,
+    0b00001000,
+    0b00000000,
+    0b00100010,
+    0b00011100,
+    0b01000001,
+    0b00100010,
+    0b00011100
+};
+
+const uint8_t BITMAP_FoxHuntSpeaker[10] =
+{   // speaker cone + two sound waves (bit0 = top row)
+    0b00011100,
+    0b00011100,
+    0b00111110,
+    0b01111111,
+    0b00000000,
+    0b00100010,
+    0b00011100,
+    0b01000001,
+    0b00100010,
+    0b00011100
+};
+
+const uint8_t BITMAP_FoxHuntUp[11] =
+{   // filled up triangle (getting nearer)
+    0b00100000,
+    0b00110000,
+    0b00111000,
+    0b00111100,
+    0b00111110,
+    0b00111111,
+    0b00111110,
+    0b00111100,
+    0b00111000,
+    0b00110000,
+    0b00100000
+};
+
+const uint8_t BITMAP_FoxHuntDown[11] =
+{   // filled down triangle (getting farther)
+    0b00000001,
+    0b00000011,
+    0b00000111,
+    0b00001111,
+    0b00011111,
+    0b00111111,
+    0b00011111,
+    0b00001111,
+    0b00000111,
+    0b00000011,
+    0b00000001
+};
+
+const uint8_t BITMAP_FoxHuntFlat[11] =
+{   // equals sign (stable)
+    0b00010010,
+    0b00010010,
+    0b00010010,
+    0b00010010,
+    0b00010010,
+    0b00010010,
+    0b00010010,
+    0b00010010,
+    0b00010010,
+    0b00010010,
+    0b00010010
+};
+
+const uint8_t BITMAP_FoxHuntBars[11] =
+{   // ascending bars = S-meter (staircase) gauge mode (bit0 = top row)
+    0b01000000, 
+    0b01000000, 
+    0b00000000,
+    0b01110000, 
+    0b01110000, 
+    0b00000000,
+    0b01111100, 
+    0b01111100, 
+    0b00000000,
+    0b01111111, 
+    0b01111111
+};
+
+const uint8_t BITMAP_FoxHuntGraph[15] =
+{   // sine wave = signal-history gauge mode (bit0 = top row)
+    0b00001000, 
+    0b00000100, 
+    0b00000010, 
+    0b00000100, 
+    0b00001000,
+    0b00010000, 
+    0b00100000, 
+    0b00010000, 
+    0b00001000, 
+    0b00000100,
+    0b00000010, 
+    0b00000100, 
+    0b00001000, 
+    0b00010000, 
+    0b00100000
+};
+
+const uint8_t BITMAP_FoxHuntTx[16] =
+{ 
+    0b00011100,
+    0b00100010,
+    0b01000001,
+    0b00011100,
+    0b00100010,
+    0b00000000,
+    0b00001000,
+    0b00011100,
+    0b00011100,
+    0b00001000,
+    0b00000000,
+    0b00100010,
+    0b00011100,
+    0b01000001,
+    0b00100010,
+    0b00011100
 };
 #endif
 

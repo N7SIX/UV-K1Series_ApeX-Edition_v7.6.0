@@ -17,31 +17,474 @@
 #ifndef MISC_H
 #define MISC_H
 
-/*
- * Aggregator header.
- *
- * The global declarations that previously lived directly in this file have
- * been split into scoped modules under App/globals/ for better organization
- * and maintainability. This header remains as a thin aggregator so that all
- * existing `#include "misc.h"` sites continue to work unchanged.
- *
- * Scoped modules:
- *   globals/channel_globals.h  - channel / memory-channel cache globals
- *   globals/radio_globals.h    - VFO, scan, squelch, dual-watch, NOAA globals
- *   globals/settings_globals.h - user settings / EEPROM-backed globals
- *   globals/system_globals.h   - timers, power-save, timeslice globals
- *   globals/ui_globals.h       - UI / keypad / display state globals
- *   globals/misc_globals.h     - utility macros, helpers, misc functions
- *
- * No declarations were changed, removed, or re-typed; this is a pure
- * organizational refactor with no behavior, EEPROM, calibration, or UX change.
- */
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "globals/channel_globals.h"
-#include "globals/radio_globals.h"
-#include "globals/settings_globals.h"
-#include "globals/system_globals.h"
-#include "globals/ui_globals.h"
-#include "globals/misc_globals.h"
+#ifndef ARRAY_SIZE
+    #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+#endif
+
+#ifndef MAX
+    #define MAX(a, b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
+#endif
+
+#ifndef MIN
+    #define MIN(a, b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
+#endif
+
+#ifndef SWAP
+    #define SWAP(a, b) ({ __typeof__ (a) _c = (a);  a = b; b = _c; })
+#endif
+
+#define FM_CHANNELS_MAX 48
+#define MR_CHANNELS_MAX 1024
+#define MR_CHANNELS_LIST 24
+#define SCAN_LIST_MODE_ALL       (MR_CHANNELS_LIST + 1u)
+#define SCAN_LIST_MODE_MIX       (MR_CHANNELS_LIST + 2u)
+#define SCAN_LIST_MIX_SHORTCUT   25u
+#define SCAN_LIST_MIX_MASK_ALL   ((1u << MR_CHANNELS_LIST) - 1u)
+// CACHE-BASED OPTIMIZATION: Only keep active channels in RAM
+// Full array stays in EEPROM, cache holds ~10 most-used channels
+#define MR_CHANNELS_CACHE_SIZE 10
+
+
+#define IS_MR_CHANNEL(x)       ((x) >= MR_CHANNEL_FIRST && (x) <= MR_CHANNEL_LAST)
+#define IS_FREQ_CHANNEL(x)     ((x) >= FREQ_CHANNEL_FIRST && (x) <= FREQ_CHANNEL_LAST)
+#define IS_VALID_CHANNEL(x)    ((x) < LAST_CHANNEL)
+#define IS_NOAA_CHANNEL(x)     ((x) >= NOAA_CHANNEL_FIRST && (x) <= NOAA_CHANNEL_LAST)
+
+enum {
+    MR_CHANNEL_FIRST   = 0,
+    MR_CHANNEL_LAST    = MR_CHANNELS_MAX - 1,
+    FREQ_CHANNEL_FIRST = MR_CHANNELS_MAX,
+    FREQ_CHANNEL_LAST  = MR_CHANNELS_MAX + 6,
+    NOAA_CHANNEL_FIRST = MR_CHANNELS_MAX + 7,
+    NOAA_CHANNEL_LAST  = MR_CHANNELS_MAX + 16,
+    LAST_CHANNEL
+};
+
+enum {
+    VFO_CONFIGURE_NONE = 0,
+    VFO_CONFIGURE,
+    VFO_CONFIGURE_RELOAD
+};
+
+enum ReceptionMode_t {
+    RX_MODE_NONE = 0,   // squelch close ?
+    RX_MODE_DETECTED,   // signal detected
+    RX_MODE_LISTENING   //
+};
+typedef enum ReceptionMode_t ReceptionMode_t;
+
+enum BacklightOnRxTx_t {
+    BACKLIGHT_ON_TR_OFF,
+    BACKLIGHT_ON_TR_TX,
+    BACKLIGHT_ON_TR_RX,
+    BACKLIGHT_ON_TR_TXRX
+};
+
+extern const uint8_t         fm_radio_countdown_500ms;
+extern const uint16_t        fm_play_countdown_scan_10ms;
+extern const uint16_t        fm_play_countdown_noscan_10ms;
+extern const uint16_t        fm_restore_countdown_10ms;
+
+extern const uint8_t        vfo_state_resume_countdown_500ms;
+
+extern const uint8_t         menu_timeout_500ms;
+extern const uint16_t        menu_timeout_long_500ms;
+
+extern const uint8_t         DTMF_RX_live_timeout_500ms;
+#ifdef ENABLE_DTMF_CALLING
+extern const uint8_t         DTMF_RX_timeout_500ms;
+extern const uint8_t         DTMF_decode_ring_countdown_500ms;
+extern const uint8_t         DTMF_txstop_countdown_500ms;
+#endif
+
+extern const uint8_t         key_input_timeout_500ms;
+
+extern const uint16_t        key_repeat_delay_10ms;
+extern const uint16_t        key_repeat_10ms;
+extern const uint16_t        key_debounce_10ms;
+
+extern const uint8_t         scan_delay_10ms;
+
+extern const uint16_t        battery_save_count_10ms;
+
+extern const uint16_t        power_save1_10ms;
+extern const uint16_t        power_save2_10ms;
+
+#ifdef ENABLE_VOX
+    extern const uint16_t    vox_stop_count_down_10ms;
+#endif
+
+extern const uint16_t        NOAA_countdown_10ms;
+extern const uint16_t        NOAA_countdown_2_10ms;
+extern const uint16_t        NOAA_countdown_3_10ms;
+
+extern const uint16_t        dual_watch_count_after_tx_10ms;
+extern const uint16_t        dual_watch_count_after_rx_10ms;
+extern const uint16_t        dual_watch_count_after_1_10ms;
+extern const uint16_t        dual_watch_count_after_2_10ms;
+extern const uint16_t        dual_watch_count_toggle_10ms;
+extern const uint16_t        dual_watch_count_noaa_10ms;
+#ifdef ENABLE_VOX
+    extern const uint16_t    dual_watch_count_after_vox_10ms;
+#endif
+
+extern const uint16_t        scan_pause_delay_in_1_10ms;
+extern const uint16_t        scan_pause_delay_in_2_10ms;
+extern const uint16_t        scan_pause_delay_in_3_10ms;
+extern const uint16_t        scan_pause_delay_in_4_10ms;
+extern const uint16_t        scan_pause_delay_in_5_10ms;
+extern const uint16_t        scan_pause_delay_in_6_10ms;
+extern const uint16_t        scan_pause_delay_in_7_10ms;
+
+//extern const uint16_t        gMax_bat_v;
+//extern const uint16_t        gMin_bat_v;
+
+extern const uint8_t         gMicGain_dB2[9];
+
+#ifndef ENABLE_FEAT_F4HWN
+extern bool                  gSetting_350TX;
+#endif
+
+#ifdef ENABLE_DTMF_CALLING
+extern bool                  gSetting_KILLED;
+#endif
+
+#ifndef ENABLE_FEAT_F4HWN
+extern bool                  gSetting_200TX;
+extern bool                  gSetting_500TX;
+#endif
+
+extern bool                  gSetting_350EN;
+extern uint8_t               gSetting_F_LOCK;
+extern bool                  gSetting_ScrambleEnable;
+
+extern enum BacklightOnRxTx_t gSetting_backlight_on_tx_rx;
+
+#ifdef ENABLE_FEAT_F4HWN_SLEEP 
+    extern uint8_t           gSetting_set_off;
+    extern bool              gWakeUp;
+#endif
+
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
+    extern bool              gSetting_set_scn;
+#endif
+
+#ifdef ENABLE_FEAT_F4HWN
+    // Keypad lock scope. Values are BOTH a bitmask (ACTIONS/PTT bits tested
+    // individually) AND a contiguous 0..3 menu index: the order must stay
+    // aligned with gSubMenu_SET_LCK[] and any new entry must keep the range
+    // contiguous so that SET_LCK_LEN remains valid as menu bound and EEPROM
+    // range check.
+    enum SET_LCK_t {
+        SET_LCK_KEYS        = 0u,
+        SET_LCK_ACTIONS     = 1u,
+        SET_LCK_PTT         = 2u,
+        SET_LCK_ACTIONS_PTT = SET_LCK_ACTIONS | SET_LCK_PTT,
+        SET_LCK_LEN
+    };
+
+    #ifdef ENABLE_FEAT_F4HWN_LOGO_SAV
+        enum SET_SAV_t {
+            SET_SAV_OFF,
+            SET_SAV_LOGO,
+            SET_SAV_LOGO_PLUS,
+            SET_SAV_MATRIX,
+            SET_SAV_LEN
+        };
+    #endif
+
+    extern uint8_t            gSetting_set_pwr;
+    extern bool               gSetting_set_ptt;
+    extern uint8_t            gSetting_set_tot;
+    extern uint8_t            gSetting_set_ctr;
+    extern bool               gSetting_set_inv;
+    extern uint8_t            gSetting_set_eot;
+    extern uint8_t            gSetting_set_lck;
+    extern bool               gSetting_set_met;
+    extern bool               gSetting_set_gui;
+    #ifdef ENABLE_FEAT_F4HWN_AUDIO
+        extern uint8_t            gSetting_set_audio_fm;
+        extern uint8_t            gSetting_set_audio_am;
+    #endif
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
+        extern bool               gSetting_set_nfm;
+    #endif
+    #ifdef ENABLE_FEAT_F4HWN_LOGO_SAV
+        extern uint8_t            gSetting_set_sav;
+    #endif
+    extern bool               gSetting_set_tmr;
+    extern bool               gSetting_set_ptt_session;
+    #ifdef ENABLE_FEAT_F4HWN_DEBUG
+        extern int16_t        gDebug;
+    #endif
+    extern uint8_t            gDW;
+    extern uint8_t            gCB;
+    extern bool               gSaveRxMode;
+    extern uint8_t            gAircopyCurrentMapIndex;
+    extern bool               gAirCopyBootMode;
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
+        extern bool               gPowerHigh;
+        extern bool               gRemoveOffset;
+    #endif
+    extern int8_t dBmCorrTable[7];
+#endif
+
+#ifdef ENABLE_AUDIO_BAR
+    extern bool              gSetting_mic_bar;
+#endif
+extern bool                  gSetting_live_DTMF_decoder;
+extern uint8_t               gSetting_battery_text;
+
+extern bool                  gMonitor;
+
+extern const uint32_t        gDefaultAesKey[4];
+extern uint32_t              gCustomAesKey[4];
+extern bool                  bHasCustomAesKey;
+extern uint32_t              gChallenge[4];
+extern uint8_t               gTryCount;
+
+extern uint16_t              gEEPROM_RSSI_CALIB[7][4];
+
+extern uint16_t              gEEPROM_1F8A;
+extern uint16_t              gEEPROM_1F8C;
+
+typedef union {
+    struct {
+        uint16_t
+            band :      3,
+            compander : 2,
+            unused_1 :  1,
+            unused_2 :  1,
+            exclude :   1,
+            scanlist :  8;
+    };
+    uint16_t __val;
+} ChannelAttributes_t;
+
+// 
+// Cache-Based Architecture
+// 
+//
+// Instead of keeping all 1038 channel attributes in RAM (~ 2,000 bytes),
+// we now keep only the active ones in a small cache (40 bytes).
+//
+// The full array remains in Flash and is loaded on-demand.
+//
+// SRAM Savings: ~ 2,000 bytes (84% reduction!)
+// 
+
+// Cache entry structure
+typedef struct {
+    uint16_t channel_id;                    // Which channel this is
+    ChannelAttributes_t attributes;         // The actual attributes
+    uint32_t access_time;                   // For LRU eviction (optional)
+} MR_ChannelCache_t;
+
+// The cache (small, stays in RAM)
+extern MR_ChannelCache_t gMR_ChannelAttributes_Cache[MR_CHANNELS_CACHE_SIZE];
+
+// REMOVED: extern ChannelAttributes_t gMR_ChannelAttributes[MR_CHANNELS_MAX + 7];
+// This now stays in Flash, not in RAM
+
+// 
+// Cache Access Functions (See misc.c for implementation)
+// 
+
+// Get channel attributes (from cache or Flash)
+// Returns pointer to attributes, loads from Flash if not in cache
+
+void MR_InitChannelAttributesCache(void);
+
+ChannelAttributes_t* MR_GetChannelAttributes(uint16_t channel_id);
+
+// Set channel attributes (updates both cache and Flasf)
+void MR_SetChannelAttributes(uint16_t channel_id, const ChannelAttributes_t* attributes);
+
+// Invalidate cache (on Flash clear)
+void MR_InvalidateChannelAttributesCache(void);
+
+// Load channel attributes from Flash directly (internal use)
+void MR_LoadChannelAttributesFromFlash(uint16_t channel_id, ChannelAttributes_t* attributes);
+
+// Save channel attributes to Flash directly (internal use)
+void MR_SaveChannelAttributesToFlash(uint16_t channel_id, const ChannelAttributes_t* attributes);
+
+extern ChannelAttributes_t   gMR_ChannelAttributes_Current;  // Current VFO attributes (for speed)
+
+extern volatile uint16_t     gBatterySaveCountdown_10ms;
+
+extern volatile bool         gPowerSaveCountdownExpired;
+extern volatile bool         gSchedulePowerSave;
+
+extern volatile bool         gScheduleDualWatch;
+
+extern volatile uint16_t     gDualWatchCountdown_10ms;
+extern bool                  gDualWatchActive;
+
+extern volatile uint8_t      gSerialConfigCountDown_500ms;
+
+extern volatile bool         gNextTimeslice_500ms;
+
+extern volatile uint16_t     gTxTimerCountdown_500ms;
+extern volatile bool         gTxTimeoutReached;
+
+#ifdef ENABLE_FEAT_F4HWN
+    extern volatile uint16_t gTxTimerCountdownAlert_500ms;
+    extern volatile bool     gTxTimeoutReachedAlert;
+    extern volatile uint16_t gTxTimeoutToneAlert;
+    #ifdef ENABLE_FEAT_F4HWN_RX_TX_TIMER
+        extern volatile uint16_t gRxTimerCountdown_500ms;
+    #endif
+    #ifdef ENABLE_FEAT_F4HWN_K5VIEWER
+        extern volatile uint8_t  gUART_LockK5Viewer; // lock the K5Viewer stream if Chirp is used
+        extern bool gUSB_K5ViewerEnabled;
+
+        bool K5VIEWER_IsLocked(void);
+    #endif
+#endif
+
+extern volatile uint16_t     gTailNoteEliminationCountdown_10ms;
+
+#ifdef ENABLE_NOAA
+    extern volatile uint16_t gNOAA_Countdown_10ms;
+#endif
+extern bool                  gEnableSpeaker;
+extern uint8_t               gKeyInputCountdown;
+extern uint8_t               gKeyLockCountdown;
+extern uint8_t               gRTTECountdown_10ms;
+extern bool                  bIsInLockScreen;
+extern uint8_t               gUpdateStatus;
+extern uint8_t               gFoundCTCSS;
+extern uint8_t               gFoundCDCSS;
+extern bool                  gEndOfRxDetectedMaybe;
+
+extern int16_t               gVFO_RSSI[2];
+extern uint8_t               gVFO_RSSI_bar_level[2];
+
+// battery critical, limit functionality to minimum
+extern uint8_t               gReducedService;
+extern uint8_t               gBatteryVoltageIndex;
+
+// we are searching CTCSS/DCS inside RX ctcss/dcs menu
+extern bool         gCssBackgroundScan;
+
+
+enum
+{
+    SCAN_REV = -1,
+    SCAN_OFF =  0,
+    SCAN_FWD = +1
+};
+
+extern volatile bool     gScheduleScanListen;
+extern volatile uint16_t gScanPauseDelayIn_10ms;
+
+extern bool                  gTx1750Active;
+extern uint16_t              gMenuCountdown;
+extern bool                  gPttWasReleased;
+extern bool                  gPttWasPressed;
+extern bool                  gHasVfoBackup;
+extern bool                  gFlagReconfigureVfos;
+extern uint8_t               gVfoConfigureMode;
+extern bool                  gFlagResetVfos;
+extern bool                  gRequestSaveVFO;
+extern uint16_t              gRequestSaveChannel;
+extern bool                  gRequestSaveSettings;
+#ifdef ENABLE_FMRADIO_EMBEDDED
+    extern bool              gRequestSaveFM;
+#endif
+extern uint8_t               gKeypadLocked;
+extern bool                  gFlagPrepareTX;
+
+extern bool                  gFlagAcceptSetting;   // accept menu setting
+extern bool                  gFlagRefreshSetting;  // refresh menu display
+
+#ifdef ENABLE_FMRADIO_EMBEDDED
+    extern bool              gFlagSaveFM;
+#endif
+extern bool                  g_CDCSS_Lost;
+extern uint8_t               gCDCSSCodeType;
+extern bool                  g_CTCSS_Lost;
+extern bool                  g_CxCSS_TAIL_Found;
+#ifdef ENABLE_VOX
+    extern bool              g_VOX_Lost;
+    extern bool              gVOX_NoiseDetected;
+    extern uint16_t          gVoxResumeCountdown;
+    extern uint16_t          gVoxPauseCountdown;
+#endif
+
+// true means we are receiving signal
+extern bool                  g_SquelchLost;
+
+extern volatile uint16_t     gFlashLightBlinkCounter;
+
+extern bool                  gFlagEndTransmission;
+extern uint16_t              gNextMrChannel;
+extern ReceptionMode_t       gRxReceptionMode;
+
+ //TRUE when dual watch is momentarly suspended and RX_VFO is locked to either last TX or RX
+extern bool                  gRxVfoIsActive;
+extern bool                  gKeyBeingHeld;
+extern bool                  gPttIsPressed;
+extern uint8_t               gPttDebounceCounter;
+extern uint8_t               gMenuListCount;
+extern uint8_t               gBackup_CROSS_BAND_RX_TX;
+extern uint8_t               gScanDelay_10ms;
+extern uint8_t               gFSKWriteIndex;
+#ifdef ENABLE_NOAA
+    extern bool              gIsNoaaMode;
+    extern uint8_t           gNoaaChannel;
+#endif
+extern volatile bool         gNextTimeslice;
+extern bool                  gUpdateDisplay;
+extern bool                  gF_LOCK;
+#ifdef ENABLE_FMRADIO_EMBEDDED
+    extern uint8_t           gFM_ChannelPosition;
+#endif
+extern uint8_t               gShowChPrefix;
+extern volatile uint8_t      gFoundCDCSSCountdown_10ms;
+extern volatile uint8_t      gFoundCTCSSCountdown_10ms;
+#ifdef ENABLE_VOX
+    extern volatile uint16_t gVoxStopCountdown_10ms;
+#endif
+extern volatile bool         gNextTimeslice40ms;
+#ifdef ENABLE_NOAA
+    extern volatile uint16_t gNOAACountdown_10ms;
+    extern volatile bool     gScheduleNOAA;
+#endif
+extern volatile bool         gFlagTailNoteEliminationComplete;
+extern volatile uint8_t      gVFOStateResumeCountdown_500ms;
+#ifdef ENABLE_FMRADIO_EMBEDDED
+    extern volatile bool     gScheduleFM;
+#endif
+extern uint8_t               gIsLocked;
+extern volatile uint8_t      boot_counter_10ms;
+
+#ifdef ENABLE_FEAT_F4HWN
+    extern bool                  gK5startup;
+    extern bool                  gBackLight;
+    extern bool                  gMute;
+    extern uint8_t               gBacklightTimeOriginal;
+    extern uint8_t               gBacklightBrightnessOld;
+    extern uint8_t               gSquelchLevelOriginal;
+    extern uint8_t               gPttOnePushCounter;
+    extern uint32_t              gBlinkCounter;
+
+    extern uint16_t gVfoSaveCountdown_10ms;
+    extern bool gScheduleVfoSave;
+    extern bool gVfoStateChanged;
+
+    extern char gListName[MR_CHANNELS_LIST][4];
+#endif
+
+int32_t NUMBER_AddWithWraparound(int32_t Base, int32_t Add, int32_t LowerLimit, int32_t UpperLimit);
+unsigned long StrToUL(const char * str);
+
+void FUNCTION_NOP();
+
+static inline bool SerialConfigInProgress() { return gSerialConfigCountDown_500ms != 0; }
 
 #endif

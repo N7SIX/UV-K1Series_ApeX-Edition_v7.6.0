@@ -47,18 +47,22 @@ typedef enum
     SCAN_FREQ_VERIFY_FUNDAMENTAL,
     SCAN_FREQ_VERIFY_HARMONIC
 } SCAN_FrequencyVerifyState_t;
+
 static SCAN_FrequencyVerifyState_t scanFreqVerifyState;
 static uint32_t                    scanVerifyFundamental;
 static uint32_t                    scanVerifyHarmonic;
 static uint16_t                    scanVerifyFundamentalRssi;
+
 static bool SCANNER_ShouldVerifyVhfSecondHarmonic(const uint32_t frequency)
 {
     const uint32_t fundamental = frequency / 2;
+
     return frequency >= (frequencyBandTable[BAND3_137MHz].lower * 2) &&
            frequency <  (frequencyBandTable[BAND4_174MHz].lower * 2) &&
            fundamental >= frequencyBandTable[BAND3_137MHz].lower &&
            fundamental <  frequencyBandTable[BAND4_174MHz].lower;
 }
+
 static void SCANNER_StartCssScanAtFrequency(const uint32_t frequency)
 {
     gScanFrequency         = frequency;
@@ -69,30 +73,38 @@ static void SCANNER_StartCssScanAtFrequency(const uint32_t frequency)
     gScanProgressIndicator = 0;
     gScanCssState          = SCAN_CSS_STATE_SCANNING;
     gScanDelay_10ms        = scan_delay_10ms;
+
     BK4819_SetScanFrequency(gScanFrequency);
+
     if (!gCssBackgroundScan)
         GUI_SelectNextDisplay(DISPLAY_SCANNER);
+
     gUpdateStatus = true;
 }
+
 static void SCANNER_TuneForFrequencyVerification(const uint32_t frequency)
 {
     BK4819_SetFrequency(frequency);
     BK4819_PickRXFilterPathBasedOnFrequency(frequency);
     BK4819_RX_TurnOn();
 }
+
 static uint16_t SCANNER_ReadVerificationRssi(void)
 {
     (void)BK4819_GetRSSI();
     return BK4819_GetRSSI();
 }
+
 static void SCANNER_StartFrequencyVerification(const uint32_t harmonic)
 {
     scanVerifyFundamental = harmonic / 2;
     scanVerifyHarmonic    = harmonic;
     scanFreqVerifyState   = SCAN_FREQ_VERIFY_FUNDAMENTAL;
+
     SCANNER_TuneForFrequencyVerification(scanVerifyFundamental);
     gScanDelay_10ms = 2;
 }
+
 static bool SCANNER_HandleFrequencyVerification(void)
 {
     switch (scanFreqVerifyState) {
@@ -102,19 +114,23 @@ static bool SCANNER_HandleFrequencyVerification(void)
             SCANNER_TuneForFrequencyVerification(scanVerifyHarmonic);
             gScanDelay_10ms = 2;
             return true;
+
         case SCAN_FREQ_VERIFY_HARMONIC: {
             const uint16_t harmonicRssi = SCANNER_ReadVerificationRssi();
             const uint16_t margin       = 4;
             uint32_t verifiedFrequency  = scanVerifyHarmonic;
+
             if (scanVerifyFundamentalRssi > harmonicRssi &&
                 scanVerifyFundamentalRssi - harmonicRssi >= margin)
             {
                 verifiedFrequency = scanVerifyFundamental;
             }
+
             scanFreqVerifyState = SCAN_FREQ_VERIFY_OFF;
             SCANNER_StartCssScanAtFrequency(verifiedFrequency);
             return true;
         }
+
         default:
             return false;
     }
@@ -420,7 +436,8 @@ void SCANNER_Start(bool singleFreq)
         gScanCssState  = SCAN_CSS_STATE_OFF;
         gScanFrequency = 0xFFFFFFFF;
 
-        BK4819_PickRXFilterPathBasedOnFrequency(gScanFrequency);
+        // Keep the RX input path selected by RADIO_SetupRegisters().
+        // 0xFFFFFFFF means "unknown frequency" here and would turn both LNAs off.
         BK4819_SetFrequencyScan(true);
 
         gUpdateStatus = true;
@@ -457,7 +474,7 @@ void SCANNER_Stop(void)
         gUpdateStatus            = true;
         gCssBackgroundScan       = false;
         gScanUseCssResult        = false;
-        scanFreqVerifyState    = SCAN_FREQ_VERIFY_OFF;
+        scanFreqVerifyState      = SCAN_FREQ_VERIFY_OFF;
 #ifdef ENABLE_VOICE
         gAnotherVoiceID          = VOICE_ID_CANCEL;
 #endif
@@ -478,7 +495,7 @@ void SCANNER_TimeSlice10ms(void)
     if (gScannerSaveState != SCAN_SAVE_NO_PROMPT) {
         return;
     }
-    
+
     if (SCANNER_HandleFrequencyVerification()) {
         return;
     }
@@ -505,11 +522,9 @@ void SCANNER_TimeSlice10ms(void)
             if (scanHitCount < 3) {
                 BK4819_SetFrequencyScan(true);
             }
-
             else if (SCANNER_ShouldVerifyVhfSecondHarmonic(gScanFrequency)) {
                 SCANNER_StartFrequencyVerification(gScanFrequency);
             }
-
             else {
                 SCANNER_StartCssScanAtFrequency(gScanFrequency);
             }
@@ -517,7 +532,6 @@ void SCANNER_TimeSlice10ms(void)
             if (scanFreqVerifyState == SCAN_FREQ_VERIFY_OFF) {
                 gScanDelay_10ms = scan_delay_10ms;
             }
-
             //gScanDelay_10ms = 1;   // 10ms
             break;
         }

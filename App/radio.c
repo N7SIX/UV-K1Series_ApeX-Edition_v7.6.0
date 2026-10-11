@@ -17,9 +17,14 @@
 #include "driver/bk4819-regs.h"
 #include <string.h>
 
-#include "am_fix.h"
+#ifdef ENABLE_FEAT_F4HWN_FULL_WATCH
+    #include "app/app.h"
+#endif
 #include "app/dtmf.h"
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG
+    #include "app/rxtx_log.h"
+#endif
+#ifdef ENABLE_FMRADIO_EMBEDDED
     #include "app/fm.h"
 #endif
 #include "audio.h"
@@ -28,23 +33,17 @@
 #include "driver/py25q16.h"
 #include "driver/gpio.h"
 #include "driver/system.h"
-#include "driver/systick.h"
-
 #include "frequencies.h"
 #include "functions.h"
 #include "helper/battery.h"
-#include "mdc1200.h"
-#include "mdc_handler.h"
 #include "misc.h"
 #include "radio.h"
 #include "settings.h"
 #include "ui/menu.h"
 
-// FIX #11: Initialize VFO pointers to safe defaults
-// Prevents NULL pointer dereference if EEPROM initialization fails
-VFO_Info_t    *gTxVfo = NULL;
-VFO_Info_t    *gRxVfo = NULL;
-VFO_Info_t    *gCurrentVfo = NULL;
+VFO_Info_t    *gTxVfo;
+VFO_Info_t    *gRxVfo;
+VFO_Info_t    *gCurrentVfo;
 DCS_CodeType_t gCurrentCodeType;
 VfoState_t     VfoState[2];
 
@@ -59,7 +58,7 @@ const char gModulationStr[MODULATION_UKNOWN][4] = {
 #endif
 };
 
-#ifdef ENABLE_FEAT_N7SIX_AUDIO
+#ifdef ENABLE_FEAT_F4HWN_AUDIO
 
     // About BK4819_WriteRegister(0x2b, val) experimentation...
     //
@@ -124,14 +123,38 @@ const char gModulationStr[MODULATION_UKNOWN][4] = {
     }
 #endif
 
+bool RADIO_IsChannelInScanList(uint8_t channelScanList, uint8_t scanList)
+{
+    if (scanList < 1 || scanList > SCAN_LIST_MODE_MIX)
+        return false;
+
+    if (channelScanList == 0)
+        return false;
+
+    if (channelScanList == SCAN_LIST_MODE_ALL)
+        return true;
+
+    if (scanList == SCAN_LIST_MODE_ALL)
+        return true;
+
+    if (scanList == SCAN_LIST_MODE_MIX) {
+        if (channelScanList > MR_CHANNELS_LIST)
+            return false;
+        return (gEeprom.SCAN_LIST_MIX_MASK & (1u << (channelScanList - 1u))) != 0;
+    }
+
+    return scanList >= 1 && scanList <= MR_CHANNELS_LIST && channelScanList == scanList;
+}
+
 bool RADIO_CheckValidList(uint8_t scanList)
 {
-    if(scanList == MR_CHANNELS_LIST + 1)
+    if (scanList == SCAN_LIST_MODE_ALL)
         return true;
 
     for (uint16_t i = 0; IS_MR_CHANNEL(i); i++) {
         const ChannelAttributes_t* att = MR_GetChannelAttributes(i);
-        if(att->scanlist == scanList && att->exclude == false)
+        if (att != NULL && !att->exclude && att->band <= BAND7_470MHz &&
+            RADIO_IsChannelInScanList(att->scanlist, scanList))
         {
             return true;
         }
@@ -139,20 +162,43 @@ bool RADIO_CheckValidList(uint8_t scanList)
     return false;
 }
 
+uint8_t RADIO_GetAdjacentScanList(uint8_t scanList, int8_t direction)
+{
+    if (scanList < 1 || scanList > SCAN_LIST_MODE_MIX)
+        scanList = 1;
+
+    if (direction > 0) {
+        if (scanList == MR_CHANNELS_LIST)
+            return SCAN_LIST_MODE_MIX;
+        if (scanList == SCAN_LIST_MODE_MIX)
+            return SCAN_LIST_MODE_ALL;
+        if (scanList == SCAN_LIST_MODE_ALL)
+            return 1;
+        return scanList + 1;
+    }
+
+    if (direction < 0) {
+        if (scanList == 1)
+            return SCAN_LIST_MODE_ALL;
+        if (scanList == SCAN_LIST_MODE_ALL)
+            return SCAN_LIST_MODE_MIX;
+        if (scanList == SCAN_LIST_MODE_MIX)
+            return MR_CHANNELS_LIST;
+        return scanList - 1;
+    }
+
+    return scanList;
+}
+
 void RADIO_NextValidList(int8_t direction)
 {
     uint8_t startList = gEeprom.SCAN_LIST_DEFAULT;
     uint8_t attempts = 0;
-    const uint8_t MAX_VALUE = MR_CHANNELS_LIST + 1;  // 25 (1-24 lists + ALL)
+    const uint8_t MAX_VALUE = SCAN_LIST_MODE_MIX;
     
     do {
-        if (direction > 0) {
-            // Forward: 1 → 2 → ... → 25 → 1
-            gEeprom.SCAN_LIST_DEFAULT = (gEeprom.SCAN_LIST_DEFAULT % MAX_VALUE) + 1;
-        } else {
-            // Backward: 25 → 24 → ... → 1 → 25
-            gEeprom.SCAN_LIST_DEFAULT = ((gEeprom.SCAN_LIST_DEFAULT - 2 + MAX_VALUE) % MAX_VALUE) + 1;
-        }
+        gEeprom.SCAN_LIST_DEFAULT = RADIO_GetAdjacentScanList(gEeprom.SCAN_LIST_DEFAULT,
+                                                              direction);
         attempts++;
         
         if (RADIO_CheckValidList(gEeprom.SCAN_LIST_DEFAULT))
@@ -162,7 +208,7 @@ void RADIO_NextValidList(int8_t direction)
     
     // Safety fallback: switch to ALL mode
     if (!RADIO_CheckValidList(gEeprom.SCAN_LIST_DEFAULT)) {
-        gEeprom.SCAN_LIST_DEFAULT = MAX_VALUE;  // ALL (25)
+        gEeprom.SCAN_LIST_DEFAULT = SCAN_LIST_MODE_ALL;
     }
 }
 
@@ -173,13 +219,15 @@ bool RADIO_CheckValidChannel(uint16_t channel, bool checkScanList, uint8_t scanL
     // return true if the channel appears valid
     if (!IS_MR_CHANNEL(channel))
         return false;
+    if (att == NULL)
+        return false;
     if (checkScanList && att->exclude == true)
         return false;
     if (att->band > BAND7_470MHz)
         return false;
-    if (!checkScanList || (scanList > MR_CHANNELS_LIST && att->scanlist != 0) || (scanList > 0 && att->scanlist == MR_CHANNELS_LIST + 1))
+    if (!checkScanList)
         return true;
-    if ((scanList == 0) || (scanList != att->scanlist)) {
+    if (!RADIO_IsChannelInScanList(att->scanlist, scanList)) {
         return false;
     }
     
@@ -250,7 +298,7 @@ void RADIO_ValidateAndSetCode(FREQ_Config_t *pFreq_Config, uint8_t tmp) {
         case CODE_TYPE_CONTINUOUS_TONE:
         case CODE_TYPE_DIGITAL:
         case CODE_TYPE_REVERSE_DIGITAL:
-            if (tmp > ((pFreq_Config->CodeType == CODE_TYPE_CONTINUOUS_TONE ? ARRAY_SIZE(CTCSS_Options) : ARRAY_SIZE(DCS_Options)) - 1))
+            if (tmp > ((pFreq_Config->CodeType == CODE_TYPE_CONTINUOUS_TONE ? ARRAY_SIZE(CTCSS_Options) : DCS_OPTION_COUNT) - 1))
                 tmp = 0;
             break;
     }
@@ -326,7 +374,7 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
     }
     else {
         band = channel - FREQ_CHANNEL_FIRST;
-        bParticipation = MR_CHANNELS_LIST + 1;
+        bParticipation = SCAN_LIST_MODE_ALL;
     }
 
     pVfo->Band                    = band;
@@ -364,7 +412,7 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
         pVfo->StepFrequency = gStepFrequencyTable[tmp];
 
         tmp = data[7];
-#ifndef ENABLE_FEAT_N7SIX
+#ifndef ENABLE_FEAT_F4HWN
         if (tmp > (ARRAY_SIZE(gSubMenu_SCRAMBLER) - 1))
             tmp = 0;
         pVfo->SCRAMBLING_TYPE = tmp;
@@ -478,7 +526,7 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
 
     pVfo->Compander = att->compander;
 
-    #ifdef ENABLE_FEAT_N7SIX_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     if(gRemoveOffset)
     {
         pVfo->pTX = &pVfo->freq_config_RX;
@@ -603,7 +651,7 @@ void RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo)
 
     PY25Q16_ReadBuffer(0x100D0 + (Band * 16) + (Op * 3), Txp, 3);
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     // make low and mid even lower
     // and use calibration values 
     // be aware with toxic fucking closed firmwares
@@ -726,10 +774,6 @@ static void RADIO_SelectCurrentVfo(void)
 
 void RADIO_SelectVfos(void)
 {
-    // FIX #11: Validate VFO indices before dereferencing pointers
-    if (gEeprom.TX_VFO > 1) gEeprom.TX_VFO = 0;
-    if (gEeprom.RX_VFO > 1) gEeprom.RX_VFO = 0;
-
     // if crossband without DW is used then RX_VFO is the opposite to the TX_VFO
     gEeprom.RX_VFO = (gEeprom.CROSS_BAND_RX_TX == CROSS_BAND_OFF || gEeprom.DUAL_WATCH != DUAL_WATCH_OFF) ? gEeprom.TX_VFO : !gEeprom.TX_VFO;
 
@@ -747,16 +791,9 @@ BK4819_FilterBandwidth_t RADIO_GetAMFilterBandwidth(const VFO_Info_t *pVfo)
 
 void RADIO_SetupRegisters(bool switchToForeground)
 {
-    // FIX #11: NULL pointer safety for VFO pointers
-    if (gRxVfo == NULL || gTxVfo == NULL || gCurrentVfo == NULL)
-    {
-        RADIO_SelectVfos();
-        if (gRxVfo == NULL) return;
-    }
-
     BK4819_FilterBandwidth_t Bandwidth = gRxVfo->CHANNEL_BANDWIDTH;
 
-    #ifdef ENABLE_FEAT_N7SIX_NARROWER
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
         if(Bandwidth == BK4819_FILTER_BW_NARROW && gSetting_set_nfm == 1)
         {
             Bandwidth = BK4819_FILTER_BW_NARROWER;
@@ -781,12 +818,7 @@ void RADIO_SetupRegisters(bool switchToForeground)
             case BK4819_FILTER_BW_WIDE:
             case BK4819_FILTER_BW_NARROW:
             case BK4819_FILTER_BW_NARROWER:
-                #ifdef ENABLE_AM_FIX
-    //              BK4819_SetFilterBandwidth(Bandwidth, gRxVfo->Modulation == MODULATION_AM && gSetting_AM_fix);
-                    BK4819_SetFilterBandwidth(Bandwidth, true);
-                #else
-                    BK4819_SetFilterBandwidth(Bandwidth, false);
-                #endif
+                BK4819_SetFilterBandwidth(Bandwidth, false);
                 break;
         }
     }
@@ -797,7 +829,7 @@ void RADIO_SetupRegisters(bool switchToForeground)
 
     BK4819_ToggleGpioOut(BK4819_GPIO1_PIN29_PA_ENABLE, false);
 
-    for (uint8_t retry = 0; retry < 10; retry++)
+    while (1)
     {
         const uint16_t Status = BK4819_ReadRegister(BK4819_REG_0C);
         if ((Status & 1u) == 0) // INTERRUPT REQUEST
@@ -883,7 +915,7 @@ void RADIO_SetupRegisters(bool switchToForeground)
                     break;
             }
 
-#ifndef ENABLE_FEAT_N7SIX
+#ifndef ENABLE_FEAT_F4HWN
             if (gRxVfo->SCRAMBLING_TYPE > 0 && gSetting_ScrambleEnable)
                 BK4819_EnableScramble(gRxVfo->SCRAMBLING_TYPE - 1);
             else
@@ -907,7 +939,7 @@ void RADIO_SetupRegisters(bool switchToForeground)
 #ifdef ENABLE_NOAA
         && !IS_NOAA_CHANNEL(gCurrentVfo->CHANNEL_SAVE)
 #endif
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
         && !gFmRadioMode
 #endif
     ){
@@ -923,18 +955,8 @@ void RADIO_SetupRegisters(bool switchToForeground)
     // RX expander
     BK4819_SetCompander((gRxVfo->Modulation == MODULATION_FM && gRxVfo->Compander >= 2) ? gRxVfo->Compander : 0);
 
-    if (gRxVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200 ||
-        gRxVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200L)
-    {
-        /* Configure BK4819 FSK demodulator for MDC-1200 1200-baud receive */
-        BK4819_EnableMDC1200RX(gRxVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200L);
-        InterruptMask |= BK4819_REG_3F_FSK_RX_FINISHED;
-    }
-    else
-    {
-        BK4819_EnableDTMF();
-        InterruptMask |= BK4819_REG_3F_DTMF_5TONE_FOUND;
-    }
+    BK4819_EnableDTMF();
+    InterruptMask |= BK4819_REG_3F_DTMF_5TONE_FOUND;
 
     RADIO_SetupAGC(gRxVfo->Modulation == MODULATION_AM, false);
     //RADIO_SetupAGC(false, false);
@@ -997,7 +1019,7 @@ void RADIO_SetTxParameters(void)
 {
     BK4819_FilterBandwidth_t Bandwidth = gCurrentVfo->CHANNEL_BANDWIDTH;
 
-    #ifdef ENABLE_FEAT_N7SIX_NARROWER
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
         if(Bandwidth == BK4819_FILTER_BW_NARROW && gSetting_set_nfm == 1)
         {
             Bandwidth = BK4819_FILTER_BW_NARROWER;
@@ -1018,12 +1040,7 @@ void RADIO_SetTxParameters(void)
         case BK4819_FILTER_BW_WIDE:
         case BK4819_FILTER_BW_NARROW:
         case BK4819_FILTER_BW_NARROWER:
-            #ifdef ENABLE_AM_FIX
-//              BK4819_SetFilterBandwidth(Bandwidth, gCurrentVfo->Modulation == MODULATION_AM && gSetting_AM_fix);
-                BK4819_SetFilterBandwidth(Bandwidth, true);
-            #else
-                BK4819_SetFilterBandwidth(Bandwidth, false);
-            #endif
+            BK4819_SetFilterBandwidth(Bandwidth, false);
             break;
     }
 
@@ -1031,12 +1048,6 @@ void RADIO_SetTxParameters(void)
 
     // TX compressor
     BK4819_SetCompander((gRxVfo->Modulation == MODULATION_FM && (gRxVfo->Compander == 1 || gRxVfo->Compander >= 3)) ? gRxVfo->Compander : 0);
-
-    // Clear any FSK/MDC-1200 RX configuration left over from receive mode so the
-    // normal FM audio path (REG_58 / REG_70 / REG_59) is restored for TX.
-    // Without this, TX with PTT_ID_MDC1200 produces no audio because the
-    // FSK modulator/Tone-2 path intercepts the mic audio.
-    BK4819_DisableMDC1200RX();
 
     BK4819_PrepareTransmit();
 
@@ -1131,7 +1142,7 @@ void RADIO_SetModulation(ModulationMode_t modulation)
             BK4819_WriteRegister(0x42, 0x6f5c);
             BK4819_WriteRegister(0x2a, 0x7434);
 
-            #ifdef ENABLE_FEAT_N7SIX_AUDIO
+            #ifdef ENABLE_FEAT_F4HWN_AUDIO
                 AUDIO_ApplyAMProfile(gSetting_set_audio_am);
             #else
                 BK4819_WriteRegister(0x54, 0x9009);
@@ -1152,7 +1163,7 @@ void RADIO_SetModulation(ModulationMode_t modulation)
             BK4819_WriteRegister(0x2b, 0x0000);
             BK4819_WriteRegister(0x2f, 0x9890);
 
-            #ifdef ENABLE_FEAT_N7SIX_AUDIO
+            #ifdef ENABLE_FEAT_F4HWN_AUDIO
                 if (modulation == MODULATION_USB)
                     AUDIO_ApplyUSBProfile();
                 else
@@ -1179,14 +1190,6 @@ void RADIO_SetupAGC(bool listeningAM, bool disable)
     if (lastSettings == newSettings)
         return;
     lastSettings = newSettings;
-
-#ifdef ENABLE_AM_FIX
-    if (listeningAM && gSetting_AM_fix) {
-        BK4819_SetAGC(0);
-        AM_fix_enable(!disable);
-        return;
-    }
-#endif
 
     BK4819_SetAGC(!disable);
     BK4819_InitAGC(listeningAM);
@@ -1224,7 +1227,12 @@ void RADIO_PrepareTX(void)
         if (!gRxVfoIsActive)
         {   // use the current RX vfo
             gEeprom.RX_VFO = gEeprom.TX_VFO;
-            gRxVfo         = gTxVfo;
+#ifdef ENABLE_FEAT_F4HWN_FULL_WATCH
+            VFO_Info_t *fullWatchVfo = APP_GetFullWatchDisplayVfo(gEeprom.TX_VFO);
+            gRxVfo = fullWatchVfo != NULL ? fullWatchVfo : gTxVfo;
+#else
+            gRxVfo = gTxVfo;
+#endif
             gRxVfoIsActive = true;
         }
 
@@ -1236,11 +1244,8 @@ void RADIO_PrepareTX(void)
     RADIO_SelectCurrentVfo();
 
     if(TX_freq_check(gCurrentVfo->pTX->Frequency) != 0
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
         && gCurrentVfo->TX_LOCK == true
-#endif
-#if defined(ENABLE_ALARM) || defined(ENABLE_TX1750)
-        && gAlarmState != ALARM_STATE_SITE_ALARM
 #endif
     ){
         // TX frequency not allowed
@@ -1265,19 +1270,17 @@ void RADIO_PrepareTX(void)
         State = VFO_STATE_TX_DISABLE;
     }
 #endif
-#ifndef ENABLE_TX_WHEN_AM
     else if (gCurrentVfo->Modulation != MODULATION_FM) {
-        // not allowed to TX if in AM mode
+        // AM and other non-FM modes are receive-only.
         State = VFO_STATE_TX_DISABLE;
     }
-#endif
 
     if (State != VFO_STATE_NORMAL) {
         // TX not allowed
         RADIO_SetVfoState(State);
 
-#if defined(ENABLE_ALARM) || defined(ENABLE_TX1750)
-        gAlarmState = ALARM_STATE_OFF;
+#ifdef ENABLE_TX1750
+        gTx1750Active = false;
 #endif
 
 #ifdef ENABLE_DTMF_CALLING
@@ -1305,23 +1308,36 @@ void RADIO_PrepareTX(void)
 
     FUNCTION_Select(FUNCTION_TRANSMIT);
 
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG
+    RXTX_LOG_BeginTx(gCurrentVfo);
+#endif
+
     gTxTimerCountdown_500ms = 0;            // no timeout
 
-    #if defined(ENABLE_ALARM) || defined(ENABLE_TX1750)
-    if (gAlarmState == ALARM_STATE_OFF)
+    #ifdef ENABLE_TX1750
+    if (!gTx1750Active)
     #endif
     {
 
         gTxTimerCountdown_500ms = ((gEeprom.TX_TIMEOUT_TIMER + 1) * 5) * 2;
 
-#ifdef ENABLE_FEAT_N7SIX 
+        /*
+        if (gEeprom.TX_TIMEOUT_TIMER == 0)
+            gTxTimerCountdown_500ms = 60;   // 30 sec
+        else if (gEeprom.TX_TIMEOUT_TIMER < (ARRAY_SIZE(gSubMenu_TOT) - 1))
+            gTxTimerCountdown_500ms = 120 * gEeprom.TX_TIMEOUT_TIMER;  // minutes
+        else
+            gTxTimerCountdown_500ms = 120 * 15;  // 15 minutes
+        */
+
+#ifdef ENABLE_FEAT_F4HWN 
         gTxTimerCountdownAlert_500ms = gTxTimerCountdown_500ms;
 #endif
     }
 
     gTxTimeoutReached    = false;
 
-#ifdef ENABLE_FEAT_N7SIX 
+#ifdef ENABLE_FEAT_F4HWN 
     gTxTimeoutReachedAlert = false;
 #endif
     
@@ -1346,68 +1362,22 @@ void RADIO_SendCssTail(void)
             break;
         }
 
-        SYSTEM_DelayMs(100);  // Reduced from 200ms to match modern radio standards (Icom/Yaesu/Kenwood)
-    }
-}
-
-/*
- * RADIO_SendMdcId - send the MDC-1200 PTT-ID burst (end of transmission).
- *
- * Opcode selection: the Motorola standard ANI is opcode 0x01, arg 0x00 -
- * the only burst a genuine Motorola radio recognizes as an ID. An EEPROM
- * value of 0x00 (the shipped default / "unset") therefore falls back to the
- * standard ANI; a custom opcode configured via CHIRP is honored as-is.
- *
- * Emergency opcodes (0x81/0x82 and legacy 0x05-0x07) are transmitted three
- * times back-to-back, matching Motorola practice, so a single lost burst
- * still alerts the receiving station.
- */
-static void RADIO_SendMdcId(bool long_preamble)
-{
-    const MDC1200_Params_t mdcParams = {
-        .unit_id = gEeprom.MDC_UnitID,
-        .op      = (gEeprom.MDC_DefaultOp != 0x00) ? gEeprom.MDC_DefaultOp
-                                                   : MDC_OP_PTT_ID,
-        .arg     = gEeprom.MDC_DefaultArg,
-    };
-#if MDC1200_ENABLE_INTEROP
-    /* Emergency 3x: Motorola practice — repeat emergency bursts three times
-     * so a single lost burst still alerts the receiving station. */
-    const uint8_t repeats = MDC_IsEmergencyOpcode(mdcParams.op) ? 3u : 1u;
-#else
-    const uint8_t repeats = 1u;
-#endif /* MDC1200_ENABLE_INTEROP */
-    uint8_t i;
-
-    for (i = 0; i < repeats; i++) {
-        if (long_preamble)
-            MDC1200_TransmitLong(&mdcParams);
-        else
-            MDC1200_Transmit(&mdcParams);
+        SYSTEM_DelayMs(200);
     }
 }
 
 void RADIO_SendEndOfTransmission(void)
 {
-    // MDC-1200 PTT-ID (relocated from the Roger menu to the per-channel PTT-ID menu).
-    //
-    // ORDERING IS CRITICAL: this burst MUST run before DTMF_SendEndOfTransmission().
-    // That function ends with BK4819_ExitDTMF_TX(true), which leaves the chip in
-    // BK4819_EnterTxMute() state (REG_50 = 0xBB18). In the audible Roger-menu era
-    // the burst fired while the chip was still in normal unmuted voice-TX state
-    // (REG_50 = 0x3B18). Firing the FSK burst behind the TX-mute point silences
-    // it completely (the tone-oscillator path used by DTMF still modulates when
-    // muted, but the FSK data path does not) - the observed "no preamble sound".
-    if (gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200)
-    {
-        RADIO_SendMdcId(false);
-    }
-    else if (gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_MDC1200L)
-    {
-        RADIO_SendMdcId(true);
-    }
+    BK4819_FilterBandwidth_t Bandwidth = gCurrentVfo->CHANNEL_BANDWIDTH;
 
-    BK4819_PlayRoger(BK4819_FILTER_BW_NARROW);
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
+        if(Bandwidth == BK4819_FILTER_BW_NARROW && gSetting_set_nfm == 1)
+        {
+            Bandwidth = BK4819_FILTER_BW_NARROWER;
+        }
+    #endif
+
+    BK4819_PlayRoger(Bandwidth);
     DTMF_SendEndOfTransmission();
 
     // send the CTCSS/DCS tail tone - allows the receivers to mute the usual FM squelch tail/crash
@@ -1423,52 +1393,4 @@ void RADIO_PrepareCssTX(void)
 
     RADIO_SendCssTail();
     RADIO_SetupRegisters(true);
-}
-
-/**
- * @brief Centralized audio path control with pop-suppression sequencing.
- *
- * Entry:  Enable AF DAC + AF bit first, let settle, then unmute speaker.
- * Exit:   Disable AF DAC + AF bit first, let transient decay, then mute speaker.
- *
- * This is the single function all features (spectrum, scanner, etc.) should
- * use to avoid duplicating pop-suppression logic.  Modeled after the K5
- * architecture where APP_StartListening() provides the same guarantee.
- */
-void RADIO_SetAudioPath(bool on)
-{
-    if (on)
-    {
-        // 1. Enable AF DAC + AF bit first (audio source)
-        uint32_t reg30 = BK4819_ReadRegister(BK4819_REG_30);
-        reg30 |= (1u << 9);
-        BK4819_WriteRegister(BK4819_REG_30, reg30);
-
-        uint16_t reg47 = BK4819_ReadRegister(BK4819_REG_47);
-        reg47 |= (1u << 8);
-        BK4819_WriteRegister(BK4819_REG_47, reg47);
-
-        // 2. Let the DAC output settle
-        SYSTICK_DelayUs(500);
-
-        // 3. Then unmute the speaker audio path
-        AUDIO_AudioPathOn();
-    }
-    else
-    {
-        // 1. Mute the speaker audio path first (clean cutoff)
-        AUDIO_AudioPathOff();
-
-        // 2. Wait for the mute transistor to settle
-        SYSTICK_DelayUs(500);
-
-        // 3. Then disable AF DAC + AF bit (transients are inaudible with speaker off)
-        uint32_t reg30 = BK4819_ReadRegister(BK4819_REG_30);
-        reg30 &= ~(1u << 9);
-        BK4819_WriteRegister(BK4819_REG_30, reg30);
-
-        uint16_t reg47 = BK4819_ReadRegister(BK4819_REG_47);
-        reg47 &= ~(1u << 8);
-        BK4819_WriteRegister(BK4819_REG_47, reg47);
-    }
 }

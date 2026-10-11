@@ -24,10 +24,6 @@
 #define LCD_HEIGHT       64
 #define FRAME_LINES 7
 
-/* INVARIANT: gFrameBuffer and gStatusLine are ONLY accessed
- * from the main loop (UI render/Tick). No ISR, DMA, or nested
- * context reads or writes these buffers. If adding DMA SPI or
- * USB ISR access, you MUST add synchronization. */
 extern uint8_t gStatusLine[LCD_WIDTH];
 extern uint8_t gFrameBuffer[FRAME_LINES][LCD_WIDTH];
 
@@ -37,7 +33,7 @@ void ST7565_BlitLine(unsigned line);
 void ST7565_BlitStatusLine(void);
 void ST7565_FillScreen(uint8_t Value);
 void ST7565_Init(void);
-#ifdef ENABLE_FEAT_N7SIX_SLEEP
+#ifdef ENABLE_FEAT_F4HWN_SLEEP
     void ST7565_ShutDown(void);
 #endif
 void ST7565_FixInterfGlitch(void);
@@ -45,13 +41,14 @@ void ST7565_HardwareReset(void);
 void ST7565_SelectColumnAndLine(uint8_t Column, uint8_t Line);
 void ST7565_WriteByte(uint8_t Value);
 
-#ifdef ENABLE_FEAT_N7SIX
-    #if defined(ENABLE_FEAT_N7SIX_CTR) || defined(ENABLE_FEAT_N7SIX_INV)
+#ifdef ENABLE_FEAT_F4HWN
+    #if defined(ENABLE_FEAT_F4HWN_CTR) || defined(ENABLE_FEAT_F4HWN_INV)
     void ST7565_ContrastAndInv(void);
     #endif
     //#if !defined(ENABLE_SPECTRUM) || !defined(ENABLE_FMRADIO)
     void ST7565_Gauge(uint8_t line, uint8_t min, uint8_t max, uint8_t value);
     //#endif
+    int16_t map(int16_t x, int16_t in_min, int16_t in_max, int16_t out_min, int16_t out_max);
 #endif
 
 #endif

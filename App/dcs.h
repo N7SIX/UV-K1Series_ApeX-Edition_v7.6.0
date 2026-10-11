@@ -35,21 +35,14 @@ enum {
 };
 
 extern const uint16_t CTCSS_Options[50];
-extern const uint16_t DCS_Options[104];
+#define DCS_OPTION_COUNT 104u
+// Option must be in the range 0..DCS_OPTION_COUNT-1.
+uint16_t DCS_GetOption(uint8_t Option);
 
-/** @brief Get the 23-bit Golay code word for a given DCS code type and option. */
 uint32_t DCS_GetGolayCodeWord(DCS_CodeType_t CodeType, uint8_t Option);
-
-/** @brief Reverse-lookup the option index from a raw Golay code word. */
 uint8_t DCS_GetCdcssCode(uint32_t Code);
-
-/** @brief Find the CTCSS option index closest to a given tone code (Hz*10). */
 uint8_t DCS_GetCtcssCode(int Code);
-
-/** @brief Get the approved CTCSS option index; returns 0xFF if not approved. */
 uint8_t DCS_GetCtcssApprovedIndex(uint8_t Option);
-
-/** @brief Get the approved DCS option index; returns 0xFF if not approved. */
 uint8_t DCS_GetDcsApprovedIndex(uint8_t Option);
 
 #endif

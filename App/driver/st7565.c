@@ -24,7 +24,10 @@
 #include "driver/st7565.h"
 #include "driver/system.h"
 #include "misc.h"
-#include "screenshot.h"
+#include "k5viewer.h"
+#ifdef ENABLE_FEAT_N7SIX_WATERFALL
+#include "app/waterfall_glue.h"
+#endif
 
 #define SPIx SPI1
 
@@ -34,7 +37,7 @@
 uint8_t gStatusLine[LCD_WIDTH];
 uint8_t gFrameBuffer[FRAME_LINES][LCD_WIDTH];
 
-static void SPI_Init(void)
+static void SPI_Init()
 {
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SPI1);
     LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA);
@@ -69,17 +72,7 @@ static void SPI_Init(void)
     InitStruct.NSS = LL_SPI_NSS_SOFT;
     InitStruct.BitOrder = LL_SPI_MSB_FIRST;
     InitStruct.CRCCalculation = LL_SPI_CRCCALCULATION_DISABLE;
-
-    // LCD SPI clock. The 48MHz APB clock with DIV64 gave only 750kHz, so a
-    // full-screen blit (~1KB) took ~11ms. DIV8 = 6MHz cuts that to ~1.4ms
-    // (8x faster UI / spectrum / waterfall refresh). The ST7565 supports
-    // write clocks well above this; if a particular unit ever shows display
-    // corruption, override with LL_SPI_BAUDRATEPRESCALER_DIV16 (3MHz) by
-    // defining LCD_SPI_BAUDRATE_PRESCALER at build time.
-    #ifndef LCD_SPI_BAUDRATE_PRESCALER
-        #define LCD_SPI_BAUDRATE_PRESCALER LL_SPI_BAUDRATEPRESCALER_DIV8
-    #endif
-    InitStruct.BaudRate = LCD_SPI_BAUDRATE_PRESCALER;
+    InitStruct.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV64;
     LL_SPI_Init(SPIx, &InitStruct);
 
     LL_SPI_Enable(SPIx);
@@ -107,21 +100,13 @@ static inline void A0_Reset()
 
 static uint8_t SPI_WriteByte(uint8_t Value)
 {
-    uint32_t timeout;
-
-    timeout = 100000;
-    while (!LL_SPI_IsActiveFlag_TXE(SPIx) && --timeout)
+    while (!LL_SPI_IsActiveFlag_TXE(SPIx))
         ;
-    if (!timeout)
-        return 0xFF;
 
     LL_SPI_TransmitData8(SPIx, Value);
 
-    timeout = 100000;
-    while (!LL_SPI_IsActiveFlag_RXNE(SPIx) && --timeout)
+    while (!LL_SPI_IsActiveFlag_RXNE(SPIx))
         ;
-    if (!timeout)
-        return 0xFF;
 
     return LL_SPI_ReceiveData8(SPIx);
 }
@@ -143,7 +128,7 @@ void ST7565_DrawLine(const unsigned int Column, const unsigned int Line, const u
 }
 
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     // Optimization
     //
     // ST7565_BlitScreen(0) = ST7565_BlitStatusLine()
@@ -181,9 +166,12 @@ void ST7565_DrawLine(const unsigned int Column, const unsigned int Line, const u
 
     void ST7565_BlitLine(unsigned line)
     {
+#ifdef ENABLE_FEAT_N7SIX_WATERFALL
+        WATERFALL_GluePreBlit(line);
+#endif
         ST7565_BlitScreen(line + 1);
-        #ifdef ENABLE_FEAT_N7SIX_SCREENSHOT
-            SCREENSHOT_Update(true);  // Force immediate capture
+        #ifdef ENABLE_FEAT_F4HWN_K5VIEWER
+            K5VIEWER_Update(true);  // Force immediate capture
         #endif
     }
 
@@ -204,6 +192,9 @@ void ST7565_DrawLine(const unsigned int Column, const unsigned int Line, const u
 
     void ST7565_BlitLine(unsigned line)
     {
+#ifdef ENABLE_FEAT_N7SIX_WATERFALL
+        WATERFALL_GluePreBlit(line);
+#endif
         CS_Assert();
         ST7565_WriteByte(0x40);    // start line ?
         DrawLine(0, line+1, gFrameBuffer[line], LCD_WIDTH);
@@ -222,10 +213,10 @@ void ST7565_DrawLine(const unsigned int Column, const unsigned int Line, const u
 void ST7565_FillScreen(uint8_t value)
 {
     CS_Assert();
-    for (unsigned i = 0; i < 8; i++) {
-        ST7565_SelectColumnAndLine(0 + 4, i);
+    for (uint8_t line = 0; line < 8u; line++) {
+        ST7565_SelectColumnAndLine(4u, line);
         A0_Set();
-        for (unsigned j = 0; j < LCD_WIDTH; j++)
+        for (uint8_t column = 0; column < LCD_WIDTH; column++)
             SPI_WriteByte(value);
     }
     CS_Release();
@@ -280,7 +271,7 @@ void ST7565_FillScreen(uint8_t value)
 // D=0, display OFF
 #define ST7565_CMD_DISPLAY_ON_OFF 0xAE 
 
-static const uint8_t cmds[] = {
+const uint8_t cmds[] = {
     ST7565_CMD_BIAS_SELECT | 0,             // Select bias setting: 1/9
     ST7565_CMD_COM_DIRECTION  | (0 << 3),   // Set output direction of COM: normal
     ST7565_CMD_SEG_DIRECTION | 1,           // Set scan direction of SEG: reverse
@@ -296,7 +287,7 @@ static const uint8_t cmds[] = {
     ST7565_CMD_DISPLAY_ON_OFF | 1,          // Display ON/OFF: ON
 };
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     static void ST7565_Cmd(uint8_t i)
     {
         switch(i) {
@@ -311,7 +302,7 @@ static const uint8_t cmds[] = {
         }
     }
 
-    #if defined(ENABLE_FEAT_N7SIX_CTR) || defined(ENABLE_FEAT_N7SIX_INV)
+    #if defined(ENABLE_FEAT_F4HWN_CTR) || defined(ENABLE_FEAT_F4HWN_INV)
     void ST7565_ContrastAndInv(void)
     {
         CS_Assert();
@@ -322,20 +313,17 @@ static const uint8_t cmds[] = {
             ST7565_Cmd(i);
         }
 
-        CS_Release();
+        // TODO: Release CS??
     }
     #endif
 
-    static int16_t map(int16_t x, int16_t in_min, int16_t in_max, int16_t out_min, int16_t out_max) {
+    int16_t map(int16_t x, int16_t in_min, int16_t in_max, int16_t out_min, int16_t out_max) {
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
     }
 
     //#if !defined(ENABLE_SPECTRUM) || !defined(ENABLE_FMRADIO)
     void ST7565_Gauge(uint8_t line, uint8_t min, uint8_t max, uint8_t value)
     {
-        if (line >= FRAME_LINES)
-            return;
-
         gFrameBuffer[line][54] = 0x0c;
         gFrameBuffer[line][55] = 0x12;
 
@@ -356,12 +344,16 @@ void ST7565_Init(void)
     SPI_Init();
     ST7565_HardwareReset();
     CS_Assert();
+
+    /* Hide the controller RAM immediately.  On K1 there is no usable hardware
+     * reset pin, so its power-on contents can otherwise briefly reach the LCD. */
+    ST7565_WriteByte(ST7565_CMD_DISPLAY_ON_OFF | 0);
     ST7565_WriteByte(ST7565_CMD_SOFTWARE_RESET);   // software reset
     SYSTEM_DelayMs(120);
 
     for(uint8_t i = 0; i < 8; i++)
     {
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
         ST7565_Cmd(i);
 #else
         ST7565_WriteByte(cmds[i]);
@@ -377,22 +369,25 @@ void ST7565_Init(void)
         ST7565_WriteByte(ST7565_CMD_POWER_CIRCUIT | 0b111);   // VB=1 VR=1 VF=1
 
     SYSTEM_DelayMs(40);
-    
-    ST7565_WriteByte(ST7565_CMD_SET_START_LINE | 0);   // line 0
-    ST7565_WriteByte(ST7565_CMD_DISPLAY_ON_OFF | 1);   // D=1
 
+    ST7565_WriteByte(ST7565_CMD_SET_START_LINE | 0);   // line 0
     CS_Release();
 
+    /* Clear all eight LCD RAM pages while the display is still disabled. */
     ST7565_FillScreen(0x00);
+
+    CS_Assert();
+    ST7565_WriteByte(ST7565_CMD_DISPLAY_ON_OFF | 1);   // D=1
+    CS_Release();
 }
 
-#ifdef ENABLE_FEAT_N7SIX_SLEEP
+#ifdef ENABLE_FEAT_F4HWN_SLEEP
     void ST7565_ShutDown(void)
     {
         CS_Assert();
-        ST7565_WriteByte(ST7565_CMD_POWER_CIRCUIT | 0b000);   // VB=0 VR=0 VF=0 (all power off)
+        ST7565_WriteByte(ST7565_CMD_POWER_CIRCUIT | 0b000);   // VB=0 VR=1 VF=1
         ST7565_WriteByte(ST7565_CMD_SET_START_LINE | 0);   // line 0
-        ST7565_WriteByte(ST7565_CMD_DISPLAY_ON_OFF | 0);   // D=0 (display off)
+        ST7565_WriteByte(ST7565_CMD_DISPLAY_ON_OFF | 0);   // D=1
         CS_Release();
     }
 #endif
@@ -401,7 +396,7 @@ void ST7565_FixInterfGlitch(void)
 {
     CS_Assert();
     for(uint8_t i = 0; i < ARRAY_SIZE(cmds); i++)
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
         ST7565_Cmd(i);
 #else
         ST7565_WriteByte(cmds[i]);
@@ -410,10 +405,10 @@ void ST7565_FixInterfGlitch(void)
     CS_Release();
 }
 
-
 void ST7565_HardwareReset(void)
 {
-    // Not supported on K1 - no-op
+    // Not supported on K1
+    // TODO: Delete this function
 }
 
 void ST7565_SelectColumnAndLine(uint8_t Column, uint8_t Line)

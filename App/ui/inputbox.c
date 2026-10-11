@@ -40,7 +40,6 @@ const char* INPUTBOX_GetAscii()
         char c = gInputBox[i];
         inputBoxAscii[i] = (c==10)? '-' : '0' + c;
     }
-    inputBoxAscii[8] = '\0';
     return inputBoxAscii;
 }
 

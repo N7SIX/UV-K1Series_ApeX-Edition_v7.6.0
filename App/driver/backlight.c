@@ -25,7 +25,7 @@
 #include "settings.h"
 #include "external/printf/printf.h"
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     #include "driver/system.h"
     #include "audio.h"
     #include "misc.h"
@@ -54,7 +54,20 @@ static int16_t currentBrightness = 0;
 static int16_t targetBrightness = 0;
 static int16_t fadeStep = 0;
 
-#ifdef ENABLE_FEAT_N7SIX
+static void BACKLIGHT_SetHardwareBrightness(uint8_t brightness);
+
+#ifdef ENABLE_FEAT_F4HWN
+    // Power-on fade-in tuning.
+    // STEPS  = number of intermediate brightness stops (smoothness).
+    // STEP_MS = pacing between stops.
+    // STEPS * STEP_MS ~= total fade duration in ms.
+    #define BL_STARTUP_FADE_STEPS   40
+    #define BL_STARTUP_FADE_STEP_MS 12
+    // First PWM value that produces a non-zero duty cycle with 32 levels.
+    #define BL_STARTUP_VISIBLE_MIN  ((255 + DUTY_CYCLE_LEVELS - 1) / DUTY_CYCLE_LEVELS)
+#endif
+
+#ifdef ENABLE_FEAT_F4HWN
     const uint8_t value[] = {
         0,    // 0 off
         8,    // 1 visible in the dark
@@ -70,7 +83,7 @@ static int16_t fadeStep = 0;
     };
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX_SLEEP
+#ifdef ENABLE_FEAT_F4HWN_SLEEP
     uint16_t gSleepModeCountdown_500ms = 0;
 #endif
 
@@ -111,7 +124,7 @@ static void BACKLIGHT_Sound(void)
 {
     if (gEeprom.POWER_ON_DISPLAY_MODE == POWER_ON_DISPLAY_MODE_SOUND ||
         gEeprom.POWER_ON_DISPLAY_MODE == POWER_ON_DISPLAY_MODE_ALL
-#ifdef ENABLE_FEAT_N7SIX_LOGO
+#ifdef ENABLE_FEAT_F4HWN_LOGO
         || gEeprom.POWER_ON_DISPLAY_MODE == POWER_ON_DISPLAY_MODE_LOGO
 #endif
     )
@@ -130,19 +143,54 @@ void BACKLIGHT_UpdateTickless(void) {
     }
 }
 
+#ifdef ENABLE_FEAT_F4HWN
+// Soft, progressive power-on fade-in.
+// Starts at the first visible PWM level, then ramps to targetBrightness using
+// a smoothstep (3x^2 - 2x^3) easing curve. Avoiding sub-PWM values removes the
+// apparent pause between drawing the welcome screen and lighting it.
+static void BACKLIGHT_FadeInStartup(void)
+{
+    const int16_t from = targetBrightness < BL_STARTUP_VISIBLE_MIN
+        ? targetBrightness
+        : BL_STARTUP_VISIBLE_MIN;
+    const int16_t span = targetBrightness - from;
+
+    currentBrightness = from;
+    BACKLIGHT_SetHardwareBrightness((uint8_t)currentBrightness);
+
+    if (span <= 0) {
+        gUpdateBacklight = false;
+        return;
+    }
+
+    for (uint16_t s = 1; s < BL_STARTUP_FADE_STEPS; s++) {
+        // x in Q8 (0..256), e = smoothstep(x) in Q16 (0..65536)
+        uint32_t x = (uint32_t)s * 256 / BL_STARTUP_FADE_STEPS;
+        uint32_t e = (x * x * (768 - 2 * x)) >> 8;
+        currentBrightness = from + (int16_t)(((uint32_t)span * e) >> 16);
+        BACKLIGHT_SetHardwareBrightness((uint8_t)currentBrightness);
+        SYSTEM_DelayMs(BL_STARTUP_FADE_STEP_MS);
+    }
+
+    currentBrightness = targetBrightness;
+    BACKLIGHT_SetHardwareBrightness((uint8_t)currentBrightness);
+    gUpdateBacklight = false;
+}
+#endif
+
 void BACKLIGHT_TurnOn(void)
 {
-    #ifdef ENABLE_FEAT_N7SIX_SLEEP
+    #ifdef ENABLE_FEAT_F4HWN_SLEEP
         gSleepModeCountdown_500ms = gSetting_set_off * 120;
     #endif
 
-    #ifdef ENABLE_FEAT_N7SIX
+    #ifdef ENABLE_FEAT_F4HWN
         gBacklightBrightnessOld = BACKLIGHT_GetBrightness();
     #endif
 
     if (gEeprom.BACKLIGHT_TIME == 0) {
         BACKLIGHT_TurnOff();
-        #ifdef ENABLE_FEAT_N7SIX
+        #ifdef ENABLE_FEAT_F4HWN
             if(gK5startup == true) 
             {
                 BACKLIGHT_Sound();
@@ -155,7 +203,7 @@ void BACKLIGHT_TurnOn(void)
 
     BACKLIGHT_SetBrightness(gEeprom.BACKLIGHT_MAX);
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     if(gK5startup == true)
 #else
     static bool startup = true;
@@ -163,10 +211,11 @@ void BACKLIGHT_TurnOn(void)
     if(startup)
 #endif
     {
-        BACKLIGHT_UpdateTickless();
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
+        BACKLIGHT_FadeInStartup();
         BACKLIGHT_Sound();
 #else
+        BACKLIGHT_UpdateTickless();
         startup = false;
 #endif
     }
@@ -184,18 +233,7 @@ void BACKLIGHT_TurnOn(void)
 
 void BACKLIGHT_TurnOff()
 {
-#ifdef ENABLE_BLMIN_TMP_OFF
-    register uint8_t tmp;
-
-    if (gEeprom.BACKLIGHT_MIN_STAT == BLMIN_STAT_ON)
-        tmp = gEeprom.BACKLIGHT_MIN;
-    else
-        tmp = 0;
-
-    BACKLIGHT_SetBrightness(tmp);
-#else
     BACKLIGHT_SetBrightness(gEeprom.BACKLIGHT_MIN);
-#endif
     gBacklightCountdown_500ms = 0;
     backlightOn = false;
 }

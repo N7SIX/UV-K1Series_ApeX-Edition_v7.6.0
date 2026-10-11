@@ -20,7 +20,7 @@
 #include "app/chFrScanner.h"
 #include "app/common.h"
 
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     #include "app/fm.h"
 #endif
 
@@ -56,7 +56,7 @@ void GENERIC_Key_F(bool bKeyPressed, bool bKeyHeld)
             COMMON_KeypadLockToggle();
         }
         else { // released
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
             if ((gFmRadioMode || gScreenToDisplay != DISPLAY_MAIN) && gScreenToDisplay != DISPLAY_FM)
                 return;
 #else
@@ -77,7 +77,7 @@ void GENERIC_Key_F(bool bKeyPressed, bool bKeyHeld)
         }
     }
     else { // short pressed
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
         if (gScreenToDisplay != DISPLAY_FM)
 #endif
         {
@@ -85,7 +85,7 @@ void GENERIC_Key_F(bool bKeyPressed, bool bKeyHeld)
             return;
         }
 
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
         if (gFM_ScanState == FM_SCAN_OFF) { // not scanning
             gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
             return;
@@ -132,7 +132,7 @@ void GENERIC_Key_PTT(bool bKeyPressed)
 
 
 
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     if (gFM_ScanState != FM_SCAN_OFF) { // FM radio is scanning .. stop
         FM_PlayAndUpdate();
 #ifdef ENABLE_VOICE
@@ -143,7 +143,7 @@ void GENERIC_Key_PTT(bool bKeyPressed)
     }
 #endif
 
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
     if (gScreenToDisplay == DISPLAY_FM)
         goto start_tx;  // listening to the FM radio .. start TX'ing
 #endif
@@ -166,9 +166,8 @@ void GENERIC_Key_PTT(bool bKeyPressed)
         if (gDTMF_InputBox_Index == 0 && gDTMF_PreviousIndex > 0)
             gDTMF_InputBox_Index = gDTMF_PreviousIndex;           // use the previous DTMF string
 
-        if (gDTMF_InputBox_Index >= sizeof(gDTMF_InputBox))
-            gDTMF_InputBox_Index = sizeof(gDTMF_InputBox) - 1;
-        gDTMF_InputBox[gDTMF_InputBox_Index] = '\0';             // NULL term the string
+        if (gDTMF_InputBox_Index < sizeof(gDTMF_InputBox))
+            gDTMF_InputBox[gDTMF_InputBox_Index] = 0;             // NULL term the string
 
 #ifdef ENABLE_DTMF_CALLING
         // append our DTMF ID to the inputted DTMF code -
@@ -182,9 +181,11 @@ void GENERIC_Key_PTT(bool bKeyPressed)
 #endif
         // remember the DTMF string
         gDTMF_PreviousIndex = gDTMF_InputBox_Index;
-        strncpy(gDTMF_String, gDTMF_InputBox, sizeof(gDTMF_String) - 1);
-        gDTMF_String[sizeof(gDTMF_String) - 1] = '\0';
+        strcpy(gDTMF_String, gDTMF_InputBox);
+        gDTMF_ReplyState = DTMF_REPLY_ANI;
     }
+
+    DTMF_clear_input_box();
 
 start_tx:
     // request start TX
@@ -199,7 +200,7 @@ cancel_tx:
 done:
     gPttDebounceCounter = 0;
     if (gScreenToDisplay != DISPLAY_MENU
-#ifdef ENABLE_FMRADIO
+#ifdef ENABLE_FMRADIO_EMBEDDED
         && gRequestDisplayScreen != DISPLAY_FM
 #endif
     ) {

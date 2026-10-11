@@ -8,7 +8,7 @@ static inline void Flashlight_TurnOn(){ GPIO_SetOutputPin(GPIO_PIN_FLASHLIGHT); 
 static inline void Flashlight_TurnOff(){ GPIO_ResetOutputPin(GPIO_PIN_FLASHLIGHT); }
 static inline void Flashlight_Toggle(){ GPIO_TogglePin(GPIO_PIN_FLASHLIGHT); }
 
-#if !defined(ENABLE_FEAT_N7SIX) || defined(ENABLE_FEAT_N7SIX_RESCUE_OPS)
+#if !defined(ENABLE_FEAT_F4HWN) || defined(ENABLE_FEAT_F4HWN_RESCUE_OPS)
     enum FlashlightMode_t  gFlashLightState;
 
     void FlashlightTimeSlice()
@@ -51,6 +51,9 @@ static inline void Flashlight_Toggle(){ GPIO_TogglePin(GPIO_PIN_FLASHLIGHT); }
 
     void ACTION_FlashLight(void)
     {
+        static uint16_t lastButtonTick;
+        const uint16_t now = gFlashLightBlinkCounter;
+
         // switch (gFlashLightState) {
         //     case FLASHLIGHT_OFF:
         //         Flashlight_TurnOn();
@@ -62,6 +65,15 @@ static inline void Flashlight_Toggle(){ GPIO_TogglePin(GPIO_PIN_FLASHLIGHT); }
         //     default:
         //         Flashlight_TurnOff();
         // }
+
+        if (gFlashLightState != FLASHLIGHT_OFF &&
+            (uint16_t)(now - lastButtonTick) >= (2500u / 10u)) {
+            Flashlight_TurnOff();
+            gFlashLightState = FLASHLIGHT_OFF;
+            return;
+        }
+
+        lastButtonTick = now;
 
         if(gFlashLightState == FLASHLIGHT_OFF) {
             Flashlight_TurnOn();

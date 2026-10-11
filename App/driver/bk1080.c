@@ -63,7 +63,7 @@ void BK1080_Init(uint16_t freq, uint8_t band/*, uint8_t space*/)
             BK1080_WriteRegister(BK1080_REG_02_POWER_CONFIGURATION, 0x0201);
         }
 
-        #ifdef ENABLE_FEAT_N7SIX
+        #ifdef ENABLE_FEAT_F4HWN
             BK1080_WriteRegister(BK1080_REG_05_SYSTEM_CONFIGURATION2, gMute ? 0x0A10 : 0x0A1F);
         #else
             BK1080_WriteRegister(BK1080_REG_05_SYSTEM_CONFIGURATION2, 0x0A1F);

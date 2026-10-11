@@ -17,7 +17,7 @@
 #ifndef APP_BEAM_H
 #define APP_BEAM_H
 
-#ifdef ENABLE_FEAT_N7SIX_BEAM
+#ifdef ENABLE_FEAT_F4HWN_BEAM
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -42,18 +42,11 @@ typedef enum {
 extern BEAM_Mode_t   gBeamMode;
 extern BEAM_Status_t gBeamStatus;
 extern uint16_t      gBeamCopiedChannel;
-extern uint8_t       gBeamRxWordCount;
 extern bool          gBeamActive;
 
 void ACTION_Beam(void);
 void BEAM_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld);
 void BEAM_StorePacket(void);
 
-#else // !ENABLE_FEAT_N7SIX_BEAM
-
-// Feature disabled: fold the flag to a constant so that call sites in
-// app.c compile unchanged (the checks are optimized away entirely).
-#define gBeamActive (false)
-
-#endif // ENABLE_FEAT_N7SIX_BEAM
+#endif // ENABLE_FEAT_F4HWN_BEAM
 #endif // APP_BEAM_H

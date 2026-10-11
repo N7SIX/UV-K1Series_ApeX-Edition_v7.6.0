@@ -17,18 +17,19 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "settings.h"
 #include "misc.h"
 
-#include "mdc1200.h"
 #include "audio.h"
 
 #include "driver/bk4819.h"
 #include "driver/gpio.h"
 #include "driver/system.h"
 #include "driver/systick.h"
+#ifdef N7SIX_APEX
+#include "driver/mdc.h"   // ApeX-only MDC roger variants (own N7SIX copyright)
+#endif
 
 #define PIN_CSN GPIO_MAKE_PIN(GPIOF, LL_GPIO_PIN_9)
 #define PIN_SCL GPIO_MAKE_PIN(GPIOB, LL_GPIO_PIN_8)
@@ -1135,30 +1136,25 @@ void BK4819_TurnsOffTones_TurnsOnRX(void)
         BK4819_REG_30_ENABLE_RX_DSP);
 }
 
-#ifdef ENABLE_AIRCOPY
+#if defined(ENABLE_AIRCOPY) || defined(ENABLE_FEAT_F4HWN_OVERLAY_APPS)
+    // AirCopy runs at 1200 bps. Every 2400 path was tried and abandoned:
+    //  - plain FSK 2.4K: doubling REG_72 (0x60CA) broke the modulation; REG_58
+    //    <3:1>=100 alone only widened the RX filter (RX-only) without raising the
+    //    TX rate;
+    //  - FFSK1200/2400 (REG_58 mode 011, 0x70C9): nothing transmitted.
+    // The BK4829 Application Notes state the 2400 variants (FSK2400 / MDC2400)
+    // require Beken's proprietary macros, i.e. extra register config the public
+    // datasheet does not expose — the documented mode bits alone are not enough.
+    // The throughput win therefore comes from multi-block framing, not 2400 bps.
     void BK4819_SetupAircopy(void)
     {
-        // Register set is copied verbatim from the proven reference Air Copy
-        // implementation (DualTachyon / egzumer uv-k5, also in bk4819.c here).
-        // These two lines used to differ, and both differences break reception:
-        //
-        // REG_70 MUST be 0x00E0. The old 0x00C3 is not another spelling of it -
-        // the low bits are the Tone-2 tuning-gain field, and the same driver's
-        // on-air-proven MDC-1200 TX/RX path writes 0x00E0 with this very
-        // comment ("Enable Tone-2, tuning gain 48"). 0x00C3 under-drives the
-        // FSK modulator. The BK4819/4829 RX FIFO still fills to the programmed
-        // 72-byte length on a weak burst, so the receiver assembles 36 words of
-        // noise and rejects EVERY block at the 0xABCD/0xDCBA framing test:
-        // "RCV:xx.xx%" still climbs (errors count as progress) while E: runs to
-        // the block count and nothing is ever stored.
-        BK4819_WriteRegister(BK4819_REG_70, 0x00E0);    // Enable Tone2, tuning gain 48
+        BK4819_WriteRegister(BK4819_REG_70, 0x00C3);    // Enable Tone2, tuning gain 48
         BK4819_WriteRegister(BK4819_REG_72, 0x3065);    // Tone2 baudrate 1200
         BK4819_WriteRegister(BK4819_REG_58, 0x00C1);    // FSK Enable, FSK 1.2K RX Bandwidth, Preamble 0xAA or 0x55, RX Gain 0, RX Mode
                                                         // (FSK1.2K, FSK2.4K Rx and NOAA SAME Rx), TX Mode FSK 1.2K and FSK 2.4K Tx
         BK4819_WriteRegister(BK4819_REG_5C, 0x5665);    // Enable CRC among other things we don't know yet
         BK4819_WriteRegister(BK4819_REG_5D, 0x4700);    // FSK Data Length 72 Bytes (0xabcd + 2 byte length + 64 byte payload + 2 byte CRC + 0xdcba)
-        // REG_5E is deliberately NOT written: the reference implementation does
-        // not program it, and its 0x3204 value here is undocumented.
+        BK4819_WriteRegister(0x5E, 0x3204);
     }
 #endif
 
@@ -1492,7 +1488,9 @@ void BK4819_GenTail(uint8_t Tail)
         // 1: 120° phase shift
         // 2: 180° phase shift
         // 3: 240° phase shift
-        BK4819_WriteRegister(BK4819_REG_52, 0x028F | (Tail << 13));
+        // Bit 15 (0x8000) must be set to enable the CTCSS/134.4Hz tail generation.
+        // Without it no turn-off tone is emitted at end of TX, leaving a DCS squelch tail.
+        BK4819_WriteRegister(BK4819_REG_52, 0x828F | (Tail << 13));
     else if (Tail == 4)
         // 4: 55Hz tone freq
         BK4819_WriteRegister(BK4819_REG_07, 0x046F);
@@ -1727,10 +1725,15 @@ uint8_t BK4819_GetCTCType(void)
     return (BK4819_ReadRegister(BK4819_REG_0C) >> 10) & 3u;
 }
 
-void BK4819_SendFSKData(uint16_t *pData)
+void BK4819_SendFSKData(uint16_t *pData, uint8_t words)
 {
     unsigned int i;
-    uint8_t Timeout = 200;
+    // TX-finished poll ceiling (units of 5 ms). It must exceed the on-air time of
+    // the whole frame or a large frame gets cut off mid-transmission. At 1200 bps
+    // one word (16 bits) takes ~13 ms (~3 ticks); +100 ticks of margin covers the
+    // preamble/sync/CRC. A 100-word frame (~1.4 s) needs ~280 ticks, not the 200
+    // (1 s) that only ever sufficed for the legacy 36-word frame.
+    uint16_t Timeout = (uint16_t)words * 3u + 100u;
 
     SYSTEM_DelayMs(30);
 
@@ -1738,7 +1741,9 @@ void BK4819_SendFSKData(uint16_t *pData)
     BK4819_WriteRegister(BK4819_REG_59, 0x8068);
     BK4819_WriteRegister(BK4819_REG_59, 0x0068);
 
-    for (i = 0; i < 36; i++)
+    // The FSK Data Length (REG_5D) is programmed by the caller before this call
+    // so `words` here must match it; the whole frame fits the 128-word TX FIFO.
+    for (i = 0; i < words; i++)
         BK4819_WriteRegister(BK4819_REG_5F, pData[i]);
 
     SYSTEM_DelayMs(20);
@@ -1775,51 +1780,6 @@ void BK4819_PrepareFSKReceive(void)
     BK4819_WriteRegister(BK4819_REG_59, 0x3068);
 }
 
-void BK4819_EnableMDC1200RX(bool long_preamble)
-{
-    /*
-     * Configure the BK4819/4829 FSK demodulator for MDC-1200 receive mode.
-     *
-     * This programs the same register set used by the TX path
-     * (BK4819_TransmitMDC1200Frame) but leaves REG_59 in RX mode (bit 3=0)
-     * so the chip receives rather than transmits.  The caller is responsible
-     * for adding BK4819_REG_3F_FSK_RX_FINISHED to the interrupt mask (REG_3F)
-     * if interrupt-driven frame detection is desired.
-     */
-    BK4819_WriteRegister(BK4819_REG_72, 0x3065);    // Tone-2 reference = 1200 Hz
-    BK4819_WriteRegister(BK4819_REG_70, 0x00E0);    // Enable Tone-2, tuning gain 48
-    BK4819_WriteRegister(BK4819_REG_58, 0x00C1);    // FSK enable, 1.2K RX BW, RX mode (aircopy-proven; 0x37C3 is the TX config)
-    /* REG_5D = number of bytes the RX FIFO must collect after the HW
-     * preamble + sync detector before FSK_RX_FINISHED is asserted.
-     * With full-frame TX (the on-air-proven framing), the TX FIFO carries
-     * the complete MDC frame (preamble included).  The BK4819/4829 hardware
-     * prepends its own 6-byte preamble + 4-byte sync on-air, which the
-     * receiver's sync detector consumes — the RX FIFO therefore captures
-     * the FULL frame (26/46 bytes) as loaded by the TX. */
-    BK4819_WriteRegister(BK4819_REG_5D, long_preamble ? 0x2E00 : 0x1A00);
-    BK4819_WriteRegister(BK4819_REG_5A, 0x5555);    // Sync word 1: preamble bytes 0x55 0x55
-    BK4819_WriteRegister(BK4819_REG_5B, 0x5555);    // Sync word 2: preamble bytes 0x55 0x55
-    /* Match the on-air-proven TX FIFO/sync configuration (0xAA30). The
-     * aircopy value 0x5665 enables the HW CRC checker, which MDC-1200 frames
-     * (they carry no HW CRC bytes) can fail. */
-    BK4819_WriteRegister(BK4819_REG_5C, 0xAA30);
-    BK4819_WriteRegister(BK4819_REG_02, 0); BK4819_WriteRegister(BK4819_REG_59, 0x4068); BK4819_WriteRegister(BK4819_REG_59, 0x3068); // clear IRQs + RX FIFO, enable FSK RX
-}
-
-/**
- * Disable the BK4819 FSK/MDC-1200 receive configuration.
- *
- * Clears REG_58 (FSK enable) and REG_70 (Tone-2 enable) so the normal FM
- * audio path is used for TX. Must be called before entering transmit when
- * BK4819_EnableMDC1200RX() was used for receive.
- */
-void BK4819_DisableMDC1200RX(void)
-{
-    BK4819_WriteRegister(BK4819_REG_58, 0x0000);    // Disable FSK
-    BK4819_WriteRegister(BK4819_REG_70, 0x0000);    // Disable Tone-2
-    BK4819_WriteRegister(BK4819_REG_59, 0x0000);    // Disable FSK RX
-}
-
 static void BK4819_PlayRogerNormal(BK4819_FilterBandwidth_t Bandwidth)
 {
     #if 0
@@ -1836,8 +1796,10 @@ static void BK4819_PlayRogerNormal(BK4819_FilterBandwidth_t Bandwidth)
     BK4819_SetAF(BK4819_AF_MUTE);
 
     const uint8_t rogerToneGain = (Bandwidth == BK4819_FILTER_BW_WIDE) ? 32u : 67u;
+
     if (Bandwidth == BK4819_FILTER_BW_WIDE)
         BK4819_SetFilterBandwidth(BK4819_FILTER_BW_NARROW, true);
+
     BK4819_WriteRegister(BK4819_REG_71, scale_freq(tone1_Hz));
 
     BK4819_EnableTXLink();
@@ -1846,6 +1808,7 @@ static void BK4819_PlayRogerNormal(BK4819_FilterBandwidth_t Bandwidth)
     BK4819_WriteRegister(BK4819_REG_70,
         BK4819_REG_70_ENABLE_TONE1 |
         (rogerToneGain << BK4819_REG_70_SHIFT_TONE1_TUNING_GAIN));
+
     BK4819_ExitTxMute();
     SYSTEM_DelayMs(80);
     BK4819_EnterTxMute();
@@ -1859,6 +1822,7 @@ static void BK4819_PlayRogerNormal(BK4819_FilterBandwidth_t Bandwidth)
 
     BK4819_WriteRegister(BK4819_REG_30, 0xC1FE);   // 1 1 0000 0 1 1111 1 1 1 0
 }
+
 
 void BK4819_PlayRogerMDC(void)
 {
@@ -1880,7 +1844,7 @@ void BK4819_PlayRogerMDC(void)
         { BK4819_REG_59, 0x8068 },  // 4 byte sync length, 6 byte preamble, clear TX FIFO
         { BK4819_REG_59, 0x0068 },  // Same, but clear TX FIFO is now unset (clearing done)
         { BK4819_REG_5A, 0x5555 },  // First two sync bytes
-        { BK4819_REG_5B, 0x5555 },  // End of sync bytes. Total 4 bytes: 5555 5555 (no phase reversal)
+        { BK4819_REG_5B, 0x5555 },  // End of sync bytes. Total 4 bytes: 555555aa
         { BK4819_REG_5C, 0xAA30 },  // Disable CRC
     };
 
@@ -1908,136 +1872,23 @@ void BK4819_PlayRogerMDC(void)
     BK4819_WriteRegister(BK4819_REG_58, 0x0000);
 }
 
-/*
- * BK4819_TransmitMDC1200Frame: Core RF transmission function for MDC-1200 frames
- * 
- * BK4829 variant (UV-K5 V3): Uses identical register mapping and timing as BK4819
- * 
- * This function handles all RF-level transmission details:
- * - Register configuration for 1200 bps FSK
- * - FIFO initialization and frame loading
- * - TX timing and ramp-up/ramp-down
- * - Single-burst MDC-1200 transmission (the supported protocol mode)
- * 
- * v7.6.10A: Parameterized, error-reporting RF transmission
- * Protocol Reference: BK4819_MDC1200_CONFIGURATION.md (register justification)
- * Platform Compatibility: BK4829 register set verified equivalent to BK4819
- */
-int BK4819_TransmitMDC1200Frame(const uint8_t *frame, size_t frame_len)
-{
-    struct reg_value {
-        BK4819_REGISTER_t reg;
-        uint16_t value;
-    };
+/* ApeX-only MDC roger variants (MDC-EP / MDC-2P / MDC-EL) live in
+ * driver/mdc.c (own N7SIX copyright) — dispatched via MDC_PlayApexRoger().
+ * Upstream code above is untouched. */
 
-    unsigned int i;
-    uint16_t reg_5d;
-    uint16_t tx_ms;
-
-    /* Validate input: accept standard 26-byte and long 46-byte frames. */
-    if (frame == NULL)
-        return MDC1200_ERROR_INVALID_PARAMS;
-    if (frame_len == MDC1200_FRAME_LENGTH) {           /* 7-byte preamble */
-        reg_5d  = 0x1A00;                              /* 0x1A = 26 TX FIFO bytes (full frame) */
-        tx_ms   = 280;                                 /* HW(11)+FIFO(26) = 37 B * 8 / 1200 ~= 247 ms + ramp */
-    } else if (frame_len == MDC1200L_FRAME_LENGTH) {  /* 27-byte composite preamble */
-        reg_5d  = 0x2E00;                              /* 0x2E = 46 TX FIFO bytes (full frame) */
-        tx_ms   = 400;                                 /* HW(11)+FIFO(46) = 57 B * 8 / 1200 ~= 380 ms + ramp */
-    } else {
-        return MDC1200_ERROR_INVALID_LENGTH;
-    }
-
-    /*
-     * MDC-1200 RF Configuration for BK4829 (UV-K5 V3)
-     * Reference: BK4819_MDC1200_CONFIGURATION.md (v7.6.10A)
-     *
-     * Register mapping (BK4829 equivalent):
-     * - REG_58 (0x37C3): FSK enable, RX/TX bandwidth FFSK 1200/1800
-     * - REG_72 (0x3065): Tone-2 frequency = 1200 Hz (calculation: 1200 * 65536 / 13MHz)
-     * - REG_70 (0x00E0): Tone-2 gain and enable
-     * - REG_5D: TX FIFO byte count, set per-frame below (0x1A00 / 0x2E00)
-     * - REG_5A/5B/5C: FIFO sync patterns for frame detection
-     */
-    struct reg_value RogerMDC1200_Configuration[] = {
-         { BK4819_REG_58, 0x37C3 },  // FSK Enable, RX Bandwidth FFSK 1200/1800 (see doc)
-         { BK4819_REG_72, 0x3065 },  // Set Tone-2 to 1200Hz (doc ref: REG_72 calculation)
-         { BK4819_REG_70, 0x00E0 },  // Enable Tone-2 and Set Tone2 Gain (doc ref: REG_70)
-        { BK4819_REG_59, 0x8068 },  // Clear TX FIFO
-        { BK4819_REG_59, 0x0068 },  // Clear TX FIFO bit unset
-        { BK4819_REG_5A, 0x5555 },  // Standard MDC-1200 sync word 1 (0x55 0x55)
-        { BK4819_REG_5B, 0x5555 },  // Standard MDC-1200 sync word 2 (0x55 0x55) - matches the
-                                    // RX sync detector (BK4819_EnableMDC1200RX) so the radio
-                                    // can decode its own bursts. The former 0x55AA value
-                                    // desynced the preamble run with an 0xAA glitch byte.
-        { BK4819_REG_5C, 0xAA30 },  // FIFO/sync configuration (doc ref: REG_5C)
-    };
-
-    BK4819_SetAF(BK4819_AF_MUTE);
-
-    /* Apply RF configuration */
-    for (i = 0; i < ARRAY_SIZE(RogerMDC1200_Configuration); i++) {
-        BK4819_WriteRegister(RogerMDC1200_Configuration[i].reg,
-                           RogerMDC1200_Configuration[i].value);
-    }
-
-    /* Load the FULL frame (preamble included) into the TX FIFO.
-     *
-     * This is the on-air-proven framing: the BK4819/4829 hardware prepends
-     * its own 6-byte 0x55 preamble + 4-byte sync (REG_5A/5B = 5555 5555)
-     * before the FIFO data on-air.  The receiver's sync detector consumes
-     * those HW-generated bytes, so the RX FIFO captures the full frame as
-     * loaded here.  The handler reads the FIFO words directly — no preamble
-     * re-insertion needed.
-     *
-     * Motorola's real implementation uses XOR differential encoding at the
-     * physical layer: successive data bits are exclusive-ored before modulation.
-     * This is NOT the BK4819 "scramble" feature (REG_31) — it must be done in
-     * software. We encode a local copy of the frame (the input is const).
-     * On-air burst = HW(11) + FIFO(26/46) = 37/57 bytes. */
-    {
-        uint8_t enc_frame[MDC1200L_FRAME_LENGTH];
-        size_t i;
-
-        memcpy(enc_frame, frame, frame_len);
-        MDC1200_DiffEncodeFrame(enc_frame, frame_len);
-
-        for (i = 0u; i < frame_len; i += 2u) {
-            BK4819_WriteRegister(BK4819_REG_5F,
-                (uint16_t)(((uint16_t)enc_frame[i] << 8) | (uint16_t)enc_frame[i + 1u]));
-        }
-    }
-
-    /* Select the hardware packet length (TX FIFO bytes, full frame). */
-    BK4819_WriteRegister(BK4819_REG_5D, reg_5d);
-
-    SYSTEM_DelayMs(20);
-    BK4819_WriteRegister(BK4819_REG_59, 0x0868);  // Enable TX
-
-    /*
-     * Single-burst TX timing: on-air bytes * 8 / 1200 bps + RF ramp/guard.
-     * Standard: HW(11) + FIFO(26) = 37 bytes ~= 247 ms (280 ms w/ ramp);
-     * Long:     HW(11) + FIFO(46) = 57 bytes ~= 380 ms (400 ms w/ ramp).
-     */
-    SYSTEM_DelayMs(tx_ms);
-    BK4819_WriteRegister(BK4819_REG_59, 0x0068);  // Disable TX
-
-    BK4819_WriteRegister(BK4819_REG_70, 0x0000);  // Disable tone
-    BK4819_WriteRegister(BK4819_REG_58, 0x0000);  // Disable FSK
-
-    return MDC1200_ERROR_NONE;
-}
-
-// Updated dispatcher - v7.6.10A: returns int for error reporting
-int BK4819_PlayRoger(BK4819_FilterBandwidth_t Bandwidth)
+void BK4819_PlayRoger(BK4819_FilterBandwidth_t Bandwidth)
 {
     if (gEeprom.ROGER == ROGER_MODE_ROGER) {
         BK4819_PlayRogerNormal(Bandwidth);
-        return MDC1200_ERROR_NONE;
     } else if (gEeprom.ROGER == ROGER_MODE_MDC) {
         BK4819_PlayRogerMDC();
-        return MDC1200_ERROR_NONE;
     }
-    return MDC1200_ERROR_NONE;
+#ifdef N7SIX_APEX
+    // ApeX-only MDC roger variants (MDC-EP / MDC-2P / MDC-EL), see driver/mdc.c.
+    else {
+        MDC_PlayApexRoger(Bandwidth);
+    }
+#endif
 }
 
 void BK4819_Enable_AfDac_DiscMode_TxDsp(void)

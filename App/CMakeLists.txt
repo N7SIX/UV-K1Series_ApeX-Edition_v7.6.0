@@ -5,6 +5,8 @@ target_link_libraries(App INTERFACE PY32F071_Driver)
 target_compile_definitions(App INTERFACE PRINTF_INCLUDE_CONFIG_H)
 
 target_sources(App INTERFACE
+    # libgcc override (signed division)
+    compact_div.S
     # Drivers
     driver/backlight.c
     driver/bk4829.c
@@ -15,7 +17,6 @@ target_sources(App INTERFACE
     driver/st7565.c
     driver/system.c
     driver/systick.c
-    driver/syscalls.c
     # Main
     app/action.c
     app/app.c
@@ -33,10 +34,7 @@ target_sources(App INTERFACE
     font.c
     frequencies.c
     functions.c
-    mdc1200.c
-    mdc_handler.c
     helper/battery.c
-    helper/battery_calibration.c
     helper/boot.c
     misc.c
     radio.c
@@ -46,7 +44,6 @@ target_sources(App INTERFACE
     ui/helper.c
     ui/inputbox.c
     ui/main.c
-    ui/mdc.c
     ui/menu.c
     ui/scanner.c
     ui/status.c
@@ -69,14 +66,26 @@ endmacro()
 
 # compile options (see README.md for descriptions)
 
-target_compile_definitions(App INTERFACE 
-    "AUTHOR_STRING_1=\"${AUTHOR_STRING_1}\""
-    "AUTHOR_STRING_2=\"${AUTHOR_STRING_2}\""
-    "VERSION_STRING_1=\"${VERSION_STRING_1}\""
-    "VERSION_STRING_2=\"${VERSION_STRING_2}\""
-    "EDITION_STRING=\"${EDITION_STRING}\""
-    ALERT_TOT=10
-)
+if(ENABLE_FEAT_F4HWN)
+    target_compile_definitions(App INTERFACE 
+        "AUTHOR_STRING_1=\"${AUTHOR_STRING_1}\""
+        "AUTHOR_STRING_2=\"${AUTHOR_STRING_2}\""
+        "VERSION_STRING_1=\"${VERSION_STRING_1}\""
+        "VERSION_STRING_2=\"${VERSION_STRING_2}\""
+        "DISPLAY_VERSION_STRING_2=\"${DISPLAY_VERSION_STRING_2}\""
+        "EDITION_STRING=\"${EDITION_STRING}\""
+        ALERT_TOT=10
+    )
+endif()
+
+# N7SIX branding (welcome QR target + PROFILE info badge) ships with the ApeX
+# edition only; the stock editions keep the original armel QR target/labels.
+if(ENABLE_FEAT_F4HWN AND "${EDITION_STRING}" STREQUAL "ApeX")
+    target_compile_definitions(App INTERFACE N7SIX_APEX)
+    # ApeX-only MDC roger variants live in driver/mdc.c (own N7SIX copyright)
+    # so the upstream driver files stay pristine.
+    target_sources(App INTERFACE driver/mdc.c)
+endif()
 
 target_compile_definitions(App INTERFACE 
     "AUTHOR_STRING=\"${AUTHOR_STRING}\""
@@ -84,29 +93,20 @@ target_compile_definitions(App INTERFACE
     "BUILD_COMMIT=\"${BUILD_COMMIT}\""
 )
 
-# EEPROM integrity: CRC-16 checksum for power-loss protection
-option(ENABLE_EEPROM_CRC "Enable CRC-16 checksum for EEPROM settings integrity" ON)
-
-# Flash writes: defer the ~300ms sector erase out of key handlers into the
-# 10ms time slice; coalesces multiple saves into a single erase cycle
-option(ENABLE_DEFERRED_FLASH_WRITES "Defer flash sector erase+program to the 10ms time slice (coalesced write-back cache)" ON)
-enable_feature(ENABLE_DEFERRED_FLASH_WRITES)
-
 if(NOT SQL_TONE)
     set(SQL_TONE 550) # For SA818, use 600 and python3 sa818.py --port /dev/ttyS2 radio --frequency 434.975 --ctcss 71.9 --tail Open
 endif()
 target_compile_definitions(App INTERFACE SQL_TONE=${SQL_TONE})
 
-if(ENABLE_AIRCOPY OR ENABLE_UART OR ENABLE_USB OR ENABLE_EEPROM_CRC)
+if(ENABLE_AIRCOPY OR ENABLE_UART OR ENABLE_USB)
     target_sources(App INTERFACE 
         driver/crc.c
-        driver/eeprom.c
+        driver/eeprom_compat.c
     )
 endif()
 
 enable_feature(ENABLE_UART
-    driver/uart.c 
-    app/uart.c
+    driver/uart.c
     # driver/aes.c
 )
 
@@ -128,21 +128,34 @@ endif()
 
 # ---- STOCK QUANSHENG FEATURES ----
 
+# ENABLE_FMRADIO keeps the BK1080 driver and the FM data/helpers shared with the
+# overlay.  ENABLE_FMRADIO_EMBEDDED additionally selects the legacy resident
+# state machine and its integration with the main scheduler.
 enable_feature(ENABLE_FMRADIO
-    driver/bk1080.c 
-    app/fm.c 
-    ui/fmradio.c
+    driver/bk1080.c
+    app/fm.c
 )
+if(ENABLE_FMRADIO AND NOT ENABLE_FEAT_F4HWN_OVERLAY_APPS)
+    target_compile_definitions(App INTERFACE ENABLE_FMRADIO_EMBEDDED)
+    target_sources(App INTERFACE ui/fmradio.c)
+endif()
 enable_feature(ENABLE_AIRCOPY
     app/aircopy.c
     ui/aircopy.c
 )
+enable_feature(ENABLE_AIRCOPY_UART)
+if(ENABLE_AIRCOPY_UART AND NOT (ENABLE_AIRCOPY AND ENABLE_UART))
+    message(FATAL_ERROR "ENABLE_AIRCOPY_UART requires ENABLE_AIRCOPY and ENABLE_UART.")
+endif()
+enable_feature(ENABLE_AIRCOPY_FLASH)
+if(ENABLE_AIRCOPY_FLASH AND NOT (ENABLE_AIRCOPY_UART AND ENABLE_FEAT_F4HWN_MULTIBOOT))
+    message(FATAL_ERROR "ENABLE_AIRCOPY_FLASH requires ENABLE_AIRCOPY_UART and ENABLE_FEAT_F4HWN_MULTIBOOT.")
+endif()
 enable_feature(ENABLE_NOAA)
 enable_feature(ENABLE_VOICE 
     driver/voice.c
 )
 enable_feature(ENABLE_VOX)
-enable_feature(ENABLE_ALARM)
 enable_feature(ENABLE_TX1750)
 enable_feature(ENABLE_PWRON_PASSWORD
     ui/lock.c
@@ -156,14 +169,22 @@ enable_feature(ENABLE_FLASHLIGHT
 
 enable_feature(ENABLE_SPECTRUM
     app/spectrum.c
-    app/waterfall.c
 )
+enable_feature(ENABLE_FEAT_N7SIX_WATERFALL)
+if(ENABLE_FEAT_N7SIX_WATERFALL)
+    if(NOT ENABLE_SPECTRUM)
+        message(FATAL_ERROR "ENABLE_FEAT_N7SIX_WATERFALL requires ENABLE_SPECTRUM.")
+    endif()
+    target_sources(App INTERFACE
+        app/waterfall.c
+        app/waterfall_glue.c
+    )
+endif()
 enable_feature(ENABLE_BIG_FREQ)
 enable_feature(ENABLE_SMALL_BOLD)
 enable_feature(ENABLE_CUSTOM_MENU_LAYOUT)
 enable_feature(ENABLE_KEEP_MEM_NAME)
 enable_feature(ENABLE_WIDE_RX)
-enable_feature(ENABLE_TX_WHEN_AM)
 enable_feature(ENABLE_F_CAL_MENU)
 enable_feature(ENABLE_CTCSS_TAIL_PHASE_SHIFT)
 enable_feature(ENABLE_BOOT_BEEPS)
@@ -174,73 +195,146 @@ enable_feature(ENABLE_SQUELCH_MORE_SENSITIVE)
 enable_feature(ENABLE_FASTER_CHANNEL_SCAN)
 enable_feature(ENABLE_RSSI_BAR)
 enable_feature(ENABLE_AUDIO_BAR)
-enable_feature(ENABLE_FEAT_N7SIX_AUDIO_SCOPE)
+enable_feature(ENABLE_FEAT_F4HWN_AUDIO_SCOPE)
 enable_feature(ENABLE_COPY_CHAN_TO_VFO)
 enable_feature(ENABLE_REDUCE_LOW_MID_TX_POWER)
 enable_feature(ENABLE_BYP_RAW_DEMODULATORS)
-enable_feature(ENABLE_BLMIN_TMP_OFF)
 enable_feature(ENABLE_SCAN_RANGES)
 
 # ---- CONTRIB MODS ----
 
-# Thank you @markusb
-enable_feature(ENABLE_REGA
-    app/rega.c
-) 
 # Thank you @reppad
 enable_feature(ENABLE_EXTRA_UART_CMD)
 
-# ---- N7SIX MODS ----
+# ---- F4HWN MODS ----
 
-enable_feature(ENABLE_FEAT_N7SIX)
-enable_feature(ENABLE_FEAT_N7SIX_CW 
-    app/cw.c
-    app/cwdecoder.c
+if(NOT ENABLE_UART AND NOT ENABLE_USB)
+    if(ENABLE_FEAT_F4HWN_K5VIEWER OR ENABLE_FEAT_F4HWN_RXTX_LOG_K5VIEWER)
+        message(STATUS "Disabling K5Viewer because both ENABLE_UART and ENABLE_USB are OFF.")
+    endif()
+    set(ENABLE_FEAT_F4HWN_K5VIEWER OFF)
+    set(ENABLE_FEAT_F4HWN_RXTX_LOG_K5VIEWER OFF)
+endif()
+
+enable_feature(ENABLE_FEAT_F4HWN)
+enable_feature(ENABLE_FEAT_F4HWN_FULL_WATCH)
+if(ENABLE_FEAT_F4HWN_FULL_WATCH AND NOT ENABLE_FEAT_F4HWN)
+    message(FATAL_ERROR "ENABLE_FEAT_F4HWN_FULL_WATCH requires ENABLE_FEAT_F4HWN.")
+endif()
+# GAME keeps the F+7 hook; the resident breakout.c is compiled only when the
+# overlay does NOT provide Breakout as an app (that is the flash we recover).
+if(ENABLE_FEAT_F4HWN_GAME)
+    target_compile_definitions(App INTERFACE ENABLE_FEAT_F4HWN_GAME)
+    if(NOT ENABLE_FEAT_F4HWN_OVERLAY_APPS)
+        target_sources(App INTERFACE app/breakout.c)
+    endif()
+endif()
+enable_feature(ENABLE_FEAT_F4HWN_OVERLAY_APPS
+    apps/app_overlay.c
+    apps/app_menu.c
 )
-enable_feature(ENABLE_FEAT_N7SIX_SCREENSHOT 
-    screenshot.c
+enable_feature(ENABLE_FEAT_F4HWN_OVERLAY_BEAM)
+enable_feature(ENABLE_FEAT_F4HWN_OVERLAY_INFO
+    stack_usage.c
 )
-enable_feature(ENABLE_FEAT_N7SIX_SPECTRUM)
-enable_feature(ENABLE_FEAT_N7SIX_RX_TX_TIMER)
-enable_feature(ENABLE_FEAT_N7SIX_CHARGING_C)
-enable_feature(ENABLE_FEAT_N7SIX_SLEEP)
-enable_feature(ENABLE_FEAT_N7SIX_RESUME_STATE)
-enable_feature(ENABLE_FEAT_N7SIX_NARROWER)
-enable_feature(ENABLE_FEAT_N7SIX_INV)
-enable_feature(ENABLE_FEAT_N7SIX_CTR)
-enable_feature(ENABLE_FEAT_N7SIX_SCAN_PROGRESS)
-enable_feature(ENABLE_FEAT_N7SIX_SCAN_FASTER)
-enable_feature(ENABLE_FEAT_N7SIX_SCAN_RSSI)
-enable_feature(ENABLE_FEAT_N7SIX_SCAN_SUBAUDIBLE)
-enable_feature(ENABLE_FEAT_N7SIX_RESCUE_OPS)
-enable_feature(ENABLE_FEAT_N7SIX_VOL)
-enable_feature(ENABLE_FEAT_N7SIX_AUDIO)
-enable_feature(ENABLE_FEAT_N7SIX_RESET_VFO)
-enable_feature(ENABLE_FEAT_N7SIX_PMR)
-enable_feature(ENABLE_FEAT_N7SIX_GMRS_FRS_MURS)
-enable_feature(ENABLE_FEAT_N7SIX_CA)
-enable_feature(ENABLE_FEAT_N7SIX_DEBUG)
-enable_feature(ENABLE_FEAT_N7SIX_MEM)
-enable_feature(ENABLE_FEAT_N7SIX_BEAM
+if(ENABLE_FEAT_F4HWN_OVERLAY_APPS AND NOT ENABLE_FEAT_F4HWN_MULTIBOOT_OVERLAY)
+    message(FATAL_ERROR "ENABLE_FEAT_F4HWN_OVERLAY_APPS requires ENABLE_FEAT_F4HWN_MULTIBOOT_OVERLAY (the 4 KiB overlay workspace).")
+endif()
+if(ENABLE_FEAT_F4HWN_OVERLAY_BEAM AND NOT ENABLE_FEAT_F4HWN_OVERLAY_APPS)
+    message(FATAL_ERROR "Overlay Beam service requires ENABLE_FEAT_F4HWN_OVERLAY_APPS.")
+endif()
+if(ENABLE_FEAT_F4HWN_OVERLAY_INFO AND NOT ENABLE_FEAT_F4HWN_OVERLAY_APPS)
+    message(FATAL_ERROR "Overlay system information requires ENABLE_FEAT_F4HWN_OVERLAY_APPS.")
+endif()
+enable_feature(ENABLE_FEAT_F4HWN_K5VIEWER 
+    k5viewer.c
+)
+enable_feature(ENABLE_FEAT_F4HWN_SPECTRUM)
+enable_feature(ENABLE_FEAT_F4HWN_RX_TX_TIMER)
+enable_feature(ENABLE_FEAT_F4HWN_CHARGING_C)
+enable_feature(ENABLE_FEAT_F4HWN_SLEEP)
+enable_feature(ENABLE_FEAT_F4HWN_RESUME_STATE)
+enable_feature(ENABLE_FEAT_F4HWN_NARROWER)
+enable_feature(ENABLE_FEAT_F4HWN_INV)
+enable_feature(ENABLE_FEAT_F4HWN_CTR)
+enable_feature(ENABLE_FEAT_F4HWN_SCAN_PROGRESS)
+enable_feature(ENABLE_FEAT_F4HWN_SCAN_FASTER)
+enable_feature(ENABLE_FEAT_F4HWN_SCAN_RSSI)
+enable_feature(ENABLE_FEAT_F4HWN_SCAN_SUBAUDIBLE)
+enable_feature(ENABLE_FEAT_F4HWN_RESCUE_OPS)
+enable_feature(ENABLE_FEAT_F4HWN_VOL)
+enable_feature(ENABLE_FEAT_F4HWN_AUDIO)
+enable_feature(ENABLE_FEAT_F4HWN_RESET_VFO)
+enable_feature(ENABLE_FEAT_F4HWN_PMR)
+enable_feature(ENABLE_FEAT_F4HWN_GMRS_FRS_MURS)
+enable_feature(ENABLE_FEAT_F4HWN_CA)
+enable_feature(ENABLE_FEAT_F4HWN_DEBUG)
+enable_feature(ENABLE_FEAT_F4HWN_MEM)
+enable_feature(ENABLE_FEAT_F4HWN_BEAM
     app/beam.c
 )
-
-if(ENABLE_FEAT_N7SIX_BEAM AND NOT ENABLE_AIRCOPY)
-    message(FATAL_ERROR "ENABLE_FEAT_N7SIX_BEAM requires ENABLE_AIRCOPY (it reuses g_FSK_Buffer, AIRCOPY_Obfuscate and the FSK packet plumbing).")
-endif()
-enable_feature(ENABLE_FEAT_N7SIX_QRCODE)
-enable_feature(ENABLE_FEAT_N7SIX_LOGO)
-enable_feature(ENABLE_FEAT_N7SIX_LOGO_SAV)
-
-if(ENABLE_FEAT_N7SIX_LOGO_SAV AND NOT ENABLE_FEAT_N7SIX_LOGO)
-    message(FATAL_ERROR "ENABLE_FEAT_N7SIX_LOGO_SAV requires ENABLE_FEAT_N7SIX_LOGO.")
-endif()
-
-enable_feature(ENABLE_FEAT_N7SIX_RXTX_LOG
+enable_feature(ENABLE_FEAT_F4HWN_RXTX_LOG
     app/rxtx_log.c
 )
-enable_feature(ENABLE_FEAT_N7SIX_RXTX_LOG_K5VIEWER)
-enable_feature(ENABLE_FEAT_N7SIX_K5VIEWER)
+enable_feature(ENABLE_FEAT_F4HWN_FOXHUNT)
+enable_feature(ENABLE_FEAT_F4HWN_BEACON)
+if(ENABLE_FEAT_F4HWN_FOXHUNT OR ENABLE_FEAT_F4HWN_BEACON)
+    target_sources(App INTERFACE app/foxhunt.c)
+endif()
+enable_feature(ENABLE_FEAT_F4HWN_ACTION_PICKER)
+
+if(ENABLE_FEAT_F4HWN_ACTION_PICKER AND NOT ENABLE_FEAT_F4HWN)
+    message(FATAL_ERROR "ENABLE_FEAT_F4HWN_ACTION_PICKER requires ENABLE_FEAT_F4HWN.")
+endif()
+
+enable_feature(ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP)
+enable_feature(ENABLE_FEAT_F4HWN_RXTX_LOG_K5VIEWER)
+
+if(ENABLE_FEAT_F4HWN_RXTX_LOG_K5VIEWER AND NOT (ENABLE_FEAT_F4HWN_RXTX_LOG AND ENABLE_FEAT_F4HWN_K5VIEWER))
+    message(FATAL_ERROR "ENABLE_FEAT_F4HWN_RXTX_LOG_K5VIEWER requires ENABLE_FEAT_F4HWN_RXTX_LOG (log data) and ENABLE_FEAT_F4HWN_K5VIEWER (serial transport).")
+endif()
+
+if(ENABLE_FEAT_F4HWN_BEAM AND NOT ENABLE_AIRCOPY)
+    message(FATAL_ERROR "ENABLE_FEAT_F4HWN_BEAM requires ENABLE_AIRCOPY (it reuses g_FSK_Buffer, AIRCOPY_Obfuscate and the FSK packet plumbing).")
+endif()
+enable_feature(ENABLE_FEAT_F4HWN_MULTIBOOT
+    driver/mb_flash.c
+    ui/multiboot.c
+)
+if(ENABLE_FEAT_F4HWN_MULTIBOOT AND NOT ENABLE_FEAT_F4HWN)
+    message(FATAL_ERROR "ENABLE_FEAT_F4HWN_MULTIBOOT requires ENABLE_FEAT_F4HWN (the SetCfg menu, SysInfo badge and multiboot UI all live under ENABLE_FEAT_F4HWN).")
+endif()
+enable_feature(ENABLE_FEAT_F4HWN_MULTIBOOT_HOT_CFG)
+if(ENABLE_FEAT_F4HWN_MULTIBOOT_HOT_CFG AND NOT ENABLE_FEAT_F4HWN_MULTIBOOT)
+    message(FATAL_ERROR "ENABLE_FEAT_F4HWN_MULTIBOOT_HOT_CFG requires ENABLE_FEAT_F4HWN_MULTIBOOT.")
+endif()
+enable_feature(ENABLE_FEAT_F4HWN_MULTIBOOT_OVERLAY)
+
+if(ENABLE_FEAT_F4HWN_MULTIBOOT_OVERLAY AND NOT ENABLE_FEAT_F4HWN_MULTIBOOT)
+    message(FATAL_ERROR "ENABLE_FEAT_F4HWN_MULTIBOOT_OVERLAY requires ENABLE_FEAT_F4HWN_MULTIBOOT.")
+endif()
+
+# External-flash dump / restore over serial (host: UV Studio). Restore keeps the
+# device-specific calibration sector protected. Adds the
+# 0x0738 (read) / 0x073A (sector erase) / 0x073C (write) / 0x073E (CRC32) UART
+# commands and the PY25Q16 physical-address helpers they use.
+enable_feature(ENABLE_FEAT_F4HWN_EXT_FLASH_RW)
+if(ENABLE_FEAT_F4HWN_EXT_FLASH_RW AND NOT ENABLE_FEAT_F4HWN_MULTIBOOT)
+    message(FATAL_ERROR "ENABLE_FEAT_F4HWN_EXT_FLASH_RW requires ENABLE_FEAT_F4HWN_MULTIBOOT (the 0x0738/0x073A/0x073C/0x073E UART commands live under multiboot).")
+endif()
+
+enable_feature(ENABLE_FEAT_F4HWN_QRCODE)
+enable_feature(ENABLE_FEAT_F4HWN_LOGO)
+enable_feature(ENABLE_FEAT_F4HWN_LOGO_SAV)
+enable_feature(ENABLE_FEAT_F4HWN_MENU_CAT)
+
+if(ENABLE_FEAT_F4HWN_LOGO_SAV AND NOT ENABLE_FEAT_F4HWN_LOGO)
+    message(FATAL_ERROR "ENABLE_FEAT_F4HWN_LOGO_SAV requires ENABLE_FEAT_F4HWN_LOGO.")
+endif()
+
+if(ENABLE_FEAT_F4HWN_MENU_CAT AND NOT ENABLE_FEAT_F4HWN)
+    message(FATAL_ERROR "ENABLE_FEAT_F4HWN_MENU_CAT requires ENABLE_FEAT_F4HWN.")
+endif()
 
 # ---- DEBUGGING ----
 

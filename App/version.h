@@ -17,24 +17,15 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-/** @brief Firmware version string. */
 extern const char Version[];
-
-/** @brief UART/reporting version string. */
 extern const char UART_Version[];
 
-#ifdef ENABLE_FEAT_N7SIX
-    /** @brief Edition string. */
-    extern const char Edition[];
-
-    /** @brief Build date string. */
-    extern const char BuildDate[];
-
-    /** @brief Build time string. */
-    extern const char BuildTime[];
-
-    /** @brief Build commit identifier. */
-    extern const char BuildCommit[];
 #endif
 
+#ifdef ENABLE_FEAT_F4HWN
+extern const char DisplayVersion[];
+extern const char Edition[];
+extern const char BuildDate[];
+extern const char BuildTime[];
+extern const char BuildCommit[];
 #endif

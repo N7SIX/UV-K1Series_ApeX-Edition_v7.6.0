@@ -7,15 +7,15 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *     Unless required by applicable law or agreed to in writing, software
+ *     distributed under the License is distributed on an "AS IS" BASIS,
+ *     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *     See the License for the specific language governing permissions and
+ *     limitations under the License.
  */
 
-#ifndef DRIVER_BK4819_H
-#define DRIVER_BK4819_H
+#ifndef DRIVER_BK4819_h
+#define DRIVER_BK4819_h
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -114,7 +114,7 @@ void     BK4819_EnterTxMute(void);
 void     BK4819_ExitTxMute(void);
 void     BK4819_Sleep(void);
 void     BK4819_TurnsOffTones_TurnsOnRX(void);
-#ifdef ENABLE_AIRCOPY
+#if defined(ENABLE_AIRCOPY) || defined(ENABLE_FEAT_F4HWN_OVERLAY_APPS)
     void     BK4819_SetupAircopy(void);
 #endif
 void     BK4819_ResetFSK(void);
@@ -167,35 +167,10 @@ uint8_t  BK4819_GetCDCSSCodeType(void);
 uint8_t  BK4819_GetCTCShift(void);
 uint8_t  BK4819_GetCTCType(void);
 
-void     BK4819_SendFSKData(uint16_t *pData);
+void     BK4819_SendFSKData(uint16_t *pData, uint8_t words);
 void     BK4819_PrepareFSKReceive(void);
 
-/**
- * Configure the BK4819 FSK demodulator for MDC-1200 receive mode.
- *
- * This function programs the FSK-specific registers (REG_58, REG_5D, REG_5A,
- * REG_5B, REG_5C, REG_59, REG_70, REG_72) to enable 1200-baud FSK frame
- * detection with the 4-byte 0x55 sync pattern. REG_5D (expected RX byte
- * count after the HW sync) is selected by long_preamble:
- *   false: standard MDC-1200  - 26-byte frame, 22 bytes after sync (0x1600)
- *   true : MDC-1200L          - 46-byte frame, 42 bytes after sync (0x2A00)
- *
- * The interrupt mask (REG_3F) is NOT modified by this function — the caller
- * must add BK4819_REG_3F_FSK_RX_FINISHED to the mask separately if IRQ-driven
- * detection is desired.
- */
-void     BK4819_EnableMDC1200RX(bool long_preamble);
-
-/**
- * Disable the BK4819 FSK/MDC-1200 receive configuration.
- *
- * Restores REG_58 (FSK enable) and REG_70 (Tone-2 enable) to their
- * disabled state so the normal FM audio path is used for TX.
- * Must be called before entering transmit when MDC-1200 RX was enabled.
- */
-void     BK4819_DisableMDC1200RX(void);
-
-int      BK4819_PlayRoger(BK4819_FilterBandwidth_t Bandwidth);
+void     BK4819_PlayRoger(BK4819_FilterBandwidth_t Bandwidth);
 
 void     BK4819_Enable_AfDac_DiscMode_TxDsp(void);
 

@@ -5,7 +5,7 @@
 #include "app/app.h"
 #include "app/chFrScanner.h"
 #include "audio.h"
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
 #include "driver/systick.h"
 #endif
 #include "functions.h"
@@ -22,14 +22,14 @@ bool              gScanPauseMode;
 uint32_t          gScanRangeStart;
 uint32_t          gScanRangeStop;
 
-#if defined(ENABLE_FEAT_N7SIX_SCAN_SUBAUDIBLE) && ENABLE_FEAT_N7SIX_SCAN_SUBAUDIBLE
+#if defined(ENABLE_FEAT_F4HWN_SCAN_SUBAUDIBLE) && ENABLE_FEAT_F4HWN_SCAN_SUBAUDIBLE
 DCS_CodeType_t    gScanRangeCssType  = CODE_TYPE_OFF;
 uint8_t           gScanRangeCssCode  = 0xFF;
 static uint8_t    scanRangeCssCandidate = 0xFF;
 static uint8_t    scanRangeCssHitCount  = 0;
 #endif
 
-#define SCAN_RANGE_SKIP_MAX 32
+#define SCAN_RANGE_SKIP_MAX 64
 #if (SCAN_RANGE_SKIP_MAX & (SCAN_RANGE_SKIP_MAX - 1)) != 0
     #error SCAN_RANGE_SKIP_MAX must be a power of two
 #endif
@@ -58,7 +58,7 @@ scan_next_chan_t    currentScanList;
 uint32_t            initialFrqOrChan;
 uint8_t             initialCROSS_BAND_RX_TX;
 
-#ifndef ENABLE_FEAT_N7SIX
+#ifndef ENABLE_FEAT_F4HWN
     uint32_t lastFoundFrqOrChan;
 #else
     uint32_t lastFoundFrqOrChan;
@@ -67,11 +67,11 @@ uint8_t             initialCROSS_BAND_RX_TX;
 
 static void NextFreqChannel(void);
 static void NextMemChannel(void);
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
 static void ScanFastResetState(void);
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
 static bool ScanFastEnabled(void)
 {
     return gSetting_set_scn;
@@ -164,7 +164,7 @@ bool CHFRSCANNER_ExcludeCurrentScanRange(void)
     if (scanRangeSkip.count < SCAN_RANGE_SKIP_MAX)
         scanRangeSkip.count++;
 
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
     ScanFastResetState();
 #endif
 
@@ -191,7 +191,7 @@ bool CHFRSCANNER_HasScanRangeExcludedOrdinal(uint32_t first_ordinal, uint32_t la
     return false;
 }
 
-#if defined(ENABLE_FEAT_N7SIX_SCAN_SUBAUDIBLE) && ENABLE_FEAT_N7SIX_SCAN_SUBAUDIBLE
+#if defined(ENABLE_FEAT_F4HWN_SCAN_SUBAUDIBLE) && ENABLE_FEAT_F4HWN_SCAN_SUBAUDIBLE
 void CHFRSCANNER_UpdateCssDetection(void)
 {
     if (!gScanRangeStart || !FUNCTION_IsRx())
@@ -259,7 +259,7 @@ static void CHFRSCANNER_AbortActiveReception(void)
     FUNCTION_Select(FUNCTION_FOREGROUND);
 }
 
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
 #define SCAN_FAST_PRECHECK_STEPS    6
 #define SCAN_FAST_RSSI_MARGIN       16
 #define SCAN_FAST_SQUELCH_MARGIN     8
@@ -292,7 +292,7 @@ static uint32_t scanFastPrevFrequency;
 static bool     scanFastLastFullTuneCandidate;
 static VFO_Info_t scanFastDisplayVfo;
 static bool       scanFastDisplayVfoValid;
-#ifdef ENABLE_FEAT_N7SIX_SCAN_RSSI
+#ifdef ENABLE_FEAT_F4HWN_SCAN_RSSI
 static uint16_t scanRssiSparkline[CHFRSCANNER_RSSI_SPARKLINE_WIDTH];
 static uint8_t  scanRssiSparklineWrite;
 static uint8_t  scanRssiSparklineCount;
@@ -416,35 +416,7 @@ static bool ScanFastUpdateDisplayVfo(uint16_t channel, uint32_t *frequency, Modu
     }
 
     scanFastDisplayVfo = gEeprom.VfoInfo[gEeprom.RX_VFO];
-
-    scanFastDisplayVfo.CHANNEL_SAVE = channel;
-    scanFastDisplayVfo.freq_config_RX = info.rx;
-    scanFastDisplayVfo.freq_config_TX = info.tx;
-    scanFastDisplayVfo.TX_OFFSET_FREQUENCY = info.offset;
-    scanFastDisplayVfo.StepFrequency = info.stepFrequency;
-    scanFastDisplayVfo.STEP_SETTING = info.stepSetting;
-    scanFastDisplayVfo.Modulation = info.modulation;
-    scanFastDisplayVfo.TX_OFFSET_FREQUENCY_DIRECTION = info.txOffsetFrequencyDirection;
-    scanFastDisplayVfo.OUTPUT_POWER = info.outputPower;
-    scanFastDisplayVfo.FrequencyReverse = info.frequencyReverse;
-    scanFastDisplayVfo.CHANNEL_BANDWIDTH = info.channelBandwidth;
-    scanFastDisplayVfo.BUSY_CHANNEL_LOCK = info.busyChannelLock;
-    scanFastDisplayVfo.TX_LOCK = info.txLock;
-#ifdef ENABLE_DTMF_CALLING
-    scanFastDisplayVfo.DTMF_DECODING_ENABLE = info.dtmfDecodingEnable;
-#endif
-    scanFastDisplayVfo.DTMF_PTT_ID_TX_MODE = info.dtmfPttIdTxMode;
-
-    if (!scanFastDisplayVfo.FrequencyReverse)
-    {
-        scanFastDisplayVfo.pRX = &scanFastDisplayVfo.freq_config_RX;
-        scanFastDisplayVfo.pTX = &scanFastDisplayVfo.freq_config_TX;
-    }
-    else
-    {
-        scanFastDisplayVfo.pRX = &scanFastDisplayVfo.freq_config_TX;
-        scanFastDisplayVfo.pTX = &scanFastDisplayVfo.freq_config_RX;
-    }
+    SETTINGS_ApplyChannelScanDisplayInfo(&scanFastDisplayVfo, channel, &info);
 
     scanFastDisplayVfoValid = true;
 
@@ -553,11 +525,7 @@ static void ScanFastApplyChannelShape(ModulationMode_t modulation)
     }
     else
     {
-#ifdef ENABLE_AM_FIX
-        BK4819_SetFilterBandwidth(BK4819_FILTER_BW_WIDE, true);
-#else
         BK4819_SetFilterBandwidth(BK4819_FILTER_BW_WIDE, false);
-#endif
     }
 
     if (modulationChanged)
@@ -571,7 +539,7 @@ static void ScanFastApplyChannelShape(ModulationMode_t modulation)
 }
 #endif
 
-#if defined(ENABLE_FEAT_N7SIX_SCAN_FASTER) && defined(ENABLE_SCAN_RANGES)
+#if defined(ENABLE_FEAT_F4HWN_SCAN_FASTER) && defined(ENABLE_SCAN_RANGES)
 static void ScanRangeFastRefineCandidate(uint16_t firstRssi)
 {
     const uint16_t step = gRxVfo->StepFrequency;
@@ -657,7 +625,7 @@ static scan_fast_result_t ScanRangeFastPrecheck(void)
         ScanFastTune(freq);
 
         const uint16_t rssi = ScanFastReadCandidateRssi();
-#ifdef ENABLE_FEAT_N7SIX_SCAN_RSSI
+#ifdef ENABLE_FEAT_F4HWN_SCAN_RSSI
         ScanRssiSparklinePush(rssi);
 #endif
         if (ScanFastIsCandidate(rssi))
@@ -671,7 +639,7 @@ static scan_fast_result_t ScanRangeFastPrecheck(void)
 }
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
 static bool MemChannelFastPrecheck(uint16_t channel)
 {
     uint32_t frequency;
@@ -696,7 +664,7 @@ static bool MemChannelFastPrecheck(uint16_t channel)
     ScanFastTune(frequency);
 
     const uint16_t rssi = ScanFastReadCandidateRssi();
-#ifdef ENABLE_FEAT_N7SIX_SCAN_RSSI
+#ifdef ENABLE_FEAT_F4HWN_SCAN_RSSI
     ScanRssiSparklinePush(rssi);
 #endif
 
@@ -712,10 +680,6 @@ static bool MemChannelFastPrecheck(uint16_t channel)
     // candidate is eventually retained.
     scanFastLastFullTuneCandidate = false;
     gRxVfo->freq_config_RX.Frequency = frequency;
-    if (scanFastDisplayVfoValid && scanFastDisplayVfo.FrequencyReverse)
-    {
-        gRxVfo->freq_config_TX.Frequency = scanFastDisplayVfo.freq_config_TX.Frequency;
-    }
     return false;
 }
 
@@ -734,7 +698,7 @@ static void SetMemScanProgressChannel(uint16_t channel)
 }
 #endif
 
-#if defined(ENABLE_FEAT_N7SIX_RESUME_STATE) || defined(ENABLE_SCAN_RANGES)
+#if defined(ENABLE_FEAT_F4HWN_RESUME_STATE) || defined(ENABLE_SCAN_RANGES)
     void CHFRSCANNER_ScanRange(void) {
         if (gScanRangeStart) {
             gScanRangeStart = 0;
@@ -743,7 +707,7 @@ static void SetMemScanProgressChannel(uint16_t channel)
 
         gScanRangeStart = gTxVfo->pRX->Frequency;
         gScanRangeStop = gEeprom.VfoInfo[!gEeprom.TX_VFO].freq_config_RX.Frequency;
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
         ScanFastResetState();
 #endif
         if(gScanRangeStart > gScanRangeStop)
@@ -760,27 +724,36 @@ void CHFRSCANNER_Start(const bool storeBackupSettings, const int8_t scan_directi
         gEeprom.CROSS_BAND_RX_TX = CROSS_BAND_OFF;
         gScanKeepResult = false;
     }
-    
+
+#ifdef ENABLE_FEAT_F4HWN_FULL_WATCH
+    // Scanning retunes the VFO and clears the crossband flag the swap depends on,
+    // so end the swap first, as a channel change does.
+    APP_FullWatchReset();
+#endif
     RADIO_SelectVfos();
     CHFRSCANNER_AbortActiveReception();
 
     gNextMrChannel   = gRxVfo->CHANNEL_SAVE;
     currentScanList = SCAN_NEXT_CHAN_SCANLIST1;
     gScanStateDir    = scan_direction;
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
-#ifdef ENABLE_FEAT_N7SIX_SCAN_RSSI
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_RSSI
     ScanRssiSparklineReset();
 #endif
     ScanFastResetState();
 #endif
 
     if (IS_MR_CHANNEL(gNextMrChannel))
-    {   
+    {
+        bool scanListChanged = false;
 
         if(!RADIO_CheckValidList(gEeprom.SCAN_LIST_DEFAULT)) {
             RADIO_NextValidList(1);
-            UI_MAIN_NotifyScanProgressDataChanged();
+            scanListChanged = true;
         }
+
+        if (storeBackupSettings || scanListChanged)
+            UI_MAIN_NotifyScanListChanged();
 
         // channel mode
         if (storeBackupSettings) {
@@ -798,7 +771,7 @@ void CHFRSCANNER_Start(const bool storeBackupSettings, const int8_t scan_directi
         NextFreqChannel();
     }
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     lastFoundFrqOrChanOld = lastFoundFrqOrChan;
 #endif
 
@@ -844,7 +817,7 @@ void CHFRSCANNER_ContinueScanning(void)
 
 void CHFRSCANNER_ContinueScanning(void)
 {
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
     if (scanFastLastFullTuneCandidate &&
         gCurrentFunction != FUNCTION_INCOMING &&
         !g_SquelchLost)
@@ -873,7 +846,7 @@ void CHFRSCANNER_ContinueScanning(void)
 
 void CHFRSCANNER_Found(void)
 {
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
     // After a real reception the BK4819 AGC has shifted, biasing the next
     // few RSSI readings high. Reset the precheck state so it warms up from
     // the current noise floor instead of carrying stale calibration into
@@ -931,7 +904,7 @@ void CHFRSCANNER_Found(void)
     }
     */
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     lastFoundFrqOrChanOld = lastFoundFrqOrChan;
 #endif
 
@@ -954,7 +927,7 @@ void CHFRSCANNER_Stop(void)
     }
     
     gScanStateDir = SCAN_OFF;
-#if defined(ENABLE_FEAT_N7SIX_SCAN_FASTER) && defined(ENABLE_FEAT_N7SIX_SCAN_RSSI)
+#if defined(ENABLE_FEAT_F4HWN_SCAN_FASTER) && defined(ENABLE_FEAT_F4HWN_SCAN_RSSI)
     ScanRssiSparklineReset();
 #endif
 
@@ -979,7 +952,7 @@ void CHFRSCANNER_Stop(void)
         }
     }
 
-    #ifdef ENABLE_FEAT_N7SIX_RESUME_STATE
+    #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
         gEeprom.CURRENT_STATE = 0;
         SETTINGS_WriteCurrentState();
     #endif
@@ -992,7 +965,7 @@ static void NextFreqChannel(void)
 {
 #ifdef ENABLE_SCAN_RANGES
     if(gScanRangeStart) {
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
         if (ScanFastEnabled())
         {
             const scan_fast_result_t fastResult = ScanRangeFastPrecheck();
@@ -1027,7 +1000,7 @@ static void NextFreqChannel(void)
     else
 #endif
     {
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
         scanFastLastFullTuneCandidate = false;
 #endif
         gRxVfo->freq_config_RX.Frequency = APP_SetFrequencyByStep(gRxVfo, gScanStateDir);
@@ -1049,9 +1022,9 @@ static void NextFreqChannel(void)
 static void NextMemChannel(void)
 {
     static uint16_t prev_mr_chan = 0;
-    const bool      enabled      = (gEeprom.SCAN_LIST_DEFAULT > 0 && gEeprom.SCAN_LIST_DEFAULT <= MR_CHANNELS_LIST + 1) ? gEeprom.SCAN_LIST_ENABLED : true;
-    const int16_t   chan1        = (gEeprom.SCAN_LIST_DEFAULT > 0 && gEeprom.SCAN_LIST_DEFAULT <= MR_CHANNELS_LIST + 1 && gEeprom.SCANLIST_PRIORITY_CH[0] != MR_CHANNELS_MAX) ? gEeprom.SCANLIST_PRIORITY_CH[0] : -1;
-    const int16_t   chan2        = (gEeprom.SCAN_LIST_DEFAULT > 0 && gEeprom.SCAN_LIST_DEFAULT <= MR_CHANNELS_LIST + 1 && gEeprom.SCANLIST_PRIORITY_CH[1] != MR_CHANNELS_MAX) ? gEeprom.SCANLIST_PRIORITY_CH[1] : -1;
+    const bool      enabled      = (gEeprom.SCAN_LIST_DEFAULT > 0 && gEeprom.SCAN_LIST_DEFAULT <= SCAN_LIST_MODE_MIX) ? gEeprom.SCAN_LIST_ENABLED : true;
+    const int16_t   chan1        = (gEeprom.SCAN_LIST_DEFAULT > 0 && gEeprom.SCAN_LIST_DEFAULT <= SCAN_LIST_MODE_MIX && gEeprom.SCANLIST_PRIORITY_CH[0] != MR_CHANNELS_MAX) ? gEeprom.SCANLIST_PRIORITY_CH[0] : -1;
+    const int16_t   chan2        = (gEeprom.SCAN_LIST_DEFAULT > 0 && gEeprom.SCAN_LIST_DEFAULT <= SCAN_LIST_MODE_MIX && gEeprom.SCANLIST_PRIORITY_CH[1] != MR_CHANNELS_MAX) ? gEeprom.SCANLIST_PRIORITY_CH[1] : -1;
     const uint16_t  prev_chan    = gNextMrChannel;
     uint16_t        chan         = 0;
 
@@ -1133,19 +1106,21 @@ static void NextMemChannel(void)
 
     if (!enabled || chan == 0xFFFF)
     {
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
         const uint16_t searchStart = gNextMrChannel;
+#endif
         chan = RADIO_FindNextChannel(gNextMrChannel + gScanStateDir, gScanStateDir, true, gEeprom.SCAN_LIST_DEFAULT);
         if (chan == 0xFFFF)
         {   // no valid channel found -> wrapping back to the first channel
             chan = MR_CHANNEL_FIRST;
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
             // Wraparound: re-warm the precheck noise floor on the new pass
             // so it tracks current RF conditions instead of an EMA that
             // accumulated drift over the previous full sweep.
             ScanFastResetState();
 #endif
         }
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
         else if ((gScanStateDir > 0 && chan < searchStart) ||
                  (gScanStateDir < 0 && chan > searchStart))
         {
@@ -1162,7 +1137,7 @@ static void NextMemChannel(void)
         //LogUart(str);
     }
 
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
     SetMemScanProgressChannel(gNextMrChannel);
 
     if (ScanFastEnabled() && !MemChannelFastPrecheck(gNextMrChannel))
@@ -1175,12 +1150,12 @@ static void NextMemChannel(void)
 #endif
 
     if (gNextMrChannel != prev_chan
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
         || scanFastLastFullTuneCandidate
 #endif
     )
     {
-#ifndef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifndef ENABLE_FEAT_F4HWN_SCAN_FASTER
         gEeprom.MrChannel[    gEeprom.RX_VFO] = gNextMrChannel;
         gEeprom.ScreenChannel[gEeprom.RX_VFO] = gNextMrChannel;
 #endif
@@ -1197,7 +1172,7 @@ static void NextMemChannel(void)
     gScanPauseDelayIn_10ms = scan_pause_delay_in_3_10ms;
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX_SCAN_FASTER
+#ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
     AdvanceMemScanList(enabled);
 #else
     if (enabled)

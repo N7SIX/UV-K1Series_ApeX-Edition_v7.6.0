@@ -17,6 +17,7 @@
 #include <assert.h>
 
 #include "battery.h"
+#include "board.h"
 #include "driver/backlight.h"
 #include "driver/st7565.h"
 #include "functions.h"
@@ -129,54 +130,45 @@ unsigned int BATTERY_VoltsToPercent(const unsigned int voltage_10mV)
     return 0;
 }
 
-bool BATTERY_IsCriticalVoltage(const BATTERY_Type_t battery_type,
-                               const uint16_t voltage_10mV)
+#if defined(ENABLE_FEAT_F4HWN_OVERLAY_APPS) || defined(ENABLE_FEAT_F4HWN_FOXHUNT) || defined(ENABLE_FEAT_F4HWN_BEACON)
+void BATTERY_Sample(const bool bDisplayBatteryLevel)
 {
-    switch (battery_type)
-    {
-        case BATTERY_TYPE_1600_MAH:
-        case BATTERY_TYPE_2200_MAH:
-        case BATTERY_TYPE_1500_MAH:
-            return voltage_10mV <= 630;
-
-        case BATTERY_TYPE_3500_MAH:
-            return voltage_10mV <= 600;
-
-        case BATTERY_TYPE_2500_MAH:
-            return voltage_10mV <= 623;
-
-        default:
-            return false;
-    }
+    BOARD_ADC_GetBatteryInfo(&gBatteryVoltages[gBatteryVoltageIndex++], &gBatteryCurrent);
+    if (gBatteryVoltageIndex > 3u)
+        gBatteryVoltageIndex = 0u;
+    BATTERY_GetReadings(bDisplayBatteryLevel);
 }
+#endif
 
 void BATTERY_GetReadings(const bool bDisplayBatteryLevel)
 {
     const uint8_t  PreviousBatteryLevel = gBatteryDisplayLevel;
     const uint16_t Voltage              = (gBatteryVoltages[0] + gBatteryVoltages[1] + gBatteryVoltages[2] + gBatteryVoltages[3]) / 4;
 
-    gBatteryVoltageAverage = BATTERY_CalibrateRaw(Voltage,
-                                                  gBatteryCalibration[0],
-                                                  gBatteryCalibration[3]);
+    gBatteryVoltageAverage = (Voltage * 760) / gBatteryCalibration[3];
 
     if(gBatteryVoltageAverage > 890)
         gBatteryDisplayLevel = 7; // battery overvoltage
-    else if(BATTERY_IsCriticalVoltage(gEeprom.BATTERY_TYPE, gBatteryVoltageAverage))
+    else if(gBatteryVoltageAverage < 630 && (gEeprom.BATTERY_TYPE == BATTERY_TYPE_1600_MAH || gEeprom.BATTERY_TYPE == BATTERY_TYPE_2200_MAH))
+        gBatteryDisplayLevel = 0; // battery critical
+    else if(gBatteryVoltageAverage < 600 && (gEeprom.BATTERY_TYPE == BATTERY_TYPE_3500_MAH))
         gBatteryDisplayLevel = 0; // battery critical
     else {
         gBatteryDisplayLevel = 1;
-        const uint8_t perc = BATTERY_VoltsToPercent(gBatteryVoltageAverage);
+        const uint8_t levels[] = {5,17,41,65,88};
+        uint8_t perc = BATTERY_VoltsToPercent(gBatteryVoltageAverage);
+        //char str[64];
+        //LogUart("----------\n");
+        //sprintf(str, "%d %d %d %d %d %d %d\n", gBatteryVoltages[0], gBatteryVoltages[1], gBatteryVoltages[2], gBatteryVoltages[3], Voltage, gBatteryVoltageAverage, perc);
+        //LogUart(str);
 
-        // Use the displayed percentage to determine battery icon bars, so the
-        // icon visually matches the percentage text.
-        if (perc > 75) {
-            gBatteryDisplayLevel = 6;
-        } else if (perc > 50) {
-            gBatteryDisplayLevel = 5;
-        } else if (perc > 25) {
-            gBatteryDisplayLevel = 4;
-        } else if (perc > 5) {
-            gBatteryDisplayLevel = 3;
+        for(uint8_t i = 6; i >= 2; i--){
+            //sprintf(str, "%d %d %d\n", perc, levels[i-2], i);
+            //LogUart(str);
+            if (perc > levels[i-2]) {
+                gBatteryDisplayLevel = i;
+                break;
+            }
         }
     }
 

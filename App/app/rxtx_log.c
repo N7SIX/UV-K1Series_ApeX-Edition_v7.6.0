@@ -3,9 +3,10 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG
+
 #include <assert.h>
 #include <stddef.h>
-#include <stdbool.h>
 #include <string.h>
 
 #include "app/common.h"
@@ -13,6 +14,9 @@
 #include "app/rxtx_log.h"
 #include "audio.h"
 #include "driver/bk4819.h"
+#ifdef ENABLE_FEAT_F4HWN_MULTIBOOT
+#include "driver/mb_flash.h"
+#endif
 #include "driver/py25q16.h"
 #include "driver/st7565.h"
 #include "external/printf/printf.h"
@@ -21,9 +25,10 @@
 #include "settings.h"
 #include "ui/helper.h"
 #include "ui/menu.h"
+#ifdef ENABLE_FEAT_F4HWN_MULTIBOOT
+#include "ui/multiboot.h"
+#endif
 #include "ui/ui.h"
-
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG
 
 #define RXTX_LOG_FLASH_BASE          0x1E0000u
 #define RXTX_LOG_FLASH_SECTOR_SIZE   0x1000u
@@ -41,6 +46,8 @@
 // (1u << 1) was FLAG_NAMED, retired: names are resolved from the channel.
 #define RXTX_LOG_FLAG_MONITOR        (1u << 2)
 #define RXTX_LOG_FLAG_SESSION        (1u << 3)
+// Bits 5..7 store config bank + 1; zero identifies legacy untagged rows.
+#define RXTX_LOG_CONFIG_BANK_SHIFT   5u
 #define RXTX_LOG_FILTER_ALL          0u
 #define RXTX_LOG_FILTER_RX           1u
 #define RXTX_LOG_FILTER_TX           2u
@@ -83,35 +90,13 @@ static_assert(RXTX_LOG_VIEW_ANCHOR_COUNT <= 32);
 // the copied prefix.
 static_assert(RXTX_LOG_ENTRY_COPY_SIZE == offsetof(RXTX_LogEntry_t, battVolt) + sizeof(((RXTX_LogEntry_t *)0)->battVolt));
 static_assert(sizeof(RXTX_LogEntry_t) >= RXTX_LOG_ENTRY_COPY_SIZE);
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_K5VIEWER
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_K5VIEWER
 // Both sizes are hardcoded in k5viewer.js (RF_LOG_ROW_SIZE and
 // RF_LOG_PACKET_SIZE): pin them so a struct change breaks the build
 // instead of the viewer.
 static_assert(sizeof(RXTX_LogK5ViewerRow_t) == 25);
 static_assert(RXTX_LOG_K5VIEWER_PACKET_SIZE == 1629);
 static_assert(RXTX_LOG_K5VIEWER_HISTORY_PACKET_SIZE == 1600);
-
-// UV Studio viewer frame: 0xAA 0x55 <type> <size_hi> <size_lo> <payload> 0x0A
-#define K5VIEWER_FRAME_HEADER_SIZE 5u
-#define K5VIEWER_FRAME_TRAILER_SIZE 1u
-#define K5VIEWER_FRAME_OVERHEAD (K5VIEWER_FRAME_HEADER_SIZE + K5VIEWER_FRAME_TRAILER_SIZE)
-
-static void RXTX_LOG_SendFramed(uint8_t type, const uint8_t *payload, uint16_t payload_len,
-                                void (*send)(const uint8_t *data, uint16_t size))
-{
-    uint8_t header[K5VIEWER_FRAME_HEADER_SIZE];
-    uint8_t trailer = 0x0A;
-
-    header[0] = 0xAA;
-    header[1] = 0x55;
-    header[2] = type;
-    header[3] = (uint8_t)((payload_len >> 8) & 0xFF);
-    header[4] = (uint8_t)(payload_len & 0xFF);
-
-    send(header, sizeof(header));
-    send(payload, payload_len);
-    send(&trailer, sizeof(trailer));
-}
 #endif
 
 static RXTX_LogEntry_t gViewCache[RXTX_LOG_VIEW_CACHE_COUNT];
@@ -128,7 +113,7 @@ static uint16_t        gViewScanIndex;
 static uint16_t        gViewAnchorSlots[RXTX_LOG_VIEW_ANCHOR_COUNT];
 static uint32_t        gViewAnchorMask;
 static uint8_t         gViewAnchorFilter;
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
 // Wrap-around scrolling state: cycling UP past the first row (or DOWN past
 // the last) requires discovering the total row count with a dedicated scan.
 static bool            gViewCacheCircular;
@@ -154,20 +139,29 @@ static uint16_t        gSessionChannel;
 static uint16_t        gSessionTicks500ms;
 static uint8_t         gSessionSMeter;
 static uint8_t         gSessionBattVolt;
-
-// Deferred flash write: RXTX_LOG_EndActive() stores the completed session
-// entry here instead of writing to flash synchronously. The actual
-// PY25Q16_SectorErase + PY25Q16_WriteBuffer (which can block for ~300ms
-// during a sector erase) is performed by RXTX_LOG_Task10ms() in the
-// background, so PTT press/release transitions no longer stall the UI.
-static RXTX_LogEntry_t gPendingEntry;
-static bool            gPendingWrite;
+static bool            gSuspended;
 
 static uint16_t        gLogCursor;
 static uint8_t         gLogFilter;
 static uint8_t         gLogDetailMode;
 
-static inline uint8_t RXTX_LOG_Crc8(const void *data, uint16_t size)
+bool RXTX_LOG_IsEnabled(void)
+{
+    return gEeprom.KEY_1_SHORT_PRESS_ACTION == ACTION_OPT_RXTX_LOG ||
+           gEeprom.KEY_1_LONG_PRESS_ACTION  == ACTION_OPT_RXTX_LOG ||
+           gEeprom.KEY_2_SHORT_PRESS_ACTION == ACTION_OPT_RXTX_LOG ||
+           gEeprom.KEY_2_LONG_PRESS_ACTION  == ACTION_OPT_RXTX_LOG ||
+           gEeprom.KEY_M_LONG_PRESS_ACTION  == ACTION_OPT_RXTX_LOG;
+}
+
+static void RXTX_LOG_ResetActiveSession(void)
+{
+    gSessionActive   = false;
+    gSessionSMeter   = RXTX_LOG_SMETER_UNKNOWN;
+    gSessionBattVolt = RXTX_LOG_BATT_UNKNOWN;
+}
+
+static uint8_t RXTX_LOG_Crc8(const void *data, uint16_t size)
 {
     const uint8_t *p = (const uint8_t *)data;
     uint8_t crc = 0x5Au;
@@ -212,6 +206,34 @@ static bool RXTX_LOG_IsTx(const RXTX_LogEntry_t *entry)
 static bool RXTX_LOG_IsSessionMarker(const RXTX_LogEntry_t *entry)
 {
     return (entry->flags & RXTX_LOG_FLAG_SESSION) != 0;
+}
+
+static void RXTX_LOG_FetchChannelName(char *name, uint16_t channel, uint8_t flags)
+{
+    name[0] = 0;
+
+#ifdef ENABLE_FEAT_F4HWN_MULTIBOOT
+    const uint8_t storedBank = flags >> RXTX_LOG_CONFIG_BANK_SHIFT;
+    if (storedBank != 0) {
+        const uint8_t bank = storedBank - 1u;
+        if (bank >= MB_BANK_COUNT || !IS_MR_CHANNEL(channel))
+            return;
+
+        PY25Q16_ReadBufferPhysical(MB_BankBase(bank) + 0x004000u + (uint32_t)channel * 16u,
+                                   name, 10u);
+        uint8_t i;
+        for (i = 0; i < 10u && name[i] >= 32 && name[i] <= 127; i++)
+            ;
+        while (i > 0 && name[i - 1u] == ' ')
+            i--;
+        name[i] = 0;
+        return;
+    }
+#else
+    (void)flags;
+#endif
+
+    SETTINGS_FetchChannelName(name, channel);
 }
 
 static bool RXTX_LOG_IsTrafficFlags(uint8_t flags)
@@ -293,7 +315,7 @@ static void RXTX_LOG_StartViewCacheScan(uint16_t start, bool circular, bool disc
 static void RXTX_LOG_StartCursorView(uint16_t cursor)
 {
     gLogCursor = cursor;
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
     gViewWrapPending = false;
     RXTX_LOG_StartViewCacheScan(cursor,
         gViewTotalKnown &&
@@ -359,7 +381,7 @@ static void RXTX_LOG_InvalidateViewCache(void)
     gViewCacheHasOlder = false;
     gViewCacheComplete = false;
     gViewScanActive    = false;
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
     gViewCacheCircular = false;
     gViewTotalKnown    = false;
     gViewWrapPending   = false;
@@ -463,12 +485,12 @@ static void RXTX_LOG_StopViewScan(void)
 {
     gViewScanActive    = false;
     gViewCacheComplete = true;
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
     gViewScanDiscoverTotal = false;
 #endif
 }
 
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
 static bool RXTX_LOG_TryWrapViewCacheScan(void)
 {
     if (!gViewCacheCircular ||
@@ -528,7 +550,7 @@ static void RXTX_LOG_StepViewCacheScan(void)
             gViewCacheCount++;
         } else {
             gViewCacheHasOlder = true;
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
             if (!gViewScanDiscoverTotal) {
                 RXTX_LOG_StopViewScan();
                 break;
@@ -540,14 +562,14 @@ static void RXTX_LOG_StepViewCacheScan(void)
         }
 
         gViewScanIndex++;
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
         if (RXTX_LOG_TryWrapViewCacheScan())
             continue;
 #endif
     }
 
     if (gViewScanScanned >= RXTX_LOG_SLOT_COUNT || capReached) {
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
         if (!gViewScanWrapped) {
             gViewTotalRows  = gViewScanIndex;
             gViewTotalKnown = gViewTotalRows > 0;
@@ -567,7 +589,7 @@ static void RXTX_LOG_StepViewCacheScan(void)
 
         RXTX_LOG_StopViewScan();
 
-#ifndef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifndef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
         // A jump-to-end aims past the last row on purpose: when the whole
         // scan was spent skipping, the leftover skip locates the actual
         // last row, so retarget the view there.
@@ -580,7 +602,7 @@ static void RXTX_LOG_StepViewCacheScan(void)
 #endif
     }
 
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
     if (!gViewCacheCircular && RXTX_LOG_AlignLastViewPage())
         return;
 #else
@@ -603,7 +625,7 @@ static void RXTX_LOG_StartViewCacheScan(uint16_t start, bool circular, bool disc
     gViewCacheHasOlder = false;
     gViewCacheComplete = false;
     gViewScanActive    = false;
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
     gViewCacheCircular     = circular;
     gViewScanDiscoverTotal = discoverTotal;
     gViewScanWrapped       = false;
@@ -613,7 +635,7 @@ static void RXTX_LOG_StartViewCacheScan(uint16_t start, bool circular, bool disc
 #endif
 
     if (gNextSequence == 0) {
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
         gViewWrapPending = false;
         gViewScanDiscoverTotal = false;
 #endif
@@ -635,7 +657,7 @@ static void RXTX_LOG_StartViewCacheScan(uint16_t start, bool circular, bool disc
     gViewScanActive  = true;
 }
 
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
 static void RXTX_LOG_RequestWrapToLast(void)
 {
     gViewWrapPending = true;
@@ -654,7 +676,7 @@ static void RXTX_LOG_RequestWrapToLast(void)
 
 static void RXTX_LOG_GoToLastRow(void)
 {
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
     if (gViewTotalKnown && gViewTotalRows > 1u)
         RXTX_LOG_StartCursorView(gViewTotalRows - 1u);
     else
@@ -768,7 +790,7 @@ static bool RXTX_LOG_GetFilteredEntry(uint16_t indexFromNewest, RXTX_LogEntry_t 
     return true;
 }
 
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_K5VIEWER
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_K5VIEWER
 static uint32_t RXTX_LOG_K5ViewerMix(uint32_t hash, uint32_t value)
 {
     hash ^= value & 0xFFu;
@@ -786,6 +808,7 @@ uint32_t RXTX_LOG_K5ViewerSignature(void)
 {
     uint32_t hash = 2166136261u;
 
+    hash = RXTX_LOG_K5ViewerMix(hash, RXTX_LOG_IsEnabled());
     hash = RXTX_LOG_K5ViewerMix(hash, gSessionActive);
     hash = RXTX_LOG_K5ViewerMix(hash, gClearActive);
     hash = RXTX_LOG_K5ViewerMix(hash, gLogHasTraffic);
@@ -803,7 +826,9 @@ uint32_t RXTX_LOG_K5ViewerSignature(void)
     return hash;
 }
 
-static void RXTX_LOG_SetK5ViewerChannelName(RXTX_LogK5ViewerRow_t *row, uint16_t channel)
+static void RXTX_LOG_SetK5ViewerChannelName(RXTX_LogK5ViewerRow_t *row,
+                                             uint16_t channel,
+                                             uint8_t flags)
 {
     memset(row->channelName, 0, sizeof(row->channelName));
 
@@ -811,7 +836,7 @@ static void RXTX_LOG_SetK5ViewerChannelName(RXTX_LogK5ViewerRow_t *row, uint16_t
         return;
 
     char name[RXTX_LOG_K5VIEWER_NAME_LENGTH + 1u];
-    SETTINGS_FetchChannelName(name, channel);
+    RXTX_LOG_FetchChannelName(name, channel, flags);
     for (uint8_t i = 0; i < RXTX_LOG_K5VIEWER_NAME_LENGTH && name[i] != 0; i++)
         row->channelName[i] = name[i];
 }
@@ -825,47 +850,28 @@ static void RXTX_LOG_CopyK5ViewerRow(RXTX_LogK5ViewerRow_t *dst, const RXTX_LogF
     dst->flags           = src->flags;
     dst->meter           = src->sMeter;
     dst->battVolt        = src->battVolt;
-    RXTX_LOG_SetK5ViewerChannelName(dst, src->channel);
+    RXTX_LOG_SetK5ViewerChannelName(dst, src->channel, src->flags);
 }
 
-
-// Send the live K5Viewer packet: 4-byte header + live row + 64 history rows.
-// The payload is built in a staging buffer, then framed and sent.
-void RXTX_LOG_SendK5ViewerPacket(void (*send)(const uint8_t *data, uint16_t size))
+// Send up to `count` rows whose flash sequence is below `beforeSeq`, newest
+// first, scanning the ring backwards from the write head and zero-padding
+// past the last valid entry. Returns the sequence of the oldest row
+// sent when more visible history remains below it, 0 otherwise: feeding
+// that value back as the next `beforeSeq` pages through the whole
+// visible history without duplicating or skipping rows, even while new
+// traffic keeps landing between pages (new entries sit above the bound).
+static uint32_t RXTX_LOG_SendK5ViewerRows(uint32_t beforeSeq, uint8_t count,
+                                          void (*send)(const uint8_t *data, uint16_t size))
 {
-    uint8_t payload[RXTX_LOG_K5VIEWER_PACKET_SIZE];
-    uint16_t offset = 0;
-
-    // Header
-    uint8_t header[4] = {RXTX_LOG_K5VIEWER_VERSION, 0, RXTX_LOG_K5VIEWER_ROW_COUNT, 0};
-    if (gSessionActive)
-        header[1] |= RXTX_LOG_K5VIEWER_STATUS_ACTIVE;
-    if (gLogHasTraffic)
-        header[1] |= RXTX_LOG_K5VIEWER_STATUS_HAS_TRAFFIC;
-    if (gClearActive)
-        header[1] |= RXTX_LOG_K5VIEWER_STATUS_CLEARING;
-    memcpy(payload + offset, header, sizeof(header));
-    offset += sizeof(header);
-
-    // Live row
     RXTX_LogK5ViewerRow_t row;
-    row.frequency       = gSessionFrequency;
-    row.trafficSeq      = gNextSequence;
-    row.durationSeconds = (gSessionTicks500ms + 1u) / 2u;
-    row.channel         = gSessionChannel;
-    row.flags           = gSessionFlags;
-    row.meter           = gSessionSMeter;
-    row.battVolt        = gSessionBattVolt;
-    RXTX_LOG_SetK5ViewerChannelName(&row, gSessionChannel);
-    memcpy(payload + offset, &row, sizeof(row));
-    offset += sizeof(row);
+    uint8_t rowsSent = 0;
+    uint32_t nextBefore = 0;
+    bool trafficLimitReached = false;
 
-    // History rows (64 rows)
-    if (gLogHasTraffic) {
+    if (gLogHasTraffic && beforeSeq > 0) {
         uint16_t slot = RXTX_LOG_AddressToSlot(gNextFlashAddress);
-        uint8_t rowsSent = 0;
 
-        for (uint16_t scanned = 0; scanned < RXTX_LOG_SLOT_COUNT && rowsSent < RXTX_LOG_K5VIEWER_ROW_COUNT; scanned++) {
+        for (uint16_t scanned = 0; scanned < RXTX_LOG_SLOT_COUNT && rowsSent < count; scanned++) {
             RXTX_LogFlashEntry_t flashEntry;
 
             slot = RXTX_LOG_PreviousSlot(slot);
@@ -877,21 +883,67 @@ void RXTX_LOG_SendK5ViewerPacket(void (*send)(const uint8_t *data, uint16_t size
                 continue;
 
             if (RXTX_LOG_IsTrafficFlags(flashEntry.flags) &&
-                (gNextTrafficSequence - 1u - flashEntry.trafficSeq) >= RXTX_LOG_VISIBLE_COUNT)
+                (gNextTrafficSequence - 1u - flashEntry.trafficSeq) >= RXTX_LOG_VISIBLE_COUNT) {
+                trafficLimitReached = true;
                 break;
+            }
 
-            RXTX_LOG_CopyK5ViewerRow((RXTX_LogK5ViewerRow_t *)(payload + offset), &flashEntry);
-            offset += sizeof(row);
-            rowsSent++;
+            if (flashEntry.sequence < beforeSeq) {
+                RXTX_LOG_CopyK5ViewerRow(&row, &flashEntry);
+                send((const uint8_t *)&row, sizeof(row));
+                rowsSent++;
+                nextBefore = flashEntry.sequence;
+            }
         }
     }
 
-    // Zero-pad remaining rows to fill the packet
-    while (offset < sizeof(payload)) {
-        payload[offset++] = 0;
+    // A short page means the log ran out. Reaching 512 traffic rows is
+    // equally final; session markers never consume one of those rows.
+    if (rowsSent < count || trafficLimitReached)
+        nextBefore = 0;
+
+    memset(&row, 0, sizeof(row));
+    while (rowsSent++ < count)
+        send((const uint8_t *)&row, sizeof(row));
+
+    return nextBefore;
+}
+
+// Stream the whole packet through `send` without ever holding it in RAM:
+// peak stack stays at one row plus one flash entry. The row area is always
+// full-length; rowCount is not known before scanning, so the header
+// announces every slot and padding rows are all-zero (the viewer already
+// skips rows with frequency == 0).
+void RXTX_LOG_SendK5ViewerPacket(void (*send)(const uint8_t *data, uint16_t size))
+{
+    RXTX_LogK5ViewerRow_t row;
+
+    uint8_t header[4] = {RXTX_LOG_K5VIEWER_VERSION, 0, RXTX_LOG_K5VIEWER_ROW_COUNT, 0};
+    if (!RXTX_LOG_IsEnabled()) {
+        header[1] = RXTX_LOG_K5VIEWER_STATUS_DISABLED;
+        header[2] = 0;
+        send(header, sizeof(header));
+        return;
     }
 
-    RXTX_LOG_SendFramed(0x05, payload, sizeof(payload), send);
+    if (gSessionActive)
+        header[1] |= RXTX_LOG_K5VIEWER_STATUS_ACTIVE;
+    if (gLogHasTraffic)
+        header[1] |= RXTX_LOG_K5VIEWER_STATUS_HAS_TRAFFIC;
+    if (gClearActive)
+        header[1] |= RXTX_LOG_K5VIEWER_STATUS_CLEARING;
+    send(header, sizeof(header));
+
+    row.frequency       = gSessionFrequency;
+    row.trafficSeq      = gNextSequence;
+    row.durationSeconds = (gSessionTicks500ms + 1u) / 2u;
+    row.channel         = gSessionChannel;
+    row.flags           = gSessionFlags;
+    row.meter           = gSessionSMeter;
+    row.battVolt        = gSessionBattVolt;
+    RXTX_LOG_SetK5ViewerChannelName(&row, gSessionChannel, gSessionFlags);
+    send((const uint8_t *)&row, sizeof(row));
+    RXTX_LOG_SendK5ViewerRows(gNextSequence, RXTX_LOG_K5VIEWER_ROW_COUNT, send);
 }
 
 uint32_t RXTX_LOG_SendK5ViewerHistoryPage(uint32_t beforeSeq, void (*send)(const uint8_t *data, uint16_t size))
@@ -903,51 +955,13 @@ uint32_t RXTX_LOG_SendK5ViewerHistoryPage(uint32_t beforeSeq, void (*send)(const
                         ? gNextSequence - RXTX_LOG_K5VIEWER_ROW_COUNT
                         : 0;
 
-    // History: 64 rows * 25 bytes = 1600 bytes, type 0x06.
-    uint8_t payload[RXTX_LOG_K5VIEWER_HISTORY_PACKET_SIZE];
-    uint16_t offset = 0;
-
-    if (gLogHasTraffic && beforeSeq > 0) {
-        uint16_t slot = RXTX_LOG_AddressToSlot(gNextFlashAddress);
-        uint8_t rowsSent = 0;
-
-        for (uint16_t scanned = 0; scanned < RXTX_LOG_SLOT_COUNT && rowsSent < RXTX_LOG_K5VIEWER_HISTORY_ROW_COUNT; scanned++) {
-            RXTX_LogFlashEntry_t flashEntry;
-
-            slot = RXTX_LOG_PreviousSlot(slot);
-            PY25Q16_ReadBuffer(RXTX_LOG_SlotToAddress(slot), &flashEntry, sizeof(flashEntry));
-
-            if (RXTX_LOG_IsBlankFlashEntry(&flashEntry))
-                break;
-            if (!RXTX_LOG_IsValidFlashEntry(&flashEntry))
-                continue;
-
-            if (RXTX_LOG_IsTrafficFlags(flashEntry.flags) &&
-                (gNextTrafficSequence - 1u - flashEntry.trafficSeq) >= RXTX_LOG_VISIBLE_COUNT)
-                break;
-
-            if (flashEntry.sequence < beforeSeq) {
-                RXTX_LOG_CopyK5ViewerRow((RXTX_LogK5ViewerRow_t *)(payload + offset), &flashEntry);
-                offset += sizeof(RXTX_LogK5ViewerRow_t);
-                rowsSent++;
-            }
-        }
-    }
-
-    // Zero-pad remaining rows
-    while (offset < sizeof(payload)) {
-        payload[offset++] = 0;
-    }
-
-    RXTX_LOG_SendFramed(0x06, payload, sizeof(payload), send);
-    return 0;
+    return RXTX_LOG_SendK5ViewerRows(beforeSeq, RXTX_LOG_K5VIEWER_HISTORY_ROW_COUNT, send);
 }
-
 #endif
 
 static void RXTX_LOG_CaptureSession(uint8_t flags, const VFO_Info_t *vfo)
 {
-    if (gClearActive)
+    if (gSuspended || !RXTX_LOG_IsEnabled() || vfo == NULL || gClearActive)
         return;
 
     const uint32_t frequency = (flags & RXTX_LOG_FLAG_TX) ? vfo->pTX->Frequency : vfo->pRX->Frequency;
@@ -986,6 +1000,7 @@ void RXTX_LOG_Init(void)
     gLogCursor        = 0;
     gLogFilter        = RXTX_LOG_FILTER_ALL;
     gSessionActive    = false;
+    gSuspended        = false;
     gSessionSMeter    = RXTX_LOG_SMETER_UNKNOWN;
     gSessionBattVolt  = RXTX_LOG_BATT_UNKNOWN;
     gClearActive        = false;
@@ -1033,15 +1048,13 @@ void RXTX_LOG_Init(void)
 
     // Skip the marker if the log already ends with one (e.g. repeated
     // reboots with no RX/TX in between) to avoid stacking empty separators.
-    if (!found || (lastEntryFlags & RXTX_LOG_FLAG_SESSION) == 0)
+    if (RXTX_LOG_IsEnabled() &&
+        (!found || (lastEntryFlags & RXTX_LOG_FLAG_SESSION) == 0))
         RXTX_LOG_WriteSessionMarker();
 }
 
 void RXTX_LOG_BeginRx(const VFO_Info_t *vfo, FUNCTION_Type_t function)
 {
-    if (vfo == NULL)
-        return;
-
     uint8_t flags = 0;
     if (function == FUNCTION_MONITOR)
         flags |= RXTX_LOG_FLAG_MONITOR;
@@ -1051,9 +1064,6 @@ void RXTX_LOG_BeginRx(const VFO_Info_t *vfo, FUNCTION_Type_t function)
 
 void RXTX_LOG_BeginTx(const VFO_Info_t *vfo)
 {
-    if (vfo == NULL)
-        return;
-
     RXTX_LOG_CaptureSession(RXTX_LOG_FLAG_TX, vfo);
 }
 
@@ -1062,10 +1072,8 @@ void RXTX_LOG_EndActive(void)
     if (!gSessionActive)
         return;
 
-    if (gClearActive) {
-        gSessionActive   = false;
-        gSessionSMeter   = RXTX_LOG_SMETER_UNKNOWN;
-        gSessionBattVolt = RXTX_LOG_BATT_UNKNOWN;
+    if (!RXTX_LOG_IsEnabled() || gClearActive) {
+        RXTX_LOG_ResetActiveSession();
         return;
     }
 
@@ -1079,27 +1087,31 @@ void RXTX_LOG_EndActive(void)
     entry.durationSeconds = (gSessionTicks500ms + 1u) / 2u;
     entry.channel         = gSessionChannel;
     entry.flags           = gSessionFlags;
+#ifdef ENABLE_FEAT_F4HWN_MULTIBOOT
+    entry.flags          |= (uint8_t)((MB_GetActiveBank() + 1u) << RXTX_LOG_CONFIG_BANK_SHIFT);
+#endif
     entry.sMeter          = gSessionSMeter;
     entry.battVolt        = gSessionBattVolt;
 
     if (entry.durationSeconds == 0)
         entry.durationSeconds = 1;
 
-    // Defer the flash write to the background task to avoid blocking the UI
-    // during sector erase (~300ms). Process any existing pending write first
-    // to avoid data loss.
-    if (gPendingWrite) {
-        RXTX_LOG_WriteEntry(&gPendingEntry);
-        gPendingWrite = false;
-    }
-    gPendingEntry = entry;
-    gPendingWrite = true;
+    RXTX_LOG_WriteEntry(&entry);
     gLogHasTraffic = true;
     RXTX_LOG_InvalidateViewCache();
 
-    gSessionActive   = false;
-    gSessionSMeter   = RXTX_LOG_SMETER_UNKNOWN;
-    gSessionBattVolt = RXTX_LOG_BATT_UNKNOWN;
+    RXTX_LOG_ResetActiveSession();
+}
+
+void RXTX_LOG_Suspend(void)
+{
+    RXTX_LOG_EndActive();
+    gSuspended = true;
+}
+
+void RXTX_LOG_Resume(void)
+{
+    gSuspended = false;
 }
 
 void RXTX_LOG_Tick500ms(void)
@@ -1113,6 +1125,9 @@ void RXTX_LOG_Tick500ms(void)
 
 void RXTX_LOG_Task10ms(void)
 {
+    if (gSessionActive && !RXTX_LOG_IsEnabled())
+        RXTX_LOG_ResetActiveSession();
+
     if (gClearActive) {
         RXTX_LOG_StepClear();
     } else if (gViewScanActive) {
@@ -1123,18 +1138,6 @@ void RXTX_LOG_Task10ms(void)
 
     if (gScreenToDisplay == DISPLAY_RXTX_LOG)
         gUpdateDisplay = true;
-}
-
-// Flush the deferred flash write from RXTX_LOG_EndActive().
-// Called from APP_TimeSlice10ms() AFTER the UI rendering (audio bar,
-// screen saver, display update) so that the potential ~300ms sector
-// erase does not stall the UI.
-void RXTX_LOG_FlushPendingWrite(void)
-{
-    if (gPendingWrite) {
-        RXTX_LOG_WriteEntry(&gPendingEntry);
-        gPendingWrite = false;
-    }
 }
 
 void ACTION_RxTxLog(void)
@@ -1192,7 +1195,7 @@ void RXTX_LOG_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         } else if (gLogCursor > 0) {
             RXTX_LOG_StartCursorView(gLogCursor - 1u);
         }
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
         else {
             RXTX_LOG_GoToLastRow();
         }
@@ -1208,7 +1211,7 @@ void RXTX_LOG_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
             gUpdateDisplay = true;
             break;
         }
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
         gViewWrapPending = false;
 #endif
         RXTX_LOG_EnsureViewCache();
@@ -1216,7 +1219,7 @@ void RXTX_LOG_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
             if (gViewScanActive)
                 break;
 
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
             if (gViewTotalKnown && gViewTotalRows > 1u) {
                 uint16_t next = gLogCursor + 1u;
                 if (next >= gViewTotalRows)
@@ -1298,7 +1301,7 @@ static void RXTX_LOG_FormatTitle(const RXTX_LogEntry_t *entry, char *buffer)
     buffer[0] = 0;
 
     if (entry->channel != RXTX_LOG_CHANNEL_NONE)
-        SETTINGS_FetchChannelName(buffer, entry->channel);
+        RXTX_LOG_FetchChannelName(buffer, entry->channel, entry->flags);
 
     if (buffer[0] == 0)
         RXTX_LOG_FormatFrequency(entry->frequency, buffer);
@@ -1372,7 +1375,7 @@ void UI_DisplayRxTxLog(void)
     }
 
     for (uint8_t row = 0; row < RXTX_LOG_VIEW_CACHE_COUNT; row++) {
-#ifdef ENABLE_FEAT_N7SIX_RXTX_LOG_WRAP  
+#ifdef ENABLE_FEAT_F4HWN_RXTX_LOG_WRAP
         if (gViewCacheCircular) {
             if (row >= gViewCacheCount)
                 break;

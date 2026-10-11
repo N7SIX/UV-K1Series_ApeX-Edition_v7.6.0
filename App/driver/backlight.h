@@ -23,20 +23,12 @@
 extern uint16_t gBacklightCountdown_500ms;
 extern uint8_t gBacklightBrightness;
 
-#ifdef ENABLE_FEAT_N7SIX
+#ifdef ENABLE_FEAT_F4HWN
     extern const uint8_t value[11];
 #endif
 
-#ifdef ENABLE_FEAT_N7SIX_SLEEP
+#ifdef ENABLE_FEAT_F4HWN_SLEEP
     extern uint16_t gSleepModeCountdown_500ms;
-#endif
-
-#ifdef ENABLE_BLMIN_TMP_OFF
-typedef enum {
-    BLMIN_STAT_ON,
-    BLMIN_STAT_OFF,
-    BLMIN_STAT_UNKNOWN
-} BLMIN_STAT_t;
 #endif
 
 void BACKLIGHT_InitHardware();

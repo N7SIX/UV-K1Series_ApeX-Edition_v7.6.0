@@ -44,10 +44,6 @@ typedef enum  {
 
 extern const freq_band_table_t frequencyBandTable[];
 
-// Global frequency limits (derived from frequencyBandTable)
-#define F_MIN  frequencyBandTable[0].lower
-#define F_MAX  frequencyBandTable[BAND_N_ELEM - 1].upper
-
 typedef enum {
 // standard steps
     STEP_2_5kHz,
@@ -85,40 +81,14 @@ extern const uint16_t gStepFrequencyTable[];
     extern const uint32_t NoaaFrequencyTable[10];
 #endif
 
-/** @brief Map a frequency (Hz) to its operating band index. */
 FREQUENCY_Band_t FREQUENCY_GetBand(uint32_t Frequency);
-
-/** @brief Interpolate output power between low/mid/high calibration points.
- *  @param TxpLow   Power level at or below LowerLimit.
- *  @param TxpMid   Power level at Middle.
- *  @param TxpHigh  Power level at or above UpperLimit.
- *  @param LowerLimit Frequency at which TxpLow is used.
- *  @param Middle   Frequency at which TxpMid is used.
- *  @param UpperLimit Frequency at which TxpHigh is used.
- *  @param Frequency Target frequency for interpolation.
- *  @return Calculated power level.
- */
 uint8_t          FREQUENCY_CalculateOutputPower(uint8_t TxpLow, uint8_t TxpMid, uint8_t TxpHigh, int32_t LowerLimit, int32_t Middle, int32_t UpperLimit, int32_t Frequency);
-
-/** @brief Round a frequency to the nearest step size (Hz). */
 uint32_t         FREQUENCY_RoundToStep(uint32_t freq, uint16_t step);
 
-/** @brief Convert a sorted step index to the corresponding STEP_Setting_t enum. */
 STEP_Setting_t   FREQUENCY_GetStepIdxFromSortedIdx(uint8_t sortedIdx);
-
-/** @brief Convert a STEP_Setting_t enum to its sorted index. */
 uint32_t         FREQUENCY_GetSortedIdxFromStepIdx(uint8_t step);
 
-/** @brief Return 0 if Frequency is allowed for TX, -1 otherwise. */
 int32_t          TX_freq_check(uint32_t Frequency);
-
-/** @brief Return 0 if Frequency is allowed for RX, -1 otherwise. */
 int32_t          RX_freq_check(uint32_t Frequency);
-
-/** @brief Clamp a frequency to the global band limits [F_MIN, F_MAX]. */
-uint32_t         FREQUENCIES_ClampGlobal(uint32_t freq);
-
-/** @brief Clamp a frequency to the limits of a specific band. */
-uint32_t         FREQUENCIES_ClampToBand(uint32_t freq, FREQUENCY_Band_t band);
 
 #endif

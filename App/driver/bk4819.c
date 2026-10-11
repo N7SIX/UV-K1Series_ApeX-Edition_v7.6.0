@@ -21,7 +21,6 @@
 #include "settings.h"
 #include "misc.h"
 
-#include "mdc1200.h"
 #include "audio.h"
 
 #include "driver/bk4819.h"
@@ -40,25 +39,6 @@ static const uint8_t DTMF_TONE1_GAIN = 65;
 static const uint8_t DTMF_TONE2_GAIN = 93;
 
 static uint16_t gBK4819_GpioOutState;
-
-// Delay used by the bit-banged BK4819 SPI.
-//
-// The SysTick-based delay (SYSTICK_DelayUs(1)) costs ~50-70 CPU cycles of
-// polling overhead per call, making each bit period ~4µs. This inline NOP
-// delay (~500ns at 48MHz) yields a ~2MHz SPI clock - well within the BK4819's
-// limits (the DualTachyon original ran this bus with no delays at all) and
-// makes register writes/reads ~2.5-3x faster, which directly speeds up RSSI
-// polling, scanning and spectrum sweeps.
-// Disable via ENABLE_FAST_BK4819_SPI=OFF to restore SYSTICK_DelayUs(1).
-#ifdef ENABLE_FAST_BK4819_SPI
-    #define SHORT_DELAY()                                                          \
-      __asm volatile("nop\n nop\n nop\n nop\n nop\n nop\n"                         \
-                     "nop\n nop\n nop\n nop\n nop\n nop\n"                         \
-                     "nop\n nop\n nop\n nop\n nop\n nop\n"                         \
-                     "nop\n nop\n nop\n nop\n nop\n nop\n")
-#else
-    #define SHORT_DELAY() SYSTICK_DelayUs(1)
-#endif
 
 bool gRxIdleMode;
 
@@ -190,16 +170,16 @@ static uint16_t BK4819_ReadU16(void)
     uint16_t     Value;
 
     SDA_SetDir(false);
-    SHORT_DELAY();
+    SYSTICK_DelayUs(1);
     Value = 0;
     for (i = 0; i < 16; i++)
     {
         Value <<= 1;
         Value |= SDA_ReadInput();
         SCL_Set();
-        SHORT_DELAY();
+        SYSTICK_DelayUs(1);
         SCL_Reset();
-        SHORT_DELAY();
+        SYSTICK_DelayUs(1);
     }
     SDA_SetDir(true);
 
@@ -213,14 +193,14 @@ uint16_t BK4819_ReadRegister(BK4819_REGISTER_t Register)
     CS_Release();
     SCL_Reset();
 
-    SHORT_DELAY();
+    SYSTICK_DelayUs(1);
 
     CS_Assert();
     BK4819_WriteU8(Register | 0x80);
     Value = BK4819_ReadU16();
     CS_Release();
 
-    SHORT_DELAY();
+    SYSTICK_DelayUs(1);
 
     SCL_Set();
     SDA_Set();
@@ -233,20 +213,20 @@ void BK4819_WriteRegister(BK4819_REGISTER_t Register, uint16_t Data)
     CS_Release();
     SCL_Reset();
 
-    SHORT_DELAY();
+    SYSTICK_DelayUs(1);
 
     CS_Assert();
     BK4819_WriteU8(Register);
 
-    SHORT_DELAY();
+    SYSTICK_DelayUs(1);
 
     BK4819_WriteU16(Data);
 
-    SHORT_DELAY();
+    SYSTICK_DelayUs(1);
 
     CS_Release();
 
-    SHORT_DELAY();
+    SYSTICK_DelayUs(1);
 
     SCL_Set();
     SDA_Set();
@@ -264,14 +244,14 @@ void BK4819_WriteU8(uint8_t Data)
         else
             SDA_Set();
 
-        SHORT_DELAY();
+        SYSTICK_DelayUs(1);
         SCL_Set();
-        SHORT_DELAY();
+        SYSTICK_DelayUs(1);
 
         Data <<= 1;
 
         SCL_Reset();
-        SHORT_DELAY();
+        SYSTICK_DelayUs(1);
     }
 }
 
@@ -287,14 +267,14 @@ void BK4819_WriteU16(uint16_t Data)
         else
             SDA_Set();
 
-        SHORT_DELAY();
+        SYSTICK_DelayUs(1);
         SCL_Set();
 
         Data <<= 1;
 
-        SHORT_DELAY();
+        SYSTICK_DelayUs(1);
         SCL_Reset();
-        SHORT_DELAY();
+        SYSTICK_DelayUs(1);
     }
 }
 
@@ -721,33 +701,8 @@ void BK4819_SetFilterBandwidth(const BK4819_FilterBandwidth_t Bandwidth, const b
     BK4819_WriteRegister(BK4819_REG_43, val);
 }
 
-#ifdef ENABLE_PA_PROTECTION
-// Safe TX frequency ranges for UV-K1/K5 V3 hardware
-// 2m band:   144-148 MHz
-// 70cm band: 430-440 MHz
-// Extended but safe: 136-174 MHz, 400-520 MHz
-#define PA_SAFE_TX_LOWER 13600000
-#define PA_SAFE_TX_UPPER 52000000
-
-// Maximum safe bias for out-of-band TX (reduced power)
-#define PA_MAX_SAFE_BIAS  80
-#endif
-
 void BK4819_SetupPowerAmplifier(const uint8_t bias, const uint32_t frequency)
 {
-    uint8_t safe_bias = bias;
-
-#ifdef ENABLE_PA_PROTECTION
-    // FIX #6: PA protection - reduce power if frequency is outside safe TX range
-    // This prevents damage to the PA transistor from extended out-of-band TX
-    if (frequency < PA_SAFE_TX_LOWER || frequency > PA_SAFE_TX_UPPER)
-    {
-        // Frequency is outside safe range - cap bias to safe level
-        if (safe_bias > PA_MAX_SAFE_BIAS)
-            safe_bias = PA_MAX_SAFE_BIAS;
-    }
-#endif
-
     // REG_36 <15:8> 0 PA Bias output 0 ~ 3.2V
     //               255 = 3.2V
     //                 0 = 0V
@@ -767,7 +722,7 @@ void BK4819_SetupPowerAmplifier(const uint8_t bias, const uint32_t frequency)
     //                                  280MHz       g1=1  g2=0 (-14.9dBm),  g1=4  g2=2 (0.13dBm)
     const uint8_t gain   = (frequency < 28000000) ? (1u << 3) | (0u << 0) : (4u << 3) | (2u << 0);
     const uint8_t enable = 1;
-    BK4819_WriteRegister(BK4819_REG_36, (safe_bias << 8) | (enable << 7) | (gain << 0));
+    BK4819_WriteRegister(BK4819_REG_36, (bias << 8) | (enable << 7) | (gain << 0));
 }
 
 void BK4819_SetFrequency(uint32_t Frequency)
@@ -1128,9 +1083,8 @@ void BK4819_TurnsOffTones_TurnsOnRX(void)
     BK4819_WriteRegister(BK4819_REG_70, 0);
     BK4819_SetAF(BK4819_AF_MUTE);
 
-    // Keep TX muted while reconfiguring for RX
-    // This prevents audible transients during register switching
-    
+    BK4819_ExitTxMute();
+
     BK4819_WriteRegister(BK4819_REG_30, 0);
     BK4819_WriteRegister(BK4819_REG_30,
         BK4819_REG_30_ENABLE_VCO_CALIB |
@@ -1139,15 +1093,9 @@ void BK4819_TurnsOffTones_TurnsOnRX(void)
         BK4819_REG_30_ENABLE_DISC_MODE |
         BK4819_REG_30_ENABLE_PLL_VCO   |
         BK4819_REG_30_ENABLE_RX_DSP);
-
-    // Allow RX PLL and DSP to stabilize before un-muting
-    SYSTEM_DelayMs(50);
-
-    // Now safe to un-mute - RX path is fully configured
-    BK4819_ExitTxMute();
 }
 
-#ifdef ENABLE_AIRCOPY
+#if defined(ENABLE_AIRCOPY) || defined(ENABLE_FEAT_F4HWN_OVERLAY_APPS)
     void BK4819_SetupAircopy(void)
     {
         BK4819_WriteRegister(BK4819_REG_70, 0x00E0);    // Enable Tone2, tuning gain 48
@@ -1728,10 +1676,12 @@ uint8_t BK4819_GetCTCType(void)
     return (BK4819_ReadRegister(BK4819_REG_0C) >> 10) & 3u;
 }
 
-void BK4819_SendFSKData(uint16_t *pData)
+void BK4819_SendFSKData(uint16_t *pData, uint8_t words)
 {
     unsigned int i;
-    uint8_t Timeout = 200;
+    // TX-finished poll ceiling (units of 5 ms): must exceed the frame's on-air
+    // time (~3 ticks/word at 1200 bps) or a large frame is cut off mid-send.
+    uint16_t Timeout = (uint16_t)words * 3u + 100u;
 
     SYSTEM_DelayMs(20);
 
@@ -1739,7 +1689,7 @@ void BK4819_SendFSKData(uint16_t *pData)
     BK4819_WriteRegister(BK4819_REG_59, 0x8068);
     BK4819_WriteRegister(BK4819_REG_59, 0x0068);
 
-    for (i = 0; i < 36; i++)
+    for (i = 0; i < words; i++)
         BK4819_WriteRegister(BK4819_REG_5F, pData[i]);
 
     SYSTEM_DelayMs(20);
@@ -1791,9 +1741,11 @@ static void BK4819_PlayRogerNormal(BK4819_FilterBandwidth_t Bandwidth)
     BK4819_EnterTxMute();
     BK4819_SetAF(BK4819_AF_MUTE);
 
-    const uint8_t rogerToneGain = (Bandwidth == BK4819_FILTER_BW_WIDE) ? 32u : 67u;
+    const uint8_t rogerToneGain = (Bandwidth == BK4819_FILTER_BW_WIDE) ? 32u : 66u;
+
     if (Bandwidth == BK4819_FILTER_BW_WIDE)
         BK4819_SetFilterBandwidth(BK4819_FILTER_BW_NARROW, true);
+
     BK4819_WriteRegister(BK4819_REG_71, scale_freq(tone1_Hz));
 
     BK4819_EnableTXLink();
@@ -1802,6 +1754,7 @@ static void BK4819_PlayRogerNormal(BK4819_FilterBandwidth_t Bandwidth)
     BK4819_WriteRegister(BK4819_REG_70,
         BK4819_REG_70_ENABLE_TONE1 |
         (rogerToneGain << BK4819_REG_70_SHIFT_TONE1_TUNING_GAIN));
+
     BK4819_ExitTxMute();
     SYSTEM_DelayMs(80);
     BK4819_EnterTxMute();
@@ -1841,7 +1794,7 @@ void BK4819_PlayRogerMDC(void)
         { BK4819_REG_59, 0x8068 },  // 4 byte sync length, 6 byte preamble, clear TX FIFO
         { BK4819_REG_59, 0x0068 },  // Same, but clear TX FIFO is now unset (clearing done)
         { BK4819_REG_5A, 0x5555 },  // First two sync bytes
-        { BK4819_REG_5B, 0x5555 },  // End of sync bytes. Total 4 bytes: 5555 5555 (no phase reversal)
+        { BK4819_REG_5B, 0x55AA },  // End of sync bytes. Total 4 bytes: 555555aa
         { BK4819_REG_5C, 0xAA30 },  // Disable CRC
     };
 
@@ -1869,125 +1822,13 @@ void BK4819_PlayRogerMDC(void)
     BK4819_WriteRegister(BK4819_REG_58, 0x0000);
 }
 
-/*
- * BK4819_TransmitMDC1200Frame: Core RF transmission function for MDC-1200 frames
- * 
- * This function handles all RF-level transmission details:
- * - Register configuration for 1200 bps FSK
- * - FIFO initialization and frame loading
- * - TX timing and ramp-up/ramp-down
- * - Single-burst MDC-1200 transmission (the supported protocol mode)
- * 
- * v7.6.10A: Parameterized, error-reporting RF transmission
- * Protocol Reference: BK4819_MDC1200_CONFIGURATION.md (register justification)
- */
-int BK4819_TransmitMDC1200Frame(const uint8_t *frame, size_t frame_len)
-{
-    struct reg_value {
-        BK4819_REGISTER_t reg;
-        uint16_t value;
-    };
-
-    uint16_t fifo_words[MDC1200L_FIFO_WORD_COUNT];
-    size_t fifo_word_count = 0;
-    unsigned int i;
-    int status;
-    uint16_t reg_5d;
-    uint16_t tx_ms;
-
-    /* Validate input: accept standard 26-byte and long 46-byte frames. */
-    if (frame == NULL)
-        return MDC1200_ERROR_INVALID_PARAMS;
-    if (frame_len == MDC1200_FRAME_LENGTH) {           /* 7-byte preamble */
-        reg_5d  = 0x1A00;                              /* 0x1A = 26 TX FIFO bytes */
-        tx_ms   = 280;                                 /* 26*8/1200 ~= 173 ms + ramp */
-    } else if (frame_len == MDC1200L_FRAME_LENGTH) {  /* 27-byte composite preamble */
-        reg_5d  = 0x2E00;                              /* 0x2E = 46 TX FIFO bytes */
-        tx_ms   = 400;                                 /* 46*8/1200 ~= 307 ms + ramp */
-    } else {
-        return MDC1200_ERROR_INVALID_LENGTH;
-    }
-
-    /* Load the FULL frame (preamble included) into the TX FIFO.
-     * This is the on-air-proven framing from the Roger-menu builds: the
-     * preamble-stripped variant (REG_5D 0x1400/0x2800, sync 5555 5555)
-     * produced no audible preamble/data burst on real hardware and must
-     * not be reintroduced. */
-    status = MDC1200_BuildFifoWords(frame, frame_len, fifo_words,
-                                    ARRAY_SIZE(fifo_words), &fifo_word_count);
-    if (status != 0) {
-        return MDC1200_ERROR_FIFO_WRITE_FAILED;
-    }
-
-    /*
-     * MDC-1200 RF Configuration for BK4819
-     * Reference: BK4819_MDC1200_CONFIGURATION.md (v7.6.10A)
-     *
-     * Register mapping:
-     * - REG_58 (0x37C3): FSK enable, RX/TX bandwidth FFSK 1200/1800
-     * - REG_72 (0x3065): Tone-2 frequency = 1200 Hz (calculation: 1200 * 65536 / 13MHz)
-     * - REG_70 (0x00E0): Tone-2 gain and enable
-     * - REG_5D: TX FIFO byte count, set per-frame below (0x1400 / 0x2800)
-     * - REG_5A/5B/5C: FIFO sync patterns for frame detection
-     */
-    struct reg_value RogerMDC1200_Configuration[] = {
-        { BK4819_REG_58, 0x37C3 },  // FSK Enable, RX Bandwidth FFSK 1200/1800 (see doc)
-        { BK4819_REG_72, 0x3065 },  // Set Tone-2 to 1200Hz (doc ref: REG_72 calculation)
-        { BK4819_REG_70, 0x00E0 },  // Enable Tone-2 and Set Tone2 Gain (doc ref: REG_70)
-        { BK4819_REG_59, 0x8068 },  // Clear TX FIFO
-        { BK4819_REG_59, 0x0068 },  // Clear TX FIFO bit unset
-        { BK4819_REG_5A, 0x5555 },  // Standard MDC-1200 sync prefix pattern (doc ref)
-        { BK4819_REG_5B, 0x55AA },  // Sync word - 0x55AA is the on-air-proven audible-era
-                                    // value (archive 6a8acd45). The unvalidated 0x5555
-                                    // "phase-reversal fix" coincided with silent bursts.
-                                    // Do not change without on-air validation.
-        { BK4819_REG_5C, 0xAA30 },  // FIFO/sync configuration (doc ref: REG_5C)
-    };
-
-    BK4819_SetAF(BK4819_AF_MUTE);
-
-    /* Apply RF configuration */
-    for (i = 0; i < ARRAY_SIZE(RogerMDC1200_Configuration); i++) {
-        BK4819_WriteRegister(RogerMDC1200_Configuration[i].reg,
-                           RogerMDC1200_Configuration[i].value);
-    }
-
-    /* Load preamble-stripped frame into TX FIFO */
-    for (i = 0; i < fifo_word_count; ++i) {
-        BK4819_WriteRegister(BK4819_REG_5F, fifo_words[i]);
-    }
-
-    /* Select the hardware packet length (TX FIFO bytes, preamble excluded). */
-    BK4819_WriteRegister(BK4819_REG_5D, reg_5d);
-
-    SYSTEM_DelayMs(20);
-    BK4819_WriteRegister(BK4819_REG_59, 0x0868);  // Enable TX
-
-    /*
-     * Single-burst TX timing: on-air bytes * 8 / 1200 bps + RF ramp/guard.
-     * Standard: HW(11) + FIFO(20) = 31 bytes ~= 207 ms (260 ms w/ ramp);
-     * Long:     HW(11) + FIFO(40) = 51 bytes ~= 340 ms (400 ms w/ ramp).
-     */
-    SYSTEM_DelayMs(tx_ms);
-    BK4819_WriteRegister(BK4819_REG_59, 0x0068);  // Disable TX
-
-    BK4819_WriteRegister(BK4819_REG_70, 0x0000);  // Disable tone
-    BK4819_WriteRegister(BK4819_REG_58, 0x0000);  // Disable FSK
-
-    return MDC1200_ERROR_NONE;
-}
-
-// Updated dispatcher - v7.6.10A: returns int for error reporting
-int BK4819_PlayRoger(BK4819_FilterBandwidth_t Bandwidth)
+void BK4819_PlayRoger(BK4819_FilterBandwidth_t Bandwidth)
 {
     if (gEeprom.ROGER == ROGER_MODE_ROGER) {
         BK4819_PlayRogerNormal(Bandwidth);
-        return MDC1200_ERROR_NONE;
     } else if (gEeprom.ROGER == ROGER_MODE_MDC) {
         BK4819_PlayRogerMDC();
-        return MDC1200_ERROR_NONE;
     }
-    return MDC1200_ERROR_NONE;
 }
 
 void BK4819_Enable_AfDac_DiscMode_TxDsp(void)
