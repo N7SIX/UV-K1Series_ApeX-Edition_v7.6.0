@@ -32,7 +32,6 @@
     #include "apps/app_overlay.h"
 #endif
 #include "app/scanner.h"
-#include "audio.h"
 #ifdef ENABLE_FMRADIO_EMBEDDED
     #include "driver/bk1080.h"
 #endif
@@ -116,7 +115,6 @@ void (*const action_opt_table[ACTION_OPT_LEN])(void) = {
         [ACTION_OPT_POWER_HIGH] = &ACTION_Power_High,
         [ACTION_OPT_REMOVE_OFFSET] = &ACTION_Remove_Offset,
     #endif
-#endif
 #if defined(ENABLE_FEAT_F4HWN_BEAM) || defined(ENABLE_FEAT_F4HWN_OVERLAY_APPS)
     [ACTION_OPT_BEAM] = &ACTION_Beam,
 #endif
@@ -129,6 +127,8 @@ void (*const action_opt_table[ACTION_OPT_LEN])(void) = {
 #if defined(ENABLE_FEAT_F4HWN_BEACON) || defined(ENABLE_FEAT_F4HWN_OVERLAY_APPS)
     [ACTION_OPT_BEACON] = &ACTION_Beacon,
 #endif
+#endif
+
 };
 
 static_assert(ARRAY_SIZE(action_opt_table) == ACTION_OPT_LEN);
@@ -661,7 +661,6 @@ void ACTION_Vox(void)
 }
 #endif
 
-#ifdef ENABLE_FEAT_F4HWN
 void ACTION_Update(void)
 {
     gSaveRxMode          = false;
@@ -846,4 +845,4 @@ void ACTION_Remove_Offset(void)
     ACTION_ToggleVfoSetting(&gRemoveOffset);
 }
 #endif
-#endif
+

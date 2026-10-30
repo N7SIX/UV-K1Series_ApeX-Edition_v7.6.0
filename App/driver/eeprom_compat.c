@@ -145,6 +145,7 @@ static void AddrTranslate(uint16_t EEPROM_Addr, uint16_t Size, uint32_t *PY25Q16
     return;
 
 HIT:
+{
     const uint16_t Off = EEPROM_Addr - p->EEPROM_Addr;
     const uint16_t Rem = p->Size - Off;
     if (Size > Rem)
@@ -159,4 +160,5 @@ HIT:
     {
         *End_out = (Size == Rem);
     }
+}
 }

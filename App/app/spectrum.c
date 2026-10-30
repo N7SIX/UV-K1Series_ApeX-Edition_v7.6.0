@@ -385,12 +385,31 @@ void SetState(State state)
 
 // Radio functions
 
+// Persistent AF field (bits 11:8): USB uses BASEBAND2, AM/FM use FM.
+// Preserved across mute to avoid leaving digital modes in BASEBAND1.
+static uint16_t savedAFField = (BK4819_AF_FM << 8);
+
 static void ToggleAFBit(bool on)
 {
     uint16_t reg = BK4819_ReadRegister(BK4819_REG_47);
-    reg &= ~(1 << 8);
-    if (on)
-        reg |= on << 8;
+
+    if (!on)
+    {
+        // Save full AF field, then write MUTE (USB: BASEBAND2).
+        savedAFField = reg & 0x0F00u;
+        reg &= ~0x0F00u;
+        reg |= (BK4819_AF_MUTE << 8);
+    }
+    else
+    {
+        uint16_t want = (BK4819_AF_FM << 8);
+        if (settings.modulationType == MODULATION_USB)
+            want = (BK4819_AF_BASEBAND2 << 8);
+        else if (settings.modulationType >= MODULATION_UKNOWN)
+            want = savedAFField; // never re-clobber an unknown/RAW path
+        reg &= ~0x0F00u;
+        reg |= want;
+    }
     BK4819_WriteRegister(BK4819_REG_47, reg);
 }
 
@@ -583,11 +602,29 @@ static void TuneToPeak()
     scanInfo.i = peak.i;
     SetF(scanInfo.f);
 }
+static void ToggleRX(bool on);  // forward declaration
 
 static void DeInitSpectrum()
 {
+    // Fully reset hardware state so a subsequent scan cycle has no stale
+    // listening/audio flags, tail interrupts, or REG_30 cached path.
     SetF(initialFreq);
     RestoreRegisters();
+
+    // Turn RX and audio fully off: explicit ToggleRX(false) rewrites the
+    // hardware AF/REG_30 state rather than trusting static flags.
+    ToggleRX(false);
+
+    isListening = false;
+    audioState = false;
+    scanReg30 = 0; // invalidate cached RX path (AF_DAC bit is cleared by ToggleRX)
+    BK4819_WriteRegister(BK4819_REG_02, 0); // clear stale tail-interrupt flag
+    BK4819_WriteRegister(BK4819_REG_3F, 0); // clear tail interrupt enable
+
+    // Clear any lingering RSSI seed so the next cycle starts from a known state.
+    listenPrevRssi = RSSI_MAX_VALUE;
+    listenLowCount = 0;
+
     isInitialized = false;
 }
 
@@ -612,28 +649,25 @@ uint16_t GetRssi()
 
 static void ToggleAudio(bool on)
 {
-    if (on == audioState)
-    {
-        return;
-    }
-    audioState = on;
+    // Unconditional: the shared core can be entered/exited mid-cycle, and
+    // static audioState is stale across sessions. Never skip a write.
     if (on)
     {
         AUDIO_AudioPathOn();
+        audioState = true;
     }
     else
     {
         AUDIO_AudioPathOff();
+        audioState = false;
     }
 }
 
 static void ToggleRX(bool on)
 {
-    #ifdef ENABLE_FEAT_F4HWN_SPECTRUM
-    if (isListening == on) {
-        return;
-    }
-    #endif
+    // Always take effect: stale isListening/audioState are reset at exit and
+    // the hardware is written unconditionally, so a second RX in a scan cycle
+    // cannot be skipped due to stale flags.
     isListening = on;
 
     //RADIO_SetupAGC(settings.modulationType == MODULATION_AM, lockAGC);
@@ -2582,11 +2616,15 @@ void APP_RunSpectrum()
 
     BackupRegisters();
 
-    isListening = true; // to turn off RX later
+    // Drive the shared-core RX state explicitly instead of the ToggleRX hack.
+    // isListening starts false so the first ToggleRX(false) leaves RX fully off.
     newScanStart = true;
     scanStartFromLeft = true;
 
-    ToggleRX(true), ToggleRX(false); // hack to prevent noise when squelch off
+    // Turn RX and audio off at entry (no noise on squelch-off startup).
+    // Drive the shared-core RX state explicitly instead of the ToggleRX hack.
+    ToggleRX(false);
+
     RADIO_SetModulation(settings.modulationType = gTxVfo->Modulation);
 
 #ifdef ENABLE_FEAT_F4HWN_SPECTRUM
@@ -2594,6 +2632,10 @@ void APP_RunSpectrum()
 #else
     BK4819_SetFilterBandwidth(settings.listenBw = BK4819_FILTER_BW_WIDE, false);
 #endif
+
+    // Cache the RX path REG_30 (RX/DAC/PLL/PLL bits, AF_DAC cleared) at entry
+    // so the first scan sweep uses a valid cached REG_30 instead of a stale 0.
+    scanReg30 = BK4819_ReadRegister(BK4819_REG_30) & ~(1u << 9);
 
     // Reset dynamic spectrum state on every entry.
     // Persisted settings are step/count/listenBW only; trigger and dB window

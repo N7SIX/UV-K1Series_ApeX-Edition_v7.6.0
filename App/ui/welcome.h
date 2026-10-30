@@ -25,6 +25,10 @@ void UI_DisplayWelcome(void);
 
 #ifdef ENABLE_FEAT_F4HWN_LOGO
 void UI_DisplayLogo(void);
+#ifdef N7SIX_APEX
+// Display the firmware-embedded ApeX N7SIX logo (boot splash).
+void UI_DisplayApexLogo(void);
+#endif
 #endif
 
 #ifdef ENABLE_FEAT_F4HWN_QRCODE

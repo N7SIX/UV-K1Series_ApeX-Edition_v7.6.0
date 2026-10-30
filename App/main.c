@@ -39,9 +39,6 @@
     #ifdef ENABLE_SPECTRUM
         #include "app/spectrum.h"
     #endif
-    #ifdef ENABLE_FEAT_N7SIX_WATERFALL
-        #include "app/waterfall_glue.h"
-    #endif
     #include "app/chFrScanner.h"
 #endif
 
@@ -331,13 +328,7 @@ void Main(void)
             #ifdef ENABLE_SPECTRUM
                 case 4:
                 case 5:
-                    #ifdef ENABLE_FEAT_N7SIX_WATERFALL
-                    WATERFALL_GlueEnter();
-                    #endif
                     APP_RunSpectrum();
-                    #ifdef ENABLE_FEAT_N7SIX_WATERFALL
-                    WATERFALL_GlueExit();
-                    #endif
                     break;
             #endif
 

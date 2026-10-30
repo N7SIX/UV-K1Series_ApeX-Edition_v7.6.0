@@ -481,17 +481,22 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
         const uint8_t set_ptt_scn_sav = Data[7] & 0x0F;
         const bool set_ptt_scn_sav_erased = Data[7] == 0xFF;
 #ifdef ENABLE_FEAT_F4HWN_LOGO_SAV
-        const bool set_ptt_scn_sav_valid = !set_ptt_scn_sav_erased && set_ptt_scn_sav < (SET_SAV_LEN << 2);
+        // SET_SAV is a 3-bit value: bits 2-3 of the low nibble plus bit 7 of the
+        // byte (set_pwr only ever uses bits 4-6, its valid range being 0..6).
+        // Valid values are 0..3 (the stock savers); any legacy stored value >=
+        // SET_SAV_LEN is rejected below and falls back to SET_SAV_OFF.
+        const uint8_t set_sav_full = (set_ptt_scn_sav >> 2) | ((Data[7] >> 5) & 0x04);
+        const bool set_ptt_scn_sav_valid = !set_ptt_scn_sav_erased && set_sav_full < SET_SAV_LEN;
 #else
         const bool set_ptt_scn_sav_valid = !set_ptt_scn_sav_erased && set_ptt_scn_sav < 4;
 #endif
-        gSetting_set_pwr = (((Data[7] & 0xF0) >> 4) < 7) ? ((Data[7] & 0xF0) >> 4) : 0;
+        gSetting_set_pwr = (((Data[7] & 0x70) >> 4) < 7) ? ((Data[7] & 0x70) >> 4) : 0;
         gSetting_set_ptt = set_ptt_scn_sav_valid ? (set_ptt_scn_sav & 0x01) : 0;
 #ifdef ENABLE_FEAT_F4HWN_SCAN_FASTER
         gSetting_set_scn = set_ptt_scn_sav_valid ? ((set_ptt_scn_sav & 0x02) == 0) : 0;
 #endif
 #ifdef ENABLE_FEAT_F4HWN_LOGO_SAV
-        gSetting_set_sav = set_ptt_scn_sav_valid ? ((set_ptt_scn_sav >> 2) & 0x03) : SET_SAV_OFF;
+        gSetting_set_sav = set_ptt_scn_sav_valid ? set_sav_full : SET_SAV_OFF;
 #endif
 
         gSetting_set_tot = (((Data[6] & 0xF0) >> 4) < 4) ? ((Data[6] & 0xF0) >> 4) : 0;
@@ -1206,10 +1211,18 @@ void SETTINGS_SaveSettings(void)
         set_ptt_scn_sav |= 0x02;
 #endif
 #ifdef ENABLE_FEAT_F4HWN_LOGO_SAV
+    // SET_SAV is a 3-bit value: bits 2-3 here, bit 2 continues in bit 7 of the
+    // byte below (only used if SET_SAV_LEN ever grows past 4 again).
     set_ptt_scn_sav |= (gSetting_set_sav & 0x03) << 2;
 #endif
 
-    State[7] = ((gSetting_set_pwr << 4) | set_ptt_scn_sav);
+    // set_pwr only ever uses bits 4-6 (valid range 0..6); bit 7 carries
+    // SET_SAV bit 2 when a higher-numbered screen saver is selected.
+    State[7] = ((gSetting_set_pwr & 0x07) << 4) | set_ptt_scn_sav;
+#ifdef ENABLE_FEAT_F4HWN_LOGO_SAV
+    if (gSetting_set_sav & 0x04)
+        State[7] |= 0x80;
+#endif
 
     PY25Q16_WriteBuffer(0x00A158, SecBuf, 8, false);
 #endif

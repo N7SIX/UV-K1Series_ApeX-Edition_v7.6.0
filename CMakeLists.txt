@@ -21,6 +21,37 @@ enable_language(C ASM)
 
 option(DEV "Prepare the rolling Fusion development firmware" OFF)
 
+# --- ApeX Edition: Adopt Fusion Edition improvements (except version) ---
+# These are Fusion-specific features that are being adopted to ApeX edition.
+# Version-related changes are intentionally excluded to protect ApeX versioning.
+
+option(ENABLE_NO_HEAP "Enable NO Heap optimization" ON)
+option(ENABLE_SPECTRUM "Enable Spectrum display" ON)
+option(ENABLE_FMRADIO "Enable FM Radio" ON)
+option(ENABLE_VOX "Enable Voice Operated eXchange" ON)
+option(ENABLE_FEAT_FULL_WATCH "Enable Full Watchdog" ON)
+option(ENABLE_FEAT_K5VIEWER "Enable K5Viewer support" ON)
+option(ENABLE_FEAT_PMR "Enable PMR support" ON)
+option(ENABLE_FEAT_GMRS_FRS_MURS "Enable GMRS/FRS/MURS support" ON)
+option(ENABLE_FEAT_VOL "Enable VOL control" ON)
+option(ENABLE_FEAT_AUDIO_SCOPE "Enable Audio Scope" ON)
+option(ENABLE_FEAT_SCAN_PROGRESS "Enable Scan Progress" ON)
+option(ENABLE_FEAT_SCAN_FASTER "Enable Faster Scan" ON)
+option(ENABLE_FEAT_SCAN_RSSI "Enable Scan RSSI" ON)
+option(ENABLE_FEAT_SCAN_SUBAUDIBLE "Enable Subaudible Scan" ON)
+option(ENABLE_FEAT_RXTX_LOG "Enable RX/TX Log" ON)
+option(ENABLE_FEAT_RXTX_LOG_K5VIEWER "Enable RX/TX Log for K5Viewer" ON)
+option(ENABLE_FEAT_QRCODE "Enable QR Code support" ON)
+option(ENABLE_FEAT_MEM "Enable Memory features" ON)
+option(ENABLE_FEAT_LOGO "Enable Logo display" ON)
+option(ENABLE_FEAT_LOGO_SAV "Enable Logo Save" ON)
+option(ENABLE_FEAT_MENU_CAT "Enable Menu Category" ON)
+option(ENABLE_FEAT_ACTION_PICKER "Enable Action Picker" ON)
+option(ENABLE_FEAT_MULTIBOOT "Enable Multiboot" ON)
+option(ENABLE_FEAT_MULTIBOOT_HOT_CFG "Enable Multiboot Hot Config" ON)
+option(ENABLE_FEAT_MULTIBOOT_OVERLAY "Enable Multiboot Overlay" ON)
+option(ENABLE_SWD "Enable SWD debug interface" ON)
+
 find_package(Git QUIET)
 set(BUILD_COMMIT "unknown")
 if(GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
@@ -77,10 +108,10 @@ if(ENABLE_FEAT_F4HWN)
         set(AUTHOR_STRING_2 "F4HWN")
     endif()
     if(NOT VERSION_STRING_1)
-        set(VERSION_STRING_1 "v0.22")
+        set(VERSION_STRING_1 "v7.6.0")
     endif()
     if(NOT VERSION_STRING_2)
-        set(VERSION_STRING_2 "v4.2")
+        set(VERSION_STRING_2 "v7.6.12")
     endif()
     if(NOT EDITION_STRING)
         set(EDITION_STRING "Custom")
@@ -176,7 +207,7 @@ endif()
 # overlay build if the linked stub branches outside its RAM section or if its
 # input section refers to any external code/data. This is deliberately a hard
 # build gate: either condition could make a restore unrecoverable without DFU.
-if(ENABLE_FEAT_F4HWN_MULTIBOOT_OVERLAY)
+if(ENABLE_FEAT_MULTIBOOT_OVERLAY)
     add_custom_command(
         TARGET ${EXE_NAME}
         POST_BUILD
@@ -220,7 +251,7 @@ add_custom_command(
 
 # Pack
 # TODO: Incorparate venv?
-# if(ENABLE_FEAT_F4HWN)
+# if(ENABLE_FEAT_FUSION)
 #     add_custom_command(
 #         TARGET ${EXE_NAME}
 #         POST_BUILD

@@ -190,10 +190,10 @@ build_preset() {
     return "$status"
   fi
 
-  # The ApeX preset brands its target as n7six.ApeX-k1.v7.6.11 (see CMakePresets.json),
+  # The ApeX preset brands its target as n7six.ApeX-k1.v7.6.12 (see CMakePresets.json),
   # so its binary does not follow the f4hwn.<preset> naming used elsewhere.
   if [[ "$preset" == "ApeX" ]]; then
-    bin_file="build/${preset}/n7six.ApeX-k1.v7.6.11.bin"
+    bin_file="build/${preset}/n7six.ApeX-k1.v7.6.12.bin"
   else
     bin_file="build/${preset}/f4hwn.${preset_slug}.bin"
   fi

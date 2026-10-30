@@ -67,4 +67,8 @@ extern const uint8_t BITMAP_NOAA[12];
     extern const uint8_t BITMAP_CurrentIndicator[8];
 #endif
 
+#ifdef N7SIX_APEX
+    extern const uint8_t BITMAP_ApexLogo[1024];
+#endif
+
 #endif

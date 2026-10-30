@@ -60,6 +60,18 @@ void UI_DisplayLogo(void)
     ST7565_BlitStatusLine();
     ST7565_BlitFullScreen();
 }
+
+#ifdef N7SIX_APEX
+// ApeX boot splash: same rendering as UI_DisplayLogo but from the
+// firmware-embedded BITMAP_ApexLogo instead of the external-flash boot logo.
+void UI_DisplayApexLogo(void)
+{
+    memcpy(gStatusLine, BITMAP_ApexLogo, sizeof(gStatusLine));
+    memcpy(gFrameBuffer, BITMAP_ApexLogo + sizeof(gStatusLine), sizeof(gFrameBuffer));
+    ST7565_BlitStatusLine();
+    ST7565_BlitFullScreen();
+}
+#endif
 #endif
 
 #ifdef ENABLE_FEAT_F4HWN_QRCODE

@@ -81,7 +81,7 @@ Specialized presets extend Fusion for specific uses:
   not a strict superset of every other edition: features may be exchanged between releases
   to preserve stability and memory headroom.
 - **ApeX** is this fork's dedicated edition: the Fusion feature set branded as
-  ApeX (binary target `n7six.ApeX-k1.v7.6.11`).
+  ApeX (binary target `n7six.ApeX-k1.v7.6.12`).
 - **Custom** remains a manually configured build based directly on the hidden technical default.
 
 ### Multiboot and Multiconfig
