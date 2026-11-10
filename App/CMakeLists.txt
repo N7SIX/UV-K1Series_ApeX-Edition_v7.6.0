@@ -79,8 +79,8 @@ if(ENABLE_FEAT_F4HWN)
 endif()
 
 # N7SIX branding (welcome QR target + PROFILE info badge) ships with the ApeX
-# edition only; the stock editions keep the original armel QR target/labels.
-if(ENABLE_FEAT_F4HWN AND "${EDITION_STRING}" STREQUAL "ApeX")
+# and ApeXLabs editions; the stock editions keep the original armel QR target/labels.
+if(ENABLE_FEAT_F4HWN AND ("${EDITION_STRING}" STREQUAL "ApeX" OR "${EDITION_STRING}" STREQUAL "ApeXLabs"))
     target_compile_definitions(App INTERFACE N7SIX_APEX)
     # ApeX-only MDC roger variants live in driver/mdc.c (own N7SIX copyright)
     # so the upstream driver files stay pristine.
