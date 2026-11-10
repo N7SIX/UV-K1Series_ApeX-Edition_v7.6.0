@@ -10,6 +10,7 @@ set -euo pipefail
 #   ./compile-firmware.sh FieldOps
 #   ./compile-firmware.sh Labs
 #   ./compile-firmware.sh ApeX
+#   ./compile-firmware.sh ApeXLabs
 #   ./compile-firmware.sh Fusion -DDEV=ON
 #   ./compile-firmware.sh FieldOps -DENABLE_VOX=OFF
 #   ./compile-firmware.sh All
@@ -17,7 +18,7 @@ set -euo pipefail
 # ---------------------------------------------
 
 IMAGE=uvk1-uvk5v3
-RELEASE_PRESETS=(Fusion Transfer FieldOps Labs Max ApeX)
+RELEASE_PRESETS=(Fusion Transfer FieldOps Labs Max ApeX ApeXLabs)
 FLASH_LIMIT=$((118 * 1024))
 RAM_LIMIT=$((16 * 1024))
 
@@ -30,9 +31,9 @@ EXTRA_ARGS=("$@")
 # ---------------------------------------------
 # Validate preset name
 # ---------------------------------------------
-if [[ ! "$PRESET" =~ ^(Custom|Fusion|Transfer|FieldOps|Labs|Max|ApeX|All)$ ]]; then
+if [[ ! "$PRESET" =~ ^(Custom|Fusion|Transfer|FieldOps|Labs|Max|ApeX|ApeXLabs|All)$ ]]; then
   echo "❌ Unknown preset: '$PRESET'"
-  echo "Valid presets are: Custom, Fusion, Transfer, FieldOps, Labs, Max, ApeX, All"
+  echo "Valid presets are: Custom, Fusion, Transfer, FieldOps, Labs, Max, ApeX, ApeXLabs, All"
   exit 1
 fi
 
@@ -190,9 +191,11 @@ build_preset() {
     return "$status"
   fi
 
-  # The ApeX preset brands its target as n7six.ApeX-k1.v7.6.12 (see CMakePresets.json),
+  # The ApeX and ApeXLabs presets brand their targets as n7six.*.k1.v7.6.12/v7.6.13 (see CMakePresets.json),
   # so its binary does not follow the f4hwn.<preset> naming used elsewhere.
-  if [[ "$preset" == "ApeX" ]]; then
+  if [[ "$preset" == "ApeXLabs" ]]; then
+    bin_file="build/${preset}/n7six.ApeXLabs-k1.v7.6.13.bin"
+  elif [[ "$preset" == "ApeX" ]]; then
     bin_file="build/${preset}/n7six.ApeX-k1.v7.6.12.bin"
   else
     bin_file="build/${preset}/f4hwn.${preset_slug}.bin"
