@@ -17,7 +17,7 @@ sys.dont_write_bytecode = True
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, ".."))
 sys.path.insert(0, os.path.join(HERE, "test"))
-from app_assets import Assets
+from app_assets import Assets, cdefine
 from model import BAYER
 import modes
 
@@ -36,7 +36,7 @@ UI = [
     ("T_RXABORT","RX aborted"),
     ("T_DITHER", "dither"),
     ("T_1BIT",   "1-bit"),
-    ("T_HELP",   "PTT send 1/F1mode 2bw 3spk 4view"),   # 32 tiny characters
+    ("T_HELP",   "MENU tx 1/F1mode 2bw 3spk 4view"),    # 31 tiny characters
 ]
 
 # The status line of the info screen, by ST_* (sstv_app.c): its text's offset
@@ -68,4 +68,9 @@ a.const("MODE_RX", modes.RX_SIZE)
 a.const("SEG_MAX", modes.SEG_MAX)
 a.u8("BMP_F", [0x3e,0x7f,0x41,0x75,0x75,0x75,0x7d,0x7f,0x3e])   # F armed, as APRS TX / FoxHunt
 a.u8("BMP_SPK", [0x1c, 0x1c, 0x3e, 0x7f, 0x00, 0x22, 0x1c, 0x41, 0x22, 0x1c])  # FoxHunt's
+# The last picture, LCD layout (status line then the 7 frame lines), blank as
+# packaged. It must stay the LAST item: the loader rewrites the last 1024 bytes
+# of the assets with the screen left at exit (APP_FLAG_SAVE_SCREEN,
+# APP_SCREEN_SAVE_LEN in app_overlay.h; pack_app.py --save-screen).
+a.raw("PIC", bytes(cdefine("app_overlay.h", "APP_SCREEN_SAVE_LEN")))
 a.main()

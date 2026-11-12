@@ -66,6 +66,9 @@ static const uint8_t rows[] = {
     ROW_SECTION(4), ROW_BLANK, 18, 19, 20, ROW_BLANK,
     ROW_SECTION(5), ROW_BLANK,
     ROW_QR(0, 0), ROW_QR(0, 1), ROW_QR(0, 2), ROW_QR(0, 3), ROW_QR(0, 4),
+    ROW_BLANK,
+    ROW_SECTION(6), ROW_BLANK,
+    ROW_QR(1, 0), ROW_QR(1, 1), ROW_QR(1, 2), ROW_QR(1, 3), ROW_QR(1, 4),
 };
 #define ROW_COUNT ((uint16_t)sizeof(rows))
 
@@ -133,17 +136,12 @@ static uint64_t divide(uint32_t n, uint32_t d)
     return A->uidivmod(n, d);
 }
 
+/* The resident formatter (API level 3). One local stub keeps every call a
+ * plain bl: the service lies past the ldr immediate range of the table. */
+__attribute__((noinline))
 static char *put_u32(char *out, uint32_t value)
 {
-    char reverse[10];
-    uint8_t count = 0;
-    do {
-        const uint64_t qr = divide(value, 10u);
-        reverse[count++] = (char)('0' + (uint32_t)(qr >> 32));
-        value = (uint32_t)qr;
-    } while (value != 0u);
-    while (count != 0u)
-        *out++ = reverse[--count];
+    out = A->append_u32(out, value);
     *out = '\0';
     return out;
 }
@@ -673,7 +671,7 @@ static void draw_row(uint16_t row, uint8_t line, char *text, bool close_top)
     }
 
     if ((definition & 0xF0u) == 0x40u) {
-        const uint16_t qr = QR_CODE;
+        const uint16_t qr = (definition & 0x08u) ? QR_WIKI : QR_CODE;
         const uint8_t page = definition & 0x07u;
         A->asset_read(qr + (uint16_t)page * QR_WIDTH,
                       &A->fb[line][QR_X], QR_WIDTH);
@@ -786,7 +784,7 @@ void app_main(const app_api_t *api)
             previous = key;
             repeat_ms = 0u;
         } else if (key != previous) {
-            const int8_t direction = A->nav_dir(key);
+            const int8_t direction = (key == APP_KEY_DOWN) - (key == APP_KEY_UP);
             A->backlight_on();
             if (key == APP_KEY_EXIT)
                 g.running = false;
@@ -797,7 +795,7 @@ void app_main(const app_api_t *api)
             previous = key;
             repeat_ms = direction != 0 ? NAV_REPEAT_DELAY_MS : 0u;
         } else {
-            const int8_t direction = A->nav_dir(key);
+            const int8_t direction = (key == APP_KEY_DOWN) - (key == APP_KEY_UP);
             if (direction != 0) {
                 if (repeat_ms > INPUT_TICK_MS) {
                     repeat_ms -= INPUT_TICK_MS;

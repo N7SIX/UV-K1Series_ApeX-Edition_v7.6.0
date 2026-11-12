@@ -22,7 +22,7 @@ RX (per ADC sample, 9.6 kHz):
     VIS 1   32P > 45Q        (below ~1210 Hz)
   The VIS byte picks the mode record (modes.record). Each period starts at the
   sync end (within +-10 ms of the prediction, else the prediction; a late sync
-  restarts the period); its scans start at off[i] samples from there, scaled to
+  restarts the period; after 3 periods without one, a sync anywhere does); its scans start at off[i] samples from there, scaled to
   the tracked period; pixel: lum = 285 - 256 sum(p) / sum(q), 0..255, weighted
   per scan (sum 4) into the line buffer; periods averaged per screen row, then
   thresholded (1-bit) or Bayer 4x4 dithered.
@@ -51,6 +51,8 @@ def mode_index(name):
 
 # ------------------------------------------------------------------ TX ------
 
+LEAD_IN = 1000                      # ms of 1900 Hz before the VIS (sstv_app.c)
+
 def vis_events(vis):
     ev = [(1900, 300 * MS), (1200, 10 * MS), (1900, 300 * MS), (1200, 30 * MS)]
     code = M.vis_byte(vis)
@@ -64,6 +66,7 @@ def tx_events(logo, mode=0):
     name, vis, segs, w, periods, pre = M.MODES[mode]
     A, B = M.rows(periods)
     ev = vis_events(vis)
+    ev[0] = (1900, (LEAD_IN + 300) * MS)    # the app's lead-in on the first leader
     if pre:
         ev.append((1200, M.cycles(pre)))
     row, acc = 0, 0
@@ -157,6 +160,7 @@ SYNC_WIN = 96                                 # +-10 ms around the prediction
 LEAD_MIN = 384                                # leader run: 40 ms
 VIS_RUN = 192                                 # start bit run: 20 ms
 MISS_MAX = 20                                 # periods without a sync: lost
+RELOCK = 3                                    # periods without a sync: take one anywhere
 BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 THR = [b * 16 + 8 for b in BAYER]             # 4x4 dither thresholds (assets)
 RECORDS = [M.record(i)[0] for i in range(len(M.MODES))]
@@ -189,6 +193,7 @@ class Rx:
         self.srun = 0             # sync run (samples)
         self.screen = [[0] * 128 for _ in range(64)]
         self.images = 0
+        self.relocks = 0
         self.log = []
         self.m = None
 
@@ -290,7 +295,7 @@ class Rx:
                             self.line = self.row = self.racc = self.cnt = 0
                             self.acc = [0] * 128
                             self.per = r["per0"]
-                            self.miss = 0
+                            self.miss = RELOCK    # the first sync: anywhere
                             self.pred = self.c = self.t0 + r["first"]
                             self.found = self.prevFound = False
                             self.errs = []
@@ -317,22 +322,31 @@ class Rx:
                         return
                     m = self.m
                 err = n - self.pred
-                if (ln >= m["syncMin"] and not self.found
-                        and -SYNC_WIN <= err <= SYNC_WIN):
-                    self.errs.append(err)
-                    if self.prevFound:
-                        per = self.per + err * 2
-                        lim = m["per0"] >> 4
-                        if per > m["per0"] + lim:
-                            per = m["per0"] + lim
-                        if per < m["per0"] - lim:
-                            per = m["per0"] - lim
-                        self.per = per
-                    self.c = n
-                    self.found = True
-                    self.miss = 0
-                    self.restart()
-                    return
+                if ln >= m["syncMin"] and not self.found:
+                    inwin = -SYNC_WIN <= err <= SYNC_WIN
+                    if inwin:
+                        self.errs.append(err)
+                        if self.prevFound:
+                            per = self.per + err * 2
+                            lim = m["per0"] >> 4
+                            if per > m["per0"] + lim:
+                                per = m["per0"] + lim
+                            if per < m["per0"] - lim:
+                                per = m["per0"] - lim
+                            self.per = per
+                        self.found = True
+                        self.miss = 0
+                    # lock lost (a sender whose first line is not where the VIS
+                    # says, a fade): after RELOCK periods on the prediction a
+                    # sync anywhere restarts the period. It does not count as
+                    # found: only a sync in the window of the next prediction
+                    # clears miss, so noise alone still ends as lost.
+                    if inwin or self.miss >= RELOCK:
+                        if not inwin:
+                            self.relocks += 1
+                        self.c = n
+                        self.restart()
+                        return
             d = n - self.ys
             if d >= 0:
                 k = (d * self.step) >> 16
@@ -399,13 +413,21 @@ def write_wav(path, events, fs=48000):
 CASES = [("std", {}, {}), ("clean", {}, dict(deemph=False)),
          ("tx +1%", dict(ppm=10000), {}), ("tx -1.5%", dict(ppm=-15000), {}),
          ("dev 1.5k", {}, dict(dev=1500)), ("snr 20", {}, dict(snr_db=20)),
-         ("snr 12", {}, dict(snr_db=12)), ("snr 6", {}, dict(snr_db=6))]
+         ("snr 12", {}, dict(snr_db=12)), ("snr 6", {}, dict(snr_db=6)),
+         ("late 25", dict(late_ms=25), {}), ("late 70", dict(late_ms=70), {}),
+         ("late-1.5%", dict(late_ms=25, ppm=-15000), {}),
+         ("late snr6", dict(late_ms=25), dict(snr_db=6))]
 
 def run_case(logo, mode, case, outdir=None):
     """One mode through one channel case, rendered dithered and 1-bit."""
     global THR
     cname, sk, ck = next(c for c in CASES if c[0] == case)
-    adc = channel(synth(tx_events(logo, mode), **sk), **ck)
+    sk = dict(sk)
+    ev = tx_events(logo, mode)
+    late = sk.pop("late_ms", 0)     # black between the VIS and the first line
+    if late:
+        ev.insert(13, (1500, late * MS))
+    adc = channel(synth(ev, **sk), **ck)
     bayer = list(THR)
     out = []
     for thr in (bayer, [128] * 16):
@@ -421,7 +443,7 @@ def run_case(logo, mode, case, outdir=None):
     print(f"{M.MODES[mode][0]:10s} {cname:9s} dither {out[0]:5d}  1-bit {out[1]:5d} px wrong"
           f"  sync err {min(errs)}..{max(errs)}  free-run {getattr(rx, 'errs', []).count(None)}"
           f"  period {getattr(rx, 'per', 0) / 16:.1f} ({rx.m['per0'] / 16 if rx.m else 0:.1f})"
-          f"  images {rx.images} {rx.log[-1:]}", flush=True)
+          f"  relock {rx.relocks}  images {rx.images} {rx.log[-1:]}", flush=True)
     return out
 
 def read_logo(path):
@@ -442,8 +464,8 @@ def main():
     logo = test_logo()
     ev = tx_events(logo, 0)
     total = sum(c for _, c in ev)
-    assert sum(c for _, c in ev[:13]) == 910 * MS
-    assert (total - 910 * MS) == 240 * 150 * MS, total
+    assert sum(c for _, c in ev[:13]) == (LEAD_IN + 910) * MS
+    assert (total - (LEAD_IN + 910) * MS) == 240 * 150 * MS, total
     if names:                       # the given modes through every case
         for n in names:
             for c in CASES:

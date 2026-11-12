@@ -32,12 +32,12 @@
  * install apps you trust.
  *
  * External-flash "Apps" region (carved from the free space in the PY25Q16 map,
- * after the multiboot markers, before the RX/TX log):
+ * after the multiboot markers and before the Sonic 4K reserve):
  *
- *   0x102000  slot 0   ]  16 slots x 8 KiB = 128 KiB
+ *   0x102000  slot 0   ]  48 slots x 8 KiB = 384 KiB
  *   0x104000  slot 1   ]  each slot: 4 KiB header sector + 4 KiB code
  *     ...              ]
- *   0x120000  slot 15  ]
+ *   0x160000  slot 47  ]
  *
  * Header sector layout (slot-relative):
  *
@@ -45,7 +45,9 @@
  *   0x040  per-app config staged by cfg_save (16 B)
  *   0x050  name of the app that config belongs to (16 B, reserved up to 0x0FF);
  *          kept with the config when the slot is erased for an update
- *   0x100  read-only assets (API level 2, up to 3840 B, CRC-checked at launch)
+ *   0x100  packaged assets (API level 2, up to 3840 B, CRC-checked at launch);
+ *          normally read-only, except for a validated config-proxy target block
+ *          and for the screen saved at exit (APP_FLAG_SAVE_SCREEN)
  *   0x1000 code (<= 4 KiB, copied into the overlay RAM)
  *
  * Host tooling (APP_SlotErase/Write/Info) touches the external flash only and is
@@ -64,7 +66,7 @@
 #define APP_SLOT_STRIDE   0x00002000u   /* 8 KiB per slot                        */
 #define APP_CODE_OFFSET   0x00001000u   /* code starts after the 4 KiB header sector */
 #define APP_SECTOR_SIZE   0x00001000u   /* external NOR erase granularity        */
-#define APP_SLOT_COUNT    16u
+#define APP_SLOT_COUNT    48u
 #define APP_SLOT_BASE(s)  (APP_REGION_BASE + (uint32_t)(s) * APP_SLOT_STRIDE)
 
 /* ---- overlay RAM budget: the PY25Q16 4 KiB sector cache reused as workspace.
@@ -72,9 +74,10 @@
  * via compile-app.sh; the loader checks each blob's link_vma against it. ---- */
 #define APP_OVERLAY_MAX   0x00001000u   /* 4 KiB                                 */
 
-/* ---- read-only assets, served by api->asset_read (API level 2) ----
+/* ---- packaged assets, served read-only to apps by asset_read (API level 2) ----
  * Literal values so pack_app.py can parse them; checked against the slot
- * geometry by static asserts in app_overlay.c. */
+ * geometry by static asserts in app_overlay.c. A config-proxy editor may stage
+ * one bounded target block; only the resident loader writes it after exit. */
 #define APP_ASSET_OFFSET  0x00000100u   /* assets start in the header sector     */
 #define APP_ASSET_MAX     0x00000F00u   /* up to the end of the header sector    */
 
@@ -84,15 +87,27 @@
 #define APP_FLAG_COMMITTED   0x0001u
 #define APP_FLAG_SCREEN_SAVER 0x0002u
 #define APP_FLAG_EXIT_TO_MAIN 0x0004u   /* leave the Apps menu when the app returns */
+/* Keep the screen the app leaves behind: when it returns, the loader copies the
+ * display buffers (status line, then the 7 frame lines: one 128x64 screen)
+ * over the last APP_SCREEN_SAVE_LEN bytes of its assets and updates asset_crc.
+ * The app reserves that block at the end of its assets, reads it back with
+ * asset_read at the next launch and fills the buffers before it returns (no
+ * blit needed). Firmware older than this flag ignores it: the block then keeps
+ * its packaged content. An app update erases the slot, the saved screen too. */
+#define APP_FLAG_SAVE_SCREEN 0x0008u
+#define APP_SCREEN_SAVE_LEN  1024u
 #define APP_FLAG_SHORTCUT_SHIFT 8u
 #define APP_FLAG_SHORTCUT_MASK  0x0F00u
-#define APP_NAME_LEN      16
 #define APP_VERSION_LEN   16
 
+/* Shortcut IDs: the value of the header's shortcut field, one per app (the
+ * first four predate the IDs, hence their single-bit values).  A firmware that
+ * does not know an ID ignores the app's shortcut. */
 #define APP_SHORTCUT_FM       0x01u
 #define APP_SHORTCUT_FOXHUNT  0x02u
 #define APP_SHORTCUT_BEACON   0x04u
 #define APP_SHORTCUT_BEAM     0x08u
+#define APP_SHORTCUT_TONECALL 0x03u
 
 /* Optional resident facilities an app may require.  Requirements live in the
  * previously reserved header bytes, so app_header_t remains 64 bytes. */
@@ -104,6 +119,14 @@
 /* BEAM channel bridge only (beam_prepare/get/save/draw); the app drives the
  * FSK modem itself through bk_read/bk_write. */
 #define APP_CAP_BEAM2         0x00000010u
+/* Configuration proxy (app_config_proxy.h), introduced by firmware v6.2.0:
+ * an editor app rewrites one bounded asset block of another app. Required by
+ * the editor and by its target, whose settings cannot be changed without it;
+ * earlier firmware refuses both with APP_ERR_CAP. */
+#define APP_CAP_CFG_PROXY     0x00000020u
+/* Serial ports (serial_read / serial_write / serial_ctl, API level 3): the
+ * USB-C port; serial_ctl tells which ports this firmware has (APP_SERIAL_OK). */
+#define APP_CAP_SERIAL        0x00000040u
 
 /* Aligned RAM objects; app_overlay.c pins every serialized field offset. */
 typedef struct {
@@ -134,20 +157,42 @@ enum {
     APP_ERR_VMA,            /* overlay buffer not at the link VMA     */
     APP_ERR_AUTH,           /* host write refused: timestamp mismatch */
     APP_ERR_CAP,            /* required firmware capability missing   */
+    APP_CHAIN_ABORTED,      /* runaway hand-off chain stopped safely  */
 };
 
 /* Read + validate a slot header (no CRC of the code). */
 uint8_t APP_ValidateSlot(uint8_t slot, app_header_t *out_header);
 
-/* Validate, load into the overlay, verify the code CRC, and run the app.
- * Returns when the app exits; the internal flash is never touched. */
+/* Validate, load into the overlay, verify the code CRC, and run the app, then
+ * each app it hands off to.  Returns when the last one exits, with its result;
+ * APP_CHAIN_ABORTED means a runaway-chain guard stopped the sequence.  The
+ * internal flash is never touched while an overlay is executing. */
 uint8_t APP_LaunchOverlay(uint8_t slot);
+
+/* Set when an app staged a VFO (vfo_stage): the Apps menu then hands back to
+ * the main screen, and clears it. */
+extern bool gAppVfoExit;
+
+/* An open RX audio capture (af_capture_open) holds the ADC on PA4: Yield puts
+ * the battery channel back for one conversion and returns whether it did, Resume
+ * takes PA4 back. Used by BOARD_ADC_GetBatteryInfo(). */
+bool    APP_AfCaptureYieldAdc(void);
+void    APP_AfCaptureResumeAdc(void);
+
+/* The slot of the last app APP_LaunchOverlay ran or tried to launch: the app
+ * that ended a hand-off chain, or the target that failed.  Its header names
+ * the app in an error and holds the APP_FLAG_EXIT_TO_MAIN that applies. */
+extern uint8_t gAppLastSlot;
+
+/* Block until no key and no PTT has been down for 100 ms.  Returns true on a
+ * long EXIT press meanwhile (the loader then ends a hand-off chain). */
+bool    APP_WaitKeyRelease(void);
 
 /* Launch the first installed app advertising this shortcut bit. */
 uint8_t APP_LaunchOverlayShortcut(uint8_t shortcut);
 
 /* Cached availability of apps exposed as resident quick actions. */
-uint8_t APP_OverlayShortcutMask(void);
+bool    APP_OverlayShortcutInstalled(uint8_t shortcut);  /* an app holds this shortcut ID */
 
 /* Host-tool slot management (external flash only, never brick-critical). */
 uint8_t APP_SlotInfo(uint8_t slot, app_header_t *out_header);

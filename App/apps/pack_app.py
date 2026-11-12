@@ -41,6 +41,8 @@ API_ASSETS     = cdefine("app_api.h",     "APP_API_ASSETS")    # first level ser
 FLAG_COMMITTED = cdefine("app_overlay.h", "APP_FLAG_COMMITTED")
 FLAG_SCREEN_SAVER = cdefine("app_overlay.h", "APP_FLAG_SCREEN_SAVER")
 FLAG_EXIT_TO_MAIN = cdefine("app_overlay.h", "APP_FLAG_EXIT_TO_MAIN")
+FLAG_SAVE_SCREEN = cdefine("app_overlay.h", "APP_FLAG_SAVE_SCREEN")
+SCREEN_SAVE_LEN = cdefine("app_overlay.h", "APP_SCREEN_SAVE_LEN")
 FLAG_SHORTCUT_SHIFT = cdefine("app_overlay.h", "APP_FLAG_SHORTCUT_SHIFT")
 SHORTCUTS = {
     "none": 0,
@@ -48,11 +50,14 @@ SHORTCUTS = {
     "foxhunt": cdefine("app_overlay.h", "APP_SHORTCUT_FOXHUNT"),
     "beacon": cdefine("app_overlay.h", "APP_SHORTCUT_BEACON"),
     "beam": cdefine("app_overlay.h", "APP_SHORTCUT_BEAM"),
+    "tonecall": cdefine("app_overlay.h", "APP_SHORTCUT_TONECALL"),
 }
 CAPABILITIES = {
     "fm": cdefine("app_overlay.h", "APP_CAP_FM"),
     "beam2": cdefine("app_overlay.h", "APP_CAP_BEAM2"),
     "sysinfo": cdefine("app_overlay.h", "APP_CAP_SYSINFO"),
+    "cfgproxy": cdefine("app_overlay.h", "APP_CAP_CFG_PROXY"),
+    "serial": cdefine("app_overlay.h", "APP_CAP_SERIAL"),
 }
 
 def field(s: str, n: int) -> bytes:
@@ -74,6 +79,8 @@ def main():
                     help="allow the resident BLTime screen saver while this app is idle")
     ap.add_argument("--exit-main", action="store_true",
                     help="return to the radio screen, not the Apps menu, when the app exits")
+    ap.add_argument("--save-screen", action="store_true",
+                    help=f"keep the screen left at exit in the last {SCREEN_SAVE_LEN} B of the assets")
     ap.add_argument("--shortcut", choices=SHORTCUTS, default="none",
                     help="resident quick action advertised by this app")
     ap.add_argument("--require", action="append", choices=CAPABILITIES, default=[],
@@ -96,12 +103,15 @@ def main():
         sys.exit(f"assets {len(assets)} B exceed the {ASSET_MAX} B asset area")
     if assets and a.api_min < API_ASSETS:
         sys.exit(f"--assets needs --api-min {API_ASSETS} or higher (asset_read)")
+    if a.save_screen and len(assets) < SCREEN_SAVE_LEN:
+        sys.exit(f"--save-screen needs at least {SCREEN_SAVE_LEN} B of assets (the saved-screen block)")
     asset_crc = (zlib.crc32(assets) & 0xFFFF) if assets else 0
 
     crc = zlib.crc32(code) & 0xFFFFFFFF
     flags = (FLAG_COMMITTED |
              (FLAG_SCREEN_SAVER if a.screensaver else 0) |
              (FLAG_EXIT_TO_MAIN if a.exit_main else 0) |
+             (FLAG_SAVE_SCREEN if a.save_screen else 0) |
              (SHORTCUTS[a.shortcut] << FLAG_SHORTCUT_SHIFT))
     required_caps = 0
     for capability in a.require:
