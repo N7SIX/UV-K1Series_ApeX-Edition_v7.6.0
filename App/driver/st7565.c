@@ -128,7 +128,7 @@ void ST7565_DrawLine(const unsigned int Column, const unsigned int Line, const u
 }
 
 
-#ifdef ENABLE_FEAT_F4HWN
+#if defined(ENABLE_FEAT_F4HWN) || defined(ENABLE_FEAT_F4HWN_OVERLAY_APPS)
     // Optimization
     //
     // ST7565_BlitScreen(0) = ST7565_BlitStatusLine()
@@ -136,7 +136,10 @@ void ST7565_DrawLine(const unsigned int Column, const unsigned int Line, const u
     // ST7565_BlitScreen(8) = ST7565_BlitFullScreen()
     //
 
-    static void ST7565_BlitScreen(uint8_t line)
+#ifndef ENABLE_FEAT_F4HWN_OVERLAY_APPS
+    static
+#endif
+    void ST7565_BlitScreen(uint8_t line)
     {
         CS_Assert();
         ST7565_WriteByte(0x40);
@@ -158,7 +161,43 @@ void ST7565_DrawLine(const unsigned int Column, const unsigned int Line, const u
 
         CS_Release();
     }
+#endif
 
+#ifdef ENABLE_FEAT_F4HWN_OVERLAY_APPS
+bool ST7565_Feed(unsigned n)
+{
+    enum { PAGE_BYTES = LCD_WIDTH + 3, FRAME_BYTES = (FRAME_LINES + 1) * PAGE_BYTES };
+    static unsigned offset;
+
+    if (n == 0) {
+        offset = 0;
+        return true;
+    }
+
+    CS_Assert();
+    while (n-- && offset < FRAME_BYTES) {
+        const unsigned page = offset / PAGE_BYTES;
+        const unsigned column = offset % PAGE_BYTES;
+
+        if (column == 0)
+            ST7565_WriteByte(0xb0u + page);
+        else if (column == 1)
+            ST7565_WriteByte(0x10u);
+        else if (column == 2)
+            ST7565_WriteByte(0x04u);
+        else {
+            A0_Set();
+            SPI_WriteByte(page == 0 ? gStatusLine[column - 3] :
+                          gFrameBuffer[page - 1][column - 3]);
+        }
+        offset++;
+    }
+    CS_Release();
+    return offset < FRAME_BYTES;
+}
+#endif
+
+#ifdef ENABLE_FEAT_F4HWN
     void ST7565_BlitFullScreen(void)
     {
         ST7565_BlitScreen(8);

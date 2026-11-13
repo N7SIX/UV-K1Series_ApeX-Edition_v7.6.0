@@ -60,10 +60,21 @@
 #include "version.h"
 #include "stack_usage.h"
 #endif
-#ifdef ENABLE_USB
-#define APP_SERIAL 1
+/* The USB stack does not yet provide the overlay serial ownership API.
+ * Do not advertise APP_CAP_SERIAL until that integration is available. */
+#if defined(ENABLE_USB) && defined(APP_SERIAL)
 #include "app/uart.h"
 #include "driver/vcp.h"
+/* USB CDC variable declarations for Labs edition */
+extern uint8_t VCP_ReadIndex;
+extern uint32_t cdc_acm_rx_total;
+extern uint8_t cdc_acm_config_count;
+extern bool K5VIEWER_LOCK_HELD;
+extern bool dtr_enable;
+extern bool ep_tx_busy_flag;
+extern bool cdc_acm_start_send(const void *buf, uint32_t len);
+extern void cdc_acm_cancel_send(void);
+extern void VCP_K5ViewerSync(void);
 #endif
 
 _Static_assert(sizeof(app_header_t) == 64u && _Alignof(app_header_t) == 4u,
@@ -1191,7 +1202,7 @@ static void app_screen_save(uint32_t base, uint16_t asset_size, uint8_t *ws)
     memcpy(screen + sizeof(gStatusLine), gFrameBuffer, sizeof(gFrameBuffer));
     const uint16_t crc = (uint16_t)MB_Crc32Bytes(assets, asset_size);
     memcpy(ws + offsetof(app_header_t, asset_crc), &crc, sizeof(crc));
-    PY25Q16_OverlayWriteSector(base);
+    PY25Q16_OverlayBuffer();
 }
 
 /* All services are immutable.  Keeping the table in flash avoids rebuilding a
@@ -1303,7 +1314,7 @@ static const app_api_t app_api = {
      * system information; inside it, an app would call a NULL pointer. */
     .handoff             = app_handoff,
     .handoff_read        = app_handoff_read,
-    .tx_prepare          = RADIO_PrepareTx,
+    .tx_prepare          = RADIO_PrepareTX,
 #ifdef APP_SERIAL
     .serial_read         = app_serial_read,
     .serial_write        = app_serial_write,

@@ -148,19 +148,19 @@ bool ACTION_IsAvailable(uint8_t action)
     switch (action) {
 #ifdef ENABLE_FMRADIO
         case ACTION_OPT_FM:
-            return (APP_OverlayShortcutMask() & APP_SHORTCUT_FM) != 0;
+            return APP_OverlayShortcutInstalled(APP_SHORTCUT_FM);
 #endif
 #ifndef ENABLE_FEAT_F4HWN_FOXHUNT
         case ACTION_OPT_FOXHUNT:
-            return (APP_OverlayShortcutMask() & APP_SHORTCUT_FOXHUNT) != 0;
+            return APP_OverlayShortcutInstalled(APP_SHORTCUT_FOXHUNT);
 #endif
 #ifndef ENABLE_FEAT_F4HWN_BEACON
         case ACTION_OPT_BEACON:
-            return (APP_OverlayShortcutMask() & APP_SHORTCUT_BEACON) != 0;
+            return APP_OverlayShortcutInstalled(APP_SHORTCUT_BEACON);
 #endif
 #ifndef ENABLE_FEAT_F4HWN_BEAM
         case ACTION_OPT_BEAM:
-            return (APP_OverlayShortcutMask() & APP_SHORTCUT_BEAM) != 0;
+            return APP_OverlayShortcutInstalled(APP_SHORTCUT_BEAM);
 #endif
         default:
             break;

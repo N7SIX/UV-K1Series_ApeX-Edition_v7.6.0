@@ -150,6 +150,9 @@ common position formats and Mic-E data, and keeps a five-frame history. APRS TX
 provides an on-radio editor for the source callsign and SSID, digipeater path,
 position, symbol and comment before transmitting a position beacon.
 
+Overlay USB serial is not yet supported by this firmware. Apps that require
+the serial capability, such as KISS TNC, are rejected as not supported.
+
 > [!IMPORTANT]
 > Overlay apps, including APRS RX and APRS TX, are experimental and intended for
 > Labs. Use the app files supplied with the same firmware release so their ABI
