@@ -44,6 +44,9 @@
 #if defined(ENABLE_OVERLAY)
     #include "sram-overlay.h"
 #endif
+#if defined(ENABLE_FEAT_F4HWN_OVERLAY_APPS)
+    #include "apps/app_overlay.h"
+#endif
 
 #if defined(ENABLE_OVERLAY)
     void BOARD_FLASH_Init(void)
@@ -173,6 +176,12 @@ void BOARD_ADC_Init(void)
 
 void BOARD_ADC_GetBatteryInfo(uint16_t *pVoltage, uint16_t *pCurrent)
 {
+#if defined(ENABLE_FEAT_F4HWN_OVERLAY_APPS)
+    // An overlay app capturing RX audio leaves the ADC on PA4: switch back to
+    // the battery channel for this conversion, then give PA4 back.
+    const bool audioCaptureYielded = APP_AfCaptureYieldAdc();
+#endif
+
     LL_ADC_REG_StartConversionSWStart(ADC1);
     while (!LL_ADC_IsActiveFlag_EOS(ADC1))
         ;
@@ -180,6 +189,11 @@ void BOARD_ADC_GetBatteryInfo(uint16_t *pVoltage, uint16_t *pCurrent)
 
     *pVoltage = LL_ADC_REG_ReadConversionData12(ADC1);
     *pCurrent = 0;
+
+#if defined(ENABLE_FEAT_F4HWN_OVERLAY_APPS)
+    if (audioCaptureYielded)
+        APP_AfCaptureResumeAdc();
+#endif
 }
 
 void BOARD_Init(void)
