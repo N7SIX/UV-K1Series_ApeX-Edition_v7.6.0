@@ -25,3 +25,9 @@ jobs:
         path: |
           build/*/*.bin
           build/Apps/*.app
+
+    - name: Mirror bin to archive
+      run: |
+        mkdir -p archive
+        cp -r -f build/*/*.bin archive/
+        cp -r -f build/Apps/*.app archive/
