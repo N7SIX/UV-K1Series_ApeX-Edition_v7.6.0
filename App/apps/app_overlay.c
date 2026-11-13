@@ -859,14 +859,28 @@ static uint32_t app_cycles_48mhz(void)
 }
 
 /* ---- v2 battery / backlight ---- */
+/* An app that draws the battery icon without ever sampling (BroadcastFM,
+ * FlashMap) would show the level frozen at launch time: refresh a stale reading
+ * when the icon is drawn, at the main loop's one-second rate. Never during an
+ * audio capture (an app doing that samples on its own schedule) nor while the
+ * PA is keyed, where the load would read as a low battery. */
+#define APP_BATTERY_REFRESH_10MS 100u
+static uint32_t app_battery_tick;
+
+static void app_battery_sample(void)
+{
+    app_battery_tick = SCHEDULER_GetTick10ms();
+    BATTERY_Sample(false);   /* yields an open capture's ADC by itself */
+}
+
 static void app_draw_battery(void)
 {
     char t[8];
+    if (!app_afc.open &&
+        !BK4819_IsGpioOutSet(BK4819_GPIO1_PIN29_PA_ENABLE) &&
+        (uint32_t)(SCHEDULER_GetTick10ms() - app_battery_tick) >= APP_BATTERY_REFRESH_10MS)
+        app_battery_sample();
     UI_DrawStatusBattery(gStatusLine, t);
-}
-static void app_battery_sample(void)
-{
-    BATTERY_Sample(false);   /* yields an open capture's ADC by itself */
 }
 
 /* BOARD_ADC_GetBatteryInfo() converts whatever channel the ADC is set to, so
