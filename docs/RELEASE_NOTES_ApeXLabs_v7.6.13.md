@@ -8,7 +8,7 @@
 **Firmware binary:** `n7six.ApeXLabs-k1.v7.6.13.bin`
 **CHIRP driver:** `n7six.ApeXLabs-k1.v7.6.13.py`
 
-ApeXLabs is a combined edition that merges **Labs' experimental overlay-apps platform** with **ApeX's N7XIX waterfall feature and branding** into a single firmware build.
+ApeXLabs is a combined edition that merges **Labs' experimental overlay-apps platform** with **ApeX's N7SIX waterfall feature and branding** into a single firmware build.
 
 ---
 
@@ -23,8 +23,21 @@ ApeXLabs is a combined edition that merges **Labs' experimental overlay-apps pla
 
 ### From ApeX Edition
 - **N7SIX Waterfall** — Real-time spectrum waterfall display on the LCD
+- **MDC-1200 roger variants** — MENU > Roger gains three real MDC-1200 hardware-FFSK bursts on top of the standard `MDC`: **MDC-EP** (one long frame, ANI), **MDC-2P** (two standard frames, Call Alert twice) and **MDC-EL** (three standard frames, Emergency repeated 3×). Each is sent as one continuous TX-enable. Transmit only; there is no MDC receive handler.
 - **N7SIX branding** — Custom boot emblem, Profile QR target, N7SIX author string
 - **Branded binary** — `n7six.ApeXLabs-k1.v7.6.13.bin`
+
+### 🔋 Battery voltage & indicator fixes
+- **Audio-capture apps no longer corrupt the battery reading.** Apps that capture RX audio (APRS RX, AIS RX, ACARS RX, ATIS RX, ATIS DSC RX, POCSAG RX, SSTV, EPIRB 406, Sonde M10/M20/RS41, AF Scope, AF Spectro, Sig Finder, APRS DIGI) leave ADC1 on PA4. `BOARD_ADC_GetBatteryInfo()` now switches back to the battery channel for each conversion, then restores PA4. Previously the audio signal was read as battery voltage, causing wrong levels and false low/over-voltage warnings while these apps ran.
+- **Broadcast FM and FlashMap now keep the battery icon live.** They draw the icon but never sampled the battery, so the level stayed frozen at launch. The loader now refreshes a reading older than 1 s when the icon is drawn. This is skipped during audio capture and while the PA is keyed, so TX load never reads as a low battery. Apps that already sample are not sampled twice.
+- Builds without overlay apps (for example ApeX) are unchanged.
+- A small voltage drop while an app runs is normal: the radio chip, CPU and backlight draw more current than on the main screen. It recovers when you exit the app.
+
+### 🆕 Other changes since v7.6.12
+- Added the ApeXLabs combined preset (Labs overlay apps + ApeX waterfall) and its CHIRP driver.
+- Fixed the Labs overlay firmware build.
+- Fixed N7SIX QR code branding for the ApeXLabs edition.
+- Synced `App/apps/` with the F4HWN `armel/uv-k1-k5v3-firmware-custom` main branch, adding 25 new overlay apps (43 in total). Built `.app` blobs are archived under `archive/apps/v7.6.0/`.
 
 ---
 
@@ -32,12 +45,17 @@ ApeXLabs is a combined edition that merges **Labs' experimental overlay-apps pla
 
 | Category | Apps |
 |----------|------|
-| Radio tools | Broadcast FM, Fox Hunt, Beacon, Beam, Spectrum3D |
-| Digital & signal | APRS RX, APRS TX, SSTV, EPIRB 406 |
-| Diagnostics | System Info |
-| Games & demos | Breakout, Cube3D, Minesweeper, Plasma, Rapid Roll, Snake, Space Impact, Tetris |
+| Radio tools | Broadcast FM, Fox Hunt, Beacon, Beam, Spectrum3D, Sig Finder, ToneCall, VFO Test |
+| Digital & signal | APRS RX, APRS TX, APRS DIGI, APRS Edit, SSTV, EPIRB 406, AIS RX, ACARS RX, ATIS RX, ATIS DSC RX, POCSAG RX, Sonde M10, Sonde M20, Sonde RS41 |
+| CW | CW Decode, CW Keyer, CW USB |
+| Audio analysis | AF Scope, AF Spectro |
+| Diagnostics & utilities | System Info, FlashMap, Resistor |
+| Games & demos | Breakout, Cube3D, Hell Maze, Minesweeper, Plasma, Rapid Roll, Sokoban, Snake, Space Impact, Tetris |
+| Developer / test | Handoff A, Handoff B |
 
-> ℹ️ Up to 16 apps from the collection of 18 can be stored in external Flash. Use app files supplied with the same firmware release so their ABI and required capabilities match.
+> ℹ️ The external Flash has 48 app slots (8 KiB each). Use app files supplied with the same firmware release so their ABI and required capabilities match.
+>
+> ⚠️ **KISS TNC** is in the app collection but is not usable on this firmware yet: it needs the USB serial overlay service (`APP_CAP_SERIAL`), which this build does not enable, so the loader refuses it.
 
 ---
 
@@ -49,8 +67,8 @@ ApeXLabs is a combined edition that merges **Labs' experimental overlay-apps pla
 | Radio | Quansheng UV-K1 / UV-K5 V3 |
 | Edition string | `ApeXLabs` |
 | Firmware version | `v7.6.13` |
-| Flash usage | ~115,976 B / 118 KB (95.98%) |
-| RAM usage | ~13,600 B / 16 KB (83.01%) |
+| Flash usage | 118,968 B / 118 KB (98.46%) |
+| RAM usage | 13,888 B / 16 KB (84.77%) |
 | Build toolchain | Arm GNU Toolchain 13.3.Rel1 |
 
 ---
@@ -93,14 +111,14 @@ build/ApeXLabs/n7six.ApeXLabs-k1.v7.6.13.bin
 ```
 
 ### Flash the radio
-Use [UV Studio](https://armel.github.io/uvstudio/#flash) or any compatible DFU flasher to write the `.bin` file to the radio in DFU mode.
+Use [UV Studio](https://n7six.github.io/UVStudio/#flash) or any compatible DFU flasher to write the `.bin` file to the radio in DFU mode.
 
 ---
 
 ## ⚠️ Important Warnings
 
 1. **Experimental software** — Labs features (overlay apps, external Flash R/W) are the newest, least-settled work. Expect rough edges. Use at your own risk.
-2. **Not a strict superset** — Features may be exchanged between editions to preserve stability and memory headroom. ApeXLabs operates near the flash limit (95.98%).
+2. **Not a strict superset** — Features may be exchanged between editions to preserve stability and memory headroom. ApeXLabs operates near the flash limit (98.46%).
 3. **Calibration data** — Back up your calibration data with UV Studio immediately after flashing. Restore it before installing another firmware or returning to stock.
 4. **Transmit regulations** — Transmitting apps (APRS TX, Beacon, etc.) must only be used on frequencies, power levels, and modes permitted by your license and local regulations.
 5. **Overlay-app ABI** — Use overlay app files supplied with the same firmware release (`v7.6.13`) to ensure capability and ABI compatibility.
@@ -120,6 +138,7 @@ Use [UV Studio](https://armel.github.io/uvstudio/#flash) or any compatible DFU f
 ## 🙏 Credits
 
 - [@N7SIX](https://github.com/N7SIX) — ApeXLabs edition, N7SIX branding, waterfall feature
+- [@armel](https://github.com/armel) (Armel, **F4HWN**) — F4HWN Fusion firmware this edition is built on, the Labs overlay-apps platform and the overlay apps, and [UV Studio](https://armel.github.io/uvstudio/)
 - [@muzkr](https://github.com/muzkr) & [@armel](https://github.com/armel) — UV-K1/UV-K5 V3 port
 - [@DualTachyon](https://github.com/DualTachyon) — Original UV-K5 open-source firmware
 - [CHIRP project](https://chirp.danplanet.com/) — Radio programming software
@@ -128,4 +147,4 @@ Use [UV Studio](https://armel.github.io/uvstudio/#flash) or any compatible DFU f
 
 ## 📄 License
 
-Apache License 2.0 — See [LICENSE](LICENSE) for details.
+Apache License 2.0 — See [LICENSE](https://github.com/N7SIX/UV-K1Series_ApeX-Edition_v7.6.0/blob/main/LICENSE) for details.
